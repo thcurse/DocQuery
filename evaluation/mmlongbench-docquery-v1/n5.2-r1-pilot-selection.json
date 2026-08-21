@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "docquery-n5.2-r1-pilot-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "selectionPolicy": "cover-all-seven-source-domains; take-two-from-research-administration-guidebook-and-one-from-each-other-domain; within-domain ascending-sourceRowIndex; unique-source-document; no-retrieval-result-used",
+  "caseIds": [
+    "mmlongbench-0003",
+    "mmlongbench-0007",
+    "mmlongbench-0013",
+    "mmlongbench-0067",
+    "mmlongbench-0093",
+    "mmlongbench-0096",
+    "mmlongbench-0146",
+    "mmlongbench-0232",
+    "mmlongbench-0342",
+    "mmlongbench-0368"
+  ]
+}

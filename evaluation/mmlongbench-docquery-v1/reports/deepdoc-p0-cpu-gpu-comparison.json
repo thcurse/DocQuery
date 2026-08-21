@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "docquery-deepdoc-p0-cpu-gpu-comparison-v1",
+  "sampleVersion": "deepdoc-p0-sample-v2",
+  "cpuReport": {
+    "path": "deepdoc-p0-report.json",
+    "sha256": "fd072250038fc6dbe6ac97b4c5201481250ba4b35ebad85dc915f741da307583"
+  },
+  "gpuReport": {
+    "path": "deepdoc-p0-report-gpu.json",
+    "sha256": "9bbf0b707d3e1876e8b5a691b4004d84b2197dc32fefbf1461c4f6241a34e4ba"
+  },
+  "gpuRuntime": {
+    "image": "docquery/deepdoc-gpu:ragflow-v0.26.4-torch-2.13.0-cu126",
+    "imageId": "sha256:7f5acc1915c858a1728a31e838d9086d471548750b17c0fde1942f2f5cba6f1f",
+    "imageSizeBytes": 7173797636,
+    "baseImageDigest": "sha256:16d24d1968ab59e2715a85d2590f1569c9539e0362344a42f3a23e8be06a655b",
+    "torchVersion": "2.13.0+cu126",
+    "cudaVersion": "12.6",
+    "gpu": "NVIDIA GeForce RTX 4060 Ti",
+    "actualOnnxProviders": [
+      "CUDAExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "networkMode": "none",
+    "containerExitCode": 0,
+    "oomKilled": false,
+    "observedGpuUtilizationPercent": [76, 91],
+    "observedGpuMemoryMiB": [1684, 1804]
+  },
+  "documents": [
+    {
+      "file": "BESTBUY_2023_10K.pdf",
+      "pages": 75,
+      "cpuElapsedMillis": 701914,
+      "gpuElapsedMillis": 108475,
+      "speedup": 6.471,
+      "cpuBlockCount": 1056,
+      "gpuBlockCount": 1056,
+      "cpuTextLength": 329963,
+      "gpuTextLength": 330079,
+      "evidenceCoverageEqual": true
+    },
+    {
+      "file": "2312.09390v1.pdf",
+      "pages": 49,
+      "cpuElapsedMillis": 377729,
+      "gpuElapsedMillis": 49688,
+      "speedup": 7.602,
+      "cpuBlockCount": 546,
+      "gpuBlockCount": 547,
+      "cpuTextLength": 154673,
+      "gpuTextLength": 154680,
+      "evidenceCoverageEqual": true
+    }
+  ],
+  "summary": {
+    "cpuElapsedMillis": 1079643,
+    "gpuElapsedMillis": 158163,
+    "speedup": 6.826,
+    "cpuParsed": 2,
+    "gpuParsed": 2,
+    "cpuEvidencePagesCovered": 7,
+    "gpuEvidencePagesCovered": 7,
+    "outputByteEquivalent": false,
+    "conclusion": "GPU materially reduces latency while preserving page and evidence coverage; OCR block/text output has small CPU/GPU differences"
+  }
+}

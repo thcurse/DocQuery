@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "docquery-n5.2-r1-retrieval-pilot-v1",
+  "status": "COMPLETED",
+  "generatedAt": "2026-08-19T16:27:59.282678+00:00",
+  "dataset": {
+    "version": "mmlongbench-docquery-v1",
+    "manifestSha256": "0423bcaf95044b5399f5f5df5e73ef45e2752e0a961a117be3fa141cb247a579",
+    "casesSha256": "c788014e4a1f66a2675a01193af6e1e2de193728cda23508e87ec7d5647aed21",
+    "selectionSha256": "5bd1060f2ec981136775402a064cc66c33dc1126cb26483b5cefec58cf170409",
+    "selectionPolicy": "cover-all-seven-source-domains; take-two-from-research-administration-guidebook-and-one-from-each-other-domain; within-domain ascending-sourceRowIndex; unique-source-document; no-retrieval-result-used",
+    "caseIds": [
+      "mmlongbench-0003",
+      "mmlongbench-0007",
+      "mmlongbench-0013",
+      "mmlongbench-0067",
+      "mmlongbench-0093",
+      "mmlongbench-0096",
+      "mmlongbench-0146",
+      "mmlongbench-0232",
+      "mmlongbench-0342",
+      "mmlongbench-0368"
+    ],
+    "caseCount": 10
+  },
+  "configuration": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "knowledgeBaseId": 1,
+    "modes": [
+      "KEYWORD",
+      "SEMANTIC",
+      "HYBRID"
+    ],
+    "topK": 10,
+    "rankingVersion": "retrieve-ranking-v1",
+    "answerExecuted": false,
+    "credentialEnvironmentVariable": "DOCQUERY_N5_APPLICATION_CREDENTIAL",
+    "python": "3.12.4",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "usageBoundary": {
+    "deepSeekCalls": 0,
+    "queryEmbeddingExactTokenUsage": "NOT_AVAILABLE_IN_CURRENT_PUBLIC_API",
+    "queryEmbeddingLogicalRequestUpperBound": 20
+  },
+  "metrics": {
+    "KEYWORD": {
+      "attempts": 10,
+      "successes": 10,
+      "normalModeResponses": 10,
+      "degradedResponses": 0,
+      "retryCount": 0,
+      "latency": {
+        "count": 10,
+        "p50Ms": 239.383,
+        "p95Ms": 1979.021,
+        "p99Ms": 1979.021,
+        "minMs": 115.983,
+        "maxMs": 1979.021,
+        "meanMs": 409.637
+      },
+      "qualityPopulation": 10,
+      "documentRecallAt1": 0.6,
+      "documentRecallAt5": 0.9,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 0.783333,
+      "allEvidencePagesHitAt10": 0.6,
+      "reciprocalRankAt10": 0.745833
+    },
+    "SEMANTIC": {
+      "attempts": 10,
+      "successes": 10,
+      "normalModeResponses": 10,
+      "degradedResponses": 0,
+      "retryCount": 0,
+      "latency": {
+        "count": 10,
+        "p50Ms": 298.178,
+        "p95Ms": 1222.019,
+        "p99Ms": 1222.019,
+        "minMs": 218.456,
+        "maxMs": 1222.019,
+        "meanMs": 393.013
+      },
+      "qualityPopulation": 10,
+      "documentRecallAt1": 0.8,
+      "documentRecallAt5": 0.9,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 0.8,
+      "evidencePageCoverageAt10": 0.683333,
+      "allEvidencePagesHitAt10": 0.6,
+      "reciprocalRankAt10": 0.866667
+    },
+    "HYBRID": {
+      "attempts": 10,
+      "successes": 10,
+      "normalModeResponses": 10,
+      "degradedResponses": 0,
+      "retryCount": 0,
+      "latency": {
+        "count": 10,
+        "p50Ms": 282.722,
+        "p95Ms": 503.257,
+        "p99Ms": 503.257,
+        "minMs": 229.652,
+        "maxMs": 503.257,
+        "meanMs": 316.174
+      },
+      "qualityPopulation": 10,
+      "documentRecallAt1": 0.9,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 0.833333,
+      "allEvidencePagesHitAt10": 0.7,
+      "reciprocalRankAt10": 0.933333
+    }
+  },
+  "artifacts": {
+    "rawResults": "raw-results.jsonl"
+  }
+}

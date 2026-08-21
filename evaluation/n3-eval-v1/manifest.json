@@ -1,0 +1,106 @@
+{
+  "datasetVersion": "n3-eval-v1",
+  "fictional": true,
+  "documentCount": 12,
+  "caseCount": 40,
+  "developmentCaseCount": 24,
+  "acceptanceCaseCount": 16,
+  "documents": [
+    {
+      "documentKey": "mx7-manual",
+      "file": "corpus/mx7-maintenance-manual.pdf",
+      "format": "PDF",
+      "displayName": "MX7循环冷却机维护手册",
+      "sha256": "c57536db24ff6614c737ed934c117c1489cece0fbe958444d05e53ef18f96ab4",
+      "bytes": 8418
+    },
+    {
+      "documentKey": "a1-service",
+      "file": "corpus/a1-service-guide.pdf",
+      "format": "PDF",
+      "displayName": "A1工业风机服务指南",
+      "sha256": "8e7d11a4e498f459f9587c82d4a23ae869df4eade3dfc93baebbaaa97c774d71",
+      "bytes": 3810
+    },
+    {
+      "documentKey": "incident-guide",
+      "file": "corpus/incident-response-guide.pdf",
+      "format": "PDF",
+      "displayName": "澄岳联合事件响应指南",
+      "sha256": "0d78bd30a64510bdee6d4ded6e30a005a48e55667d4bcecbba261df5ad4319c8",
+      "bytes": 4478
+    },
+    {
+      "documentKey": "expense-policy",
+      "file": "corpus/travel-expense-policy.docx",
+      "format": "DOCX",
+      "displayName": "澄岳差旅与费用报销制度",
+      "sha256": "7de420cae1f4265ef5113032fe9ae8dd4824c71d946e4bbc5dd1bd13944e0391",
+      "bytes": 38231
+    },
+    {
+      "documentKey": "security-standard",
+      "file": "corpus/security-access-standard.docx",
+      "format": "DOCX",
+      "displayName": "凌光生产系统访问安全标准",
+      "sha256": "21b77fd2b1843c3c14defe3e568c34dabe8f1ee0f7c8437f76531c998112116e",
+      "bytes": 38206
+    },
+    {
+      "documentKey": "supplier-returns",
+      "file": "corpus/supplier-return-process.docx",
+      "format": "DOCX",
+      "displayName": "星岚供应商退货作业指导书",
+      "sha256": "22a1381b22051c9f9e03994616d30dd0c1ed23f5c522bb8e5abc33808b856e75",
+      "bytes": 38136
+    },
+    {
+      "documentKey": "orion-api",
+      "file": "corpus/orion-api-operations.md",
+      "format": "MARKDOWN",
+      "displayName": "Orion API 运维手册",
+      "sha256": "2cf63d51e527c98d58a2cf4013d45cd7303a983056a8c00a2ac4a82a42da447f",
+      "bytes": 1337
+    },
+    {
+      "documentKey": "refund-rules",
+      "file": "corpus/customer-refund-rules.md",
+      "format": "MARKDOWN",
+      "displayName": "星澜客户退款规则",
+      "sha256": "845129d3c51c996fcf514f21c53df53c0138c2ee4b67a6556731caa72bc991eb",
+      "bytes": 991
+    },
+    {
+      "documentKey": "retention-handbook",
+      "file": "corpus/data-retention-handbook.md",
+      "format": "MARKDOWN",
+      "displayName": "澄岳数据保留手册",
+      "sha256": "05b1bbd2431950b3bc11b50ae4d27d14518532b8a931791c16ee4e7d59b2121c",
+      "bytes": 879
+    },
+    {
+      "documentKey": "warehouse-shift",
+      "file": "corpus/warehouse-shift-procedures.txt",
+      "format": "TXT",
+      "displayName": "澄岳仓库交接班操作说明",
+      "sha256": "bb3c132ab87df92c15f08e711ad0fa88d828af5586196635fb13437bec4a406b",
+      "bytes": 1038
+    },
+    {
+      "documentKey": "battery-guide",
+      "file": "corpus/battery-inspection-log-guide.txt",
+      "format": "TXT",
+      "displayName": "凌光电池巡检记录指南",
+      "sha256": "375f1ebcdeeeb4b9e81e07e0725ca44393b2a849fecc16142d6e8be9c610685e",
+      "bytes": 808
+    },
+    {
+      "documentKey": "field-pricing",
+      "file": "corpus/field-service-pricing.txt",
+      "format": "TXT",
+      "displayName": "星澜现场服务计价说明",
+      "sha256": "6c8a3f9ce5d1bc4ef738caa5df30913f340285f2dd03a5355fec8d89bfb45640",
+      "bytes": 984
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+FROM infiniflow/ragflow:v0.26.4
+
+ARG TORCH_VERSION=2.13.0
+ARG TORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu126
+
+RUN python -m pip install --no-cache-dir \
+      "torch==${TORCH_VERSION}+cu126" \
+      --index-url "${TORCH_CUDA_INDEX}" \
+    && python -c "import torch; assert torch.__version__.startswith('${TORCH_VERSION}'); assert torch.version.cuda == '12.6'"

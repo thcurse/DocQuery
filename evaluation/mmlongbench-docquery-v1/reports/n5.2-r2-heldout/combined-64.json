@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "docquery-n5.2-combined-64-descriptive-v1",
+  "generatedAt": "2026-08-21T07:30:23.914461+00:00",
+  "descriptiveOnly": true,
+  "selectionBias": "R1's 10 PILOT cases were used to select HYBRID; only the R2 54-case held-out report is the formal result",
+  "r1PilotCases": 10,
+  "r2HeldoutCases": 54,
+  "qualityPopulation": 64,
+  "complete": true,
+  "documentHitAt1": 0.59375,
+  "documentHitAt5": 0.78125,
+  "documentHitAt10": 0.828125,
+  "anyGoldPageHitAt10": 0.6875,
+  "evidencePageCoverageAt10": 0.602083,
+  "allGoldPagesHitAt10": 0.515625,
+  "reciprocalRankAt10": 0.667336,
+  "sources": {
+    "r1RawResultsSha256": "6031559709771f89427708a711dfcee877c9598c9ab2018b2b53eb0cad76968c",
+    "r2RawResults": "raw-results.jsonl"
+  }
+}

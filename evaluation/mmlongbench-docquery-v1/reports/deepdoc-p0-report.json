@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "docquery-deepdoc-p0-report-v1",
+  "sampleVersion": "deepdoc-p0-sample-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "engine": {
+    "name": "RAGFlow DeepDoc PdfParser",
+    "version": "ragflow-v0.26.4",
+    "image": "infiniflow/ragflow:v0.26.4",
+    "device": "cpu",
+    "cudaVisibleDevices": "",
+    "network": "none",
+    "tableAutoRotate": "false",
+    "pageBatchSize": "10"
+  },
+  "startedAt": "2026-08-16T10:01:45.744058Z",
+  "completed": false,
+  "results": [
+    {
+      "documentKey": "mmlongbench-024c2a4c161d74c0d805",
+      "displayName": "BESTBUY_2023_10K.pdf",
+      "sourceDomain": "Financial report",
+      "role": "CASE_SOURCE",
+      "caseIds": [
+        "mmlongbench-1078"
+      ],
+      "baselineResult": "PDF_COMPLEX_LAYOUT_UNSUPPORTED",
+      "sha256": "7ca465d31a08be29e8c08d756644d33d818c7254a1215720f265227005cda696",
+      "bytes": 703034,
+      "evidencePages": [
+        39
+      ],
+      "status": "PARSED",
+      "pageCount": 75,
+      "blockCount": 1056,
+      "textLength": 329963,
+      "boxesWithPositions": 1056,
+      "layoutTypeCounts": {
+        "figure": 3,
+        "table": 69,
+        "text": 662,
+        "title": 233,
+        "unknown": 89
+      },
+      "pagesWithTextCount": 75,
+      "evidencePagesWithText": [
+        39
+      ],
+      "evidenceCoverageComplete": true,
+      "memory": {
+        "available": true,
+        "rssBeforeBytes": 1042903040,
+        "rssAfterBytes": 5205737472,
+        "peakRssBytes": 6022897664
+      },
+      "elapsedMillis": 701914
+    },
+    {
+      "documentKey": "mmlongbench-0d59352fbdb4307e4f87",
+      "displayName": "2312.09390v1.pdf",
+      "sourceDomain": "Academic paper",
+      "role": "CASE_SOURCE",
+      "caseIds": [
+        "mmlongbench-0888"
+      ],
+      "baselineResult": "PDF_COMPLEX_LAYOUT_UNSUPPORTED",
+      "sha256": "720656b49d4c00dac26d6ebe10dad0d8482d3bcc87640a66b73867730b89515f",
+      "bytes": 2299371,
+      "evidencePages": [
+        1,
+        2,
+        5,
+        7,
+        32,
+        47
+      ],
+      "status": "PARSED",
+      "pageCount": 49,
+      "blockCount": 546,
+      "textLength": 154673,
+      "boxesWithPositions": 546,
+      "layoutTypeCounts": {
+        "figure": 31,
+        "table": 3,
+        "text": 451,
+        "title": 55,
+        "unknown": 6
+      },
+      "pagesWithTextCount": 49,
+      "evidencePagesWithText": [
+        1,
+        2,
+        5,
+        7,
+        32,
+        47
+      ],
+      "evidenceCoverageComplete": true,
+      "memory": {
+        "available": true,
+        "rssBeforeBytes": 5199507456,
+        "rssAfterBytes": 4969041920,
+        "peakRssBytes": 5318721536
+      },
+      "elapsedMillis": 377729
+    }
+  ],
+  "summary": {
+    "attempted": 2,
+    "parsed": 2,
+    "failed": 0,
+    "recoveredPreviouslyRejected": 2,
+    "evidenceDocumentsParsed": 2,
+    "evidenceDocumentsComplete": 2,
+    "elapsedMillis": {
+      "min": 377729,
+      "median": 539821,
+      "max": 701914,
+      "total": 1079643
+    },
+    "p0RecoveryThresholdMet": false
+  },
+  "updatedAt": "2026-08-16T10:19:15.806838Z",
+  "modelInitializationMillis": 423
+}

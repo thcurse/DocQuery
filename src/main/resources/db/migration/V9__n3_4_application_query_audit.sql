@@ -1,0 +1,52 @@
+CREATE TABLE application_query_audit (
+    id BIGINT NOT NULL AUTO_INCREMENT COMMENT '应用查询审计主键ID',
+    request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '每次HTTP尝试的DocQuery请求ID',
+    tenant_id BIGINT NOT NULL COMMENT '可信凭证所属租户ID，逻辑外键',
+    application_id BIGINT NOT NULL COMMENT '可信凭证所属应用ID，逻辑外键',
+    credential_id BIGINT NOT NULL COMMENT '本次使用的凭证ID，逻辑外键',
+    credential_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'Credential Key ID的SHA-256摘要',
+    knowledge_base_id BIGINT NOT NULL COMMENT '请求目标知识库ID，逻辑外键或拒绝时的请求值',
+    operation_type VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '操作代码：1=Retrieve，2=Answer',
+    caller_trace_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '调用方不透明排障标识，不参与授权',
+    actor_ref VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '调用方不透明主体引用，不参与授权',
+    query_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '规范化问题SHA-256，不保存问题正文',
+    query_code_points INT UNSIGNED NULL COMMENT '规范化问题Unicode code point数量',
+    requested_mode VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '调用方请求的检索模式',
+    executed_mode VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '实际执行的检索模式',
+    outcome VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '结果代码：1=Started，2=Succeeded，3=Failed，4=Rejected，5=Interrupted',
+    http_status SMALLINT UNSIGNED NULL COMMENT '终态HTTP状态',
+    failure_category VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '内部稳定失败分类',
+    failure_code VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '对外稳定错误码或内部安全错误码',
+    query_execution_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '逻辑查询执行ID；重放沿用原ID',
+    idempotency_disposition VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '幂等代码：1=Owner，2=Replay，3=InProgress，4=Conflict',
+    snapshot_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'activeVersion快照摘要',
+    active_version_count INT UNSIGNED NULL COMMENT '本次固定的activeVersion数量',
+    degraded TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否发生明确检索降级',
+    degradation_reason VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT '稳定降级原因',
+    result_count INT UNSIGNED NULL COMMENT 'Retrieve返回章节结果数量',
+    evidence_count INT UNSIGNED NULL COMMENT 'Retrieve返回canonical Evidence数量',
+    answer_status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'ANSWERED或INSUFFICIENT_EVIDENCE',
+    citation_count INT UNSIGNED NULL COMMENT 'Answer最终引用数量',
+    tool_rounds INT UNSIGNED NULL COMMENT '本次HTTP尝试实际Agent工具轮次',
+    tool_calls INT UNSIGNED NULL COMMENT '本次HTTP尝试实际工具调用次数',
+    model_calls INT UNSIGNED NULL COMMENT '本次HTTP尝试实际Answer模型调用次数',
+    canonical_characters INT UNSIGNED NULL COMMENT '本次Answer登记的canonical字符量',
+    started_at DATETIME(6) NOT NULL COMMENT '审计开始时间，UTC',
+    completed_at DATETIME(6) NULL COMMENT '终态时间，UTC',
+    duration_ms BIGINT UNSIGNED NULL COMMENT '从审计开始到终态的毫秒数',
+    created_at DATETIME(6) NOT NULL COMMENT '创建时间，UTC',
+    updated_at DATETIME(6) NOT NULL COMMENT '最近更新时间，UTC',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_application_query_audit_request (request_id),
+    KEY idx_application_query_audit_tenant_time (tenant_id, started_at, id),
+    KEY idx_application_query_audit_tenant_application_time (
+        tenant_id, application_id, started_at, id
+    ),
+    KEY idx_application_query_audit_tenant_kb_time (
+        tenant_id, knowledge_base_id, started_at, id
+    ),
+    KEY idx_application_query_audit_execution (tenant_id, query_execution_id),
+    KEY idx_application_query_audit_trace (tenant_id, caller_trace_id)
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "docquery-deepdoc-p0-scope-result-v1",
+  "scopeVersion": "deepdoc-p0-sample-v2",
+  "scopeCompleted": true,
+  "completedAt": "2026-08-16T10:19:19.228609223Z",
+  "derivedFromRawReport": {
+    "path": "deepdoc-p0-report.json",
+    "sha256": "fd072250038fc6dbe6ac97b4c5201481250ba4b35ebad85dc915f741da307583",
+    "rawRunCompleted": false,
+    "stopReason": "USER_REDUCED_SCOPE_TO_FIRST_TWO_DOCUMENTS"
+  },
+  "engine": {
+    "image": "infiniflow/ragflow:v0.26.4",
+    "imageDigest": "sha256:16d24d1968ab59e2715a85d2590f1569c9539e0362344a42f3a23e8be06a655b",
+    "device": "cpu",
+    "deviceRequests": null,
+    "nanoCpus": 4000000000,
+    "memoryLimitBytes": 12884901888,
+    "networkMode": "none",
+    "oomKilled": false,
+    "restartCount": 0,
+    "containerExitCode": 137,
+    "containerExitMeaning": "INTENTIONAL_STOP_AFTER_SECOND_RESULT"
+  },
+  "summary": {
+    "attempted": 2,
+    "parsed": 2,
+    "failed": 0,
+    "recoveredPreviouslyRejected": 2,
+    "recoveryThreshold": 2,
+    "recoveryThresholdMet": true,
+    "pagesWithText": 124,
+    "totalPages": 124,
+    "evidencePagesWithText": 7,
+    "totalEvidencePages": 7,
+    "elapsedMillis": {
+      "min": 377729,
+      "median": 539821,
+      "max": 701914,
+      "total": 1079643
+    }
+  },
+  "gpuFallbackProbeAtCpuScopeCompletion": {
+    "gpu": "NVIDIA GeForce RTX 4060 Ti",
+    "memoryMiB": 8188,
+    "onnxProviders": [
+      "TensorrtExecutionProvider",
+      "CUDAExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "onnxDevice": "GPU",
+    "documentParsingExecuted": false
+  }
+}

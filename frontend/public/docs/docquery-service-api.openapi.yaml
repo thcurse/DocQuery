@@ -1,0 +1,338 @@
+openapi: 3.1.0
+info:
+  title: DocQuery Service API
+  version: 1.0.0
+  description: Application Credential authenticated retrieval and controlled single-turn answer API.
+servers:
+  - url: "{baseUrl}"
+    variables:
+      baseUrl:
+        default: http://localhost:8080
+paths:
+  /api/v1/service/knowledge-bases/{knowledgeBaseId}/retrieve:
+    post:
+      summary: Retrieve canonical evidence
+      operationId: retrieve
+      security:
+        - applicationCredential: []
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeBaseId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/TraceId'
+        - $ref: '#/components/parameters/ActorRef'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Retrieval completed
+          headers:
+            X-DocQuery-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetrieveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/KnowledgeBaseUnavailable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/v1/service/knowledge-bases/{knowledgeBaseId}/answer:
+    post:
+      summary: Generate a controlled single-turn answer with citations
+      operationId: answer
+      security:
+        - applicationCredential: []
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeBaseId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/TraceId'
+        - $ref: '#/components/parameters/ActorRef'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Answer execution reached a replayable terminal state
+          headers:
+            X-DocQuery-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/KnowledgeBaseUnavailable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  securitySchemes:
+    applicationCredential:
+      type: http
+      scheme: bearer
+      bearerFormat: "dq_app_<keyId>.<secret>"
+  parameters:
+    KnowledgeBaseId:
+      name: knowledgeBaseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Use a new value for a new logical request; reuse it only when retrying that same request.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    TraceId:
+      name: X-DocQuery-Trace-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+    ActorRef:
+      name: X-DocQuery-Actor-Ref
+      in: header
+      required: false
+      description: Opaque business-side end-user or actor reference. Do not put secrets here.
+      schema:
+        type: string
+        maxLength: 128
+  headers:
+    RequestId:
+      description: DocQuery request identifier for audit and troubleshooting.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invalid request or missing/invalid idempotency key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Application Credential is invalid or revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    KnowledgeBaseUnavailable:
+      description: KnowledgeBase is unavailable to this application, including grant or lifecycle rejection
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Idempotency conflict, active-version context change, or request still in progress
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unavailable:
+      description: Idempotency, embedding, search, evidence, or answer dependency is temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    QueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        mode:
+          $ref: '#/components/schemas/RetrievalMode'
+        topK:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+      example:
+        query: 差旅住宿报销标准是什么？
+        mode: HYBRID
+        topK: 5
+    RetrievalMode:
+      type: string
+      enum: [HYBRID, KEYWORD, SEMANTIC]
+      default: HYBRID
+    BaseExecution:
+      type: object
+      required: [queryExecutionId, knowledgeBaseId, requestedMode, executedMode, degraded]
+      properties:
+        queryExecutionId:
+          type: string
+          format: uuid
+        knowledgeBaseId:
+          type: integer
+          format: int64
+        requestedMode:
+          $ref: '#/components/schemas/RetrievalMode'
+        executedMode:
+          $ref: '#/components/schemas/RetrievalMode'
+        degraded:
+          type: boolean
+        degradationReason:
+          type: [string, 'null']
+    RetrieveResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseExecution'
+        - type: object
+          required: [results]
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/RetrieveResult'
+    RetrieveResult:
+      type: object
+      required: [rank, documentId, documentVersionId, versionNo, documentName, headingPath, channels, evidence]
+      properties:
+        rank:
+          type: integer
+        documentId:
+          type: integer
+          format: int64
+        documentVersionId:
+          type: integer
+          format: int64
+        versionNo:
+          type: integer
+        documentName:
+          type: string
+        headingNodeId:
+          type: [string, 'null']
+        headingPath:
+          type: array
+          items: { type: string }
+        channels:
+          type: array
+          items: { type: string }
+        keywordRank:
+          type: [integer, 'null']
+        semanticRank:
+          type: [integer, 'null']
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/Evidence'
+    Evidence:
+      type: object
+      required: [blockId, kind, text, truncated, canonicalStart, canonicalEnd, keywordHighlights]
+      properties:
+        blockId: { type: string }
+        kind: { type: string }
+        text: { type: string }
+        truncated: { type: boolean }
+        canonicalStart: { type: integer, format: int64 }
+        canonicalEnd: { type: integer, format: int64 }
+        sourcePosition:
+          oneOf:
+            - $ref: '#/components/schemas/SourcePosition'
+            - type: 'null'
+        keywordHighlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/HighlightFragment'
+    HighlightFragment:
+      type: object
+      required: [segments]
+      properties:
+        segments:
+          type: array
+          items:
+            type: object
+            required: [text, matched]
+            properties:
+              text: { type: string }
+              matched: { type: boolean }
+    SourcePosition:
+      type: object
+      properties:
+        sourceType: { type: [string, 'null'] }
+        pageNumber: { type: [integer, 'null'] }
+        pageBlockOrdinal: { type: [integer, 'null'] }
+        pageCharacterStart: { type: [integer, 'null'] }
+        pageCharacterEnd: { type: [integer, 'null'] }
+        bodyElementIndex: { type: [integer, 'null'] }
+        tableRow: { type: [integer, 'null'] }
+        tableColumn: { type: [integer, 'null'] }
+        cellParagraphIndex: { type: [integer, 'null'] }
+        startLine: { type: [integer, 'null'] }
+        startColumn: { type: [integer, 'null'] }
+        endLine: { type: [integer, 'null'] }
+        endColumn: { type: [integer, 'null'] }
+    AnswerResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseExecution'
+        - type: object
+          required: [status, citations]
+          properties:
+            status:
+              type: string
+            answer:
+              type: [string, 'null']
+            citations:
+              type: array
+              items:
+                $ref: '#/components/schemas/Citation'
+    Citation:
+      type: object
+      required: [evidenceId, documentId, documentVersionId, versionNo, documentName, headingPath, blockId, text, truncated, canonicalStart, canonicalEnd]
+      properties:
+        evidenceId: { type: string }
+        documentId: { type: integer, format: int64 }
+        documentVersionId: { type: integer, format: int64 }
+        versionNo: { type: integer }
+        documentName: { type: string }
+        headingNodeId: { type: [string, 'null'] }
+        headingPath:
+          type: array
+          items: { type: string }
+        blockId: { type: string }
+        text: { type: string }
+        truncated: { type: boolean }
+        canonicalStart: { type: integer, format: int64 }
+        canonicalEnd: { type: integer, format: int64 }
+        sourcePosition:
+          oneOf:
+            - $ref: '#/components/schemas/SourcePosition'
+            - type: 'null'
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      example:
+        code: APPLICATION_CREDENTIAL_INVALID
+        message: Application credential is invalid

@@ -1,0 +1,218 @@
+name: docquery-greenfield
+
+services:
+  mysql:
+    image: mysql:8.4.10
+    restart: "no"
+    environment:
+      MYSQL_DATABASE: docquery
+      MYSQL_USER: docquery
+      MYSQL_PASSWORD: ${DOCQUERY_DB_PASSWORD:-local-docquery-only}
+      MYSQL_ROOT_PASSWORD: ${DOCQUERY_DB_ROOT_PASSWORD:-local-root-only}
+    ports:
+      - "${DOCQUERY_MYSQL_PORT:-3308}:3306"
+    volumes:
+      - docquery_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.40
+    restart: "no"
+    environment:
+      AWS_ACCESS_KEY_ID: ${DOCQUERY_OBJECT_STORAGE_ACCESS_KEY:-docquery-local}
+      AWS_SECRET_ACCESS_KEY: ${DOCQUERY_OBJECT_STORAGE_SECRET_KEY:-local-seaweedfs-only}
+      S3_BUCKET: ${DOCQUERY_OBJECT_STORAGE_BUCKET:-docquery-source}
+    ports:
+      - "${DOCQUERY_SEAWEEDFS_S3_PORT:-8333}:8333"
+      - "${DOCQUERY_SEAWEEDFS_ADMIN_PORT:-23646}:23646"
+    volumes:
+      - docquery_seaweedfs_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:9333/cluster/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  rabbitmq:
+    image: rabbitmq:4.3.4-management
+    restart: "no"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DOCQUERY_RABBITMQ_USERNAME:-docquery}
+      RABBITMQ_DEFAULT_PASS: ${DOCQUERY_RABBITMQ_PASSWORD:-local-rabbit-only}
+    ports:
+      # Windows/WSL2 常把 5672 落入动态排除段，本地默认改用稳定宿主端口。
+      - "${DOCQUERY_RABBITMQ_PORT:-25672}:5672"
+      - "${DOCQUERY_RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - docquery_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.4
+    restart: "no"
+    environment:
+      discovery.type: single-node
+      # 仅用于绑定到本机回环地址的开发容器；生产部署必须启用 TLS 和认证。
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:${DOCQUERY_ELASTICSEARCH_PORT:-19200}:9200"
+    volumes:
+      - docquery_elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+  redis:
+    image: redis:8.8.1
+    restart: "no"
+    environment:
+      DOCQUERY_REDIS_PASSWORD: ${DOCQUERY_REDIS_PASSWORD:-local-redis-only}
+    command:
+      - redis-server
+      - --appendonly
+      - "no"
+      - --save
+      - ""
+      - --requirepass
+      - ${DOCQUERY_REDIS_PASSWORD:-local-redis-only}
+    ports:
+      - "127.0.0.1:${DOCQUERY_REDIS_PORT:-26379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$DOCQUERY_REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  deepdoc-p0-cpu:
+    profiles: ["deepdoc-p0-cpu"]
+    image: infiniflow/ragflow:v0.26.4
+    pull_policy: missing
+    restart: "no"
+    working_dir: /ragflow
+    entrypoint: ["python", "/runner/run_deepdoc_p0.py"]
+    command:
+      - --sample
+      - /config/deepdoc-p0-sample-2.json
+      - --input-dir
+      - /input
+      - --output
+      - /output/deepdoc-p0-report-cpu-replay.json
+    environment:
+      DEVICE: cpu
+      CUDA_VISIBLE_DEVICES: ""
+      LAYOUT_RECOGNIZER_TYPE: onnx
+      TABLE_AUTO_ROTATE: "false"
+      PDF_PARSER_PAGE_BATCH_SIZE: "10"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    network_mode: none
+    cpus: "4.0"
+    mem_limit: 12g
+    volumes:
+      - ./evaluation/mmlongbench-docquery-v1/corpus:/input:ro
+      - ./evaluation/mmlongbench-docquery-v1/deepdoc-p0-sample-2.json:/config/deepdoc-p0-sample-2.json:ro
+      - ./evaluation/mmlongbench-docquery-v1/reports:/output
+      - ./tools/document-parser-p0/run_deepdoc_p0.py:/runner/run_deepdoc_p0.py:ro
+
+  deepdoc-p0-gpu:
+    profiles: ["deepdoc-p0-gpu"]
+    image: docquery/deepdoc-gpu:ragflow-v0.26.4-torch-2.13.0-cu126
+    build:
+      context: ./tools/document-parser-p0
+      dockerfile: Dockerfile.gpu
+    pull_policy: never
+    restart: "no"
+    working_dir: /ragflow
+    entrypoint: ["python", "/runner/run_deepdoc_p0.py"]
+    command:
+      - --sample
+      - /config/deepdoc-p0-sample-2.json
+      - --input-dir
+      - /input
+      - --output
+      - /output/deepdoc-p0-report-gpu-replay.json
+    environment:
+      DEVICE: gpu
+      CUDA_VISIBLE_DEVICES: "0"
+      REQUIRE_ONNX_PROVIDER: CUDAExecutionProvider
+      LAYOUT_RECOGNIZER_TYPE: onnx
+      TABLE_AUTO_ROTATE: "false"
+      PDF_PARSER_PAGE_BATCH_SIZE: "10"
+      OCR_GPU_MEM_LIMIT_MB: "6144"
+      OCR_GPUMEM_ARENA_SHRINKAGE: "1"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+    network_mode: none
+    gpus: all
+    cpus: "4.0"
+    mem_limit: 12g
+    volumes:
+      - ./evaluation/mmlongbench-docquery-v1/corpus:/input:ro
+      - ./evaluation/mmlongbench-docquery-v1/deepdoc-p0-sample-2.json:/config/deepdoc-p0-sample-2.json:ro
+      - ./evaluation/mmlongbench-docquery-v1/reports:/output
+      - ./tools/document-parser-p0/run_deepdoc_p0.py:/runner/run_deepdoc_p0.py:ro
+
+  deepdoc:
+    image: docquery/deepdoc-service:ragflow-v0.26.4-torch-2.13.0-cu126
+    build:
+      context: ./tools/deepdoc-service
+      dockerfile: Dockerfile
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    environment:
+      DEVICE: gpu
+      CUDA_VISIBLE_DEVICES: "0"
+      REQUIRE_ONNX_PROVIDER: CUDAExecutionProvider
+      LAYOUT_RECOGNIZER_TYPE: onnx
+      TABLE_AUTO_ROTATE: "false"
+      PDF_PARSER_PAGE_BATCH_SIZE: "1"
+      OCR_GPU_MEM_LIMIT_MB: "6144"
+      OCR_GPUMEM_ARENA_SHRINKAGE: "1"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      PARSER_HTTP_HOST: 0.0.0.0
+      PARSER_HTTP_PORT: "8080"
+      PARSER_MAX_CONCURRENCY: "1"
+      PARSER_MAX_PDF_PAGES: ${DOCQUERY_PARSE_MAX_PDF_PAGES:-300}
+      PARSER_MAX_BLOCKS: ${DOCQUERY_PARSE_MAX_BLOCKS:-200000}
+      PARSER_MAX_DOCX_EXPANDED_BYTES: ${DOCQUERY_PARSE_MAX_DOCX_EXPANDED_BYTES:-209715200}
+      PARSER_MAX_REQUEST_BYTES: ${DOCQUERY_UPLOAD_MAX_REQUEST_BYTES:-53477376}
+    ports:
+      - "127.0.0.1:${DOCQUERY_DEEPDOC_PORT:-18080}:8080"
+    gpus: all
+    cpus: "4.0"
+    mem_limit: 12g
+    shm_size: 2g
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/ready', timeout=3).read()"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+volumes:
+  docquery_mysql_data:
+  docquery_seaweedfs_data:
+  docquery_rabbitmq_data:
+  docquery_elasticsearch_data:

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "n3-real-provider-evaluation-status-v1",
+  "status": "NOT_EXECUTED",
+  "reason": "Formal quality evaluation was deferred by product decision until all planned functionality is implemented; n3-eval-v1 is retained only as a deterministic smoke fixture.",
+  "requiredRunner": "tools/evaluation/run_n3_eval.py",
+  "requiredInputs": [
+    "baseUrl",
+    "knowledgeBaseId containing the selected public benchmark corpus",
+    "DOCQUERY_APPLICATION_CREDENTIAL",
+    "explicit real query-embedding and answer-provider configuration"
+  ],
+  "interpretation": "No real-provider retrieval quality, answer quality, cost or latency claim is made; the final release gate must use a mature public benchmark."
+}

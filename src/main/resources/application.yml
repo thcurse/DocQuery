@@ -1,0 +1,185 @@
+spring:
+  application:
+    name: docquery
+  config:
+    # 本地密钥保存在项目根目录 config/application-secrets.yml；文件不存在时仍可正常启动。
+    # 该外部文件不会被打进 JAR，并已加入 .gitignore，禁止提交真实 API Key。
+    import: optional:file:./config/application-secrets.yml
+  datasource:
+    url: ${DOCQUERY_DB_URL:jdbc:mysql://localhost:${DOCQUERY_MYSQL_PORT:3308}/docquery?connectionTimeZone=UTC}
+    username: ${DOCQUERY_DB_USERNAME:docquery}
+    password: ${DOCQUERY_DB_PASSWORD:local-docquery-only}
+  flyway:
+    clean-disabled: true
+  servlet:
+    multipart:
+      max-file-size: ${DOCQUERY_UPLOAD_MAX_BYTES:52428800}
+      max-request-size: ${DOCQUERY_UPLOAD_MAX_REQUEST_BYTES:53477376}
+  rabbitmq:
+    host: ${DOCQUERY_RABBITMQ_HOST:localhost}
+    port: ${DOCQUERY_RABBITMQ_PORT:25672}
+    username: ${DOCQUERY_RABBITMQ_USERNAME:docquery}
+    password: ${DOCQUERY_RABBITMQ_PASSWORD:local-rabbit-only}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: ${DOCQUERY_CONSUMER_PREFETCH:1}
+  data:
+    redis:
+      host: ${DOCQUERY_REDIS_HOST:localhost}
+      port: ${DOCQUERY_REDIS_PORT:26379}
+      password: ${DOCQUERY_REDIS_PASSWORD:local-redis-only}
+      connect-timeout: ${DOCQUERY_REDIS_CONNECT_TIMEOUT:2s}
+      timeout: ${DOCQUERY_REDIS_COMMAND_TIMEOUT:2s}
+
+server:
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${DOCQUERY_SESSION_COOKIE_SECURE:false}
+
+docquery:
+  security:
+    password:
+      bcrypt-strength: ${DOCQUERY_BCRYPT_STRENGTH:12}
+  object-storage:
+    enabled: ${DOCQUERY_OBJECT_STORAGE_ENABLED:true}
+    endpoint: ${DOCQUERY_OBJECT_STORAGE_ENDPOINT:http://localhost:8333}
+    region: ${DOCQUERY_OBJECT_STORAGE_REGION:us-east-1}
+    access-key: ${DOCQUERY_OBJECT_STORAGE_ACCESS_KEY:docquery-local}
+    secret-key: ${DOCQUERY_OBJECT_STORAGE_SECRET_KEY:local-seaweedfs-only}
+    bucket: ${DOCQUERY_OBJECT_STORAGE_BUCKET:docquery-source}
+    path-style-access: ${DOCQUERY_OBJECT_STORAGE_PATH_STYLE:true}
+    upload-max-bytes: ${DOCQUERY_UPLOAD_MAX_BYTES:52428800}
+    orphan-prefix: source/
+    orphan-grace: ${DOCQUERY_ORPHAN_GRACE:24h}
+    orphan-scan-delay: ${DOCQUERY_ORPHAN_SCAN_DELAY:15m}
+    orphan-batch-size: ${DOCQUERY_ORPHAN_BATCH_SIZE:100}
+  parsing:
+    schema-version: 1
+    parser-version: 1
+    canonical-prefix: canonical/
+    max-pdf-pages: ${DOCQUERY_PARSE_MAX_PDF_PAGES:2000}
+    max-docx-expanded-bytes: ${DOCQUERY_PARSE_MAX_DOCX_EXPANDED_BYTES:209715200}
+    max-canonical-bytes: ${DOCQUERY_PARSE_MAX_CANONICAL_BYTES:104857600}
+    max-blocks: ${DOCQUERY_PARSE_MAX_BLOCKS:200000}
+    max-block-chars: ${DOCQUERY_PARSE_MAX_BLOCK_CHARS:65536}
+    orphan-grace: ${DOCQUERY_CANONICAL_ORPHAN_GRACE:24h}
+    orphan-scan-delay: ${DOCQUERY_CANONICAL_ORPHAN_SCAN_DELAY:15m}
+    orphan-batch-size: ${DOCQUERY_CANONICAL_ORPHAN_BATCH_SIZE:100}
+    deepdoc:
+      # 默认四种格式均调用项目内 DeepDoc 服务；显式 false 才回退本地 Adapter。
+      enabled: ${DOCQUERY_DEEPDOC_ENABLED:true}
+      base-url: ${DOCQUERY_DEEPDOC_BASE_URL:http://127.0.0.1:18080}
+      connect-timeout: ${DOCQUERY_DEEPDOC_CONNECT_TIMEOUT:5s}
+      request-timeout: ${DOCQUERY_DEEPDOC_REQUEST_TIMEOUT:20m}
+      max-response-bytes: ${DOCQUERY_DEEPDOC_MAX_RESPONSE_BYTES:104857600}
+  retrieval:
+    # 默认关闭真实供应商；显式开启后才读取 Key 并产生外部调用费用。
+    provider-enabled: ${DOCQUERY_RETRIEVAL_PROVIDER_ENABLED:false}
+    schema-version: 1
+    retrieval-prefix: retrieval/
+    max-retrieval-bytes: ${DOCQUERY_RETRIEVAL_MAX_BYTES:67108864}
+    max-source-chars-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_CHAT_SOURCE_CHARS:64000}
+    max-total-source-chars: ${DOCQUERY_RETRIEVAL_MAX_TOTAL_SOURCE_CHARS:4000000}
+    max-cards: ${DOCQUERY_RETRIEVAL_MAX_CARDS:2000}
+    max-chat-calls: ${DOCQUERY_RETRIEVAL_MAX_CHAT_CALLS:128}
+    max-items-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_ITEMS_PER_CHAT_CALL:16}
+    chat-max-output-tokens: ${DOCQUERY_RETRIEVAL_CHAT_MAX_OUTPUT_TOKENS:8192}
+    embedding-dimension: 2560
+    embedding-batch-size: 20
+    provider-max-retries: 2
+    chat-timeout: 180s
+    embedding-timeout: 60s
+    orphan-grace: ${DOCQUERY_RETRIEVAL_ORPHAN_GRACE:24h}
+    orphan-scan-delay: ${DOCQUERY_RETRIEVAL_ORPHAN_SCAN_DELAY:15m}
+    orphan-batch-size: ${DOCQUERY_RETRIEVAL_ORPHAN_BATCH_SIZE:100}
+    chat-base-url: ${DOCQUERY_DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    chat-api-key: ${DEEPSEEK_API_KEY:}
+    chat-model: deepseek-v4-flash
+    chat-prompt-version: retrieval-card-v1
+    # 北京地域 OpenAI 兼容 Endpoint 可含 Workspace ID，故不写死到仓库。
+    embedding-base-url: ${DOCQUERY_ALIBABA_EMBEDDING_BASE_URL:}
+    embedding-api-key: ${DASHSCOPE_API_KEY:}
+    embedding-model: qwen3.7-text-embedding
+    embedding-template-version: retrieval-embedding-v1
+  search:
+    # ES 是可重建投影；显式开启后才创建/校验索引并注册完整入库处理器。
+    enabled: ${DOCQUERY_SEARCH_ENABLED:false}
+    endpoint: ${DOCQUERY_ELASTICSEARCH_ENDPOINT:http://localhost:${DOCQUERY_ELASTICSEARCH_PORT:19200}}
+    api-key: ${DOCQUERY_ELASTICSEARCH_API_KEY:}
+    index-prefix: ${DOCQUERY_ELASTICSEARCH_INDEX_PREFIX:docquery}
+    evidence-mapping-version: evidence-v1
+    navigation-mapping-version: navigation-v1
+    embedding-dimension: 2560
+    bulk-max-actions: ${DOCQUERY_ELASTICSEARCH_BULK_MAX_ACTIONS:500}
+    bulk-max-bytes: ${DOCQUERY_ELASTICSEARCH_BULK_MAX_BYTES:5242880}
+    shards: ${DOCQUERY_ELASTICSEARCH_SHARDS:1}
+    replicas: ${DOCQUERY_ELASTICSEARCH_REPLICAS:0}
+  query:
+    audit:
+      stale-after: ${DOCQUERY_QUERY_AUDIT_STALE_AFTER:15m}
+      retention: ${DOCQUERY_QUERY_AUDIT_RETENTION:90d}
+      maintenance-delay: ${DOCQUERY_QUERY_AUDIT_MAINTENANCE_DELAY:1h}
+      maintenance-batch-size: ${DOCQUERY_QUERY_AUDIT_MAINTENANCE_BATCH_SIZE:500}
+    idempotency:
+      enabled: ${DOCQUERY_QUERY_IDEMPOTENCY_ENABLED:false}
+      key-prefix: docquery:query-idempotency:v1
+      running-ttl: ${DOCQUERY_QUERY_RUNNING_TTL:10m}
+      result-ttl: ${DOCQUERY_QUERY_RESULT_TTL:5m}
+      max-result-bytes: ${DOCQUERY_QUERY_MAX_RESULT_BYTES:1048576}
+    retrieve:
+      max-query-code-points: 2000
+      default-top-k: 5
+      max-top-k: 20
+      keyword-candidates: 50
+      knn-k: 20
+      knn-num-candidates: 100
+      rrf-k: 60
+      max-evidence-blocks-per-result: 3
+      max-evidence-chars-per-result: 12000
+      max-total-evidence-chars: 80000
+      executor-threads: ${DOCQUERY_RETRIEVE_EXECUTOR_THREADS:8}
+    answer:
+      prompt-version: answer-agent-v1
+      policy-version: answer-policy-v1
+      max-tool-rounds: 3
+      max-tool-calls: 6
+      max-parallel-tool-calls: 2
+      max-model-calls: 4
+      max-repair-calls: 1
+      max-tool-query-code-points: 2000
+      max-search-limit: 5
+      max-read-blocks: 3
+      max-read-characters: 12000
+      max-canonical-characters: 60000
+      max-outline-nodes: 200
+      max-outline-nodes-per-call: 100
+      max-answer-code-points: 4000
+      max-citations: 8
+      max-citation-characters: 16000
+      max-output-tokens: 4096
+      model-timeout: ${DOCQUERY_ANSWER_MODEL_TIMEOUT:45s}
+      total-timeout: ${DOCQUERY_ANSWER_TOTAL_TIMEOUT:120s}
+  messaging:
+    infrastructure-enabled: ${DOCQUERY_RABBITMQ_INFRASTRUCTURE_ENABLED:true}
+    publisher-enabled: ${DOCQUERY_OUTBOX_PUBLISHER_ENABLED:true}
+    publisher-delay: ${DOCQUERY_OUTBOX_PUBLISHER_DELAY:1s}
+    publisher-batch-size: ${DOCQUERY_OUTBOX_PUBLISHER_BATCH_SIZE:50}
+    publisher-lease: ${DOCQUERY_OUTBOX_PUBLISHER_LEASE:30s}
+    confirm-timeout: ${DOCQUERY_RABBITMQ_CONFIRM_TIMEOUT:5s}
+    retry-delay-1: ${DOCQUERY_PROCESSING_RETRY_DELAY_1:5s}
+    retry-delay-2: ${DOCQUERY_PROCESSING_RETRY_DELAY_2:30s}
+    retry-delay-3: ${DOCQUERY_PROCESSING_RETRY_DELAY_3:300s}
+    listener-enabled: ${DOCQUERY_PROCESSING_LISTENER_ENABLED:false}
+    deletion-listener-enabled: ${DOCQUERY_DOCUMENT_DELETION_LISTENER_ENABLED:${DOCQUERY_PROCESSING_LISTENER_ENABLED:false}}
+    consumer-concurrency: ${DOCQUERY_CONSUMER_CONCURRENCY:1}
+    job-lease: ${DOCQUERY_PROCESSING_JOB_LEASE:15m}
+    job-heartbeat: ${DOCQUERY_PROCESSING_JOB_HEARTBEAT:1m}

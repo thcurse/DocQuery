@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "n3-deterministic-metric-baseline-v1",
+  "status": "COMPLETED",
+  "scope": "EVALUATION_HARNESS_FIXED_FIXTURE",
+  "generatedAt": "2026-08-11T14:55:03Z",
+  "datasetIntegrity": {
+    "documentCount": 12,
+    "caseCount": 40,
+    "developmentCaseCount": 24,
+    "acceptanceCaseCount": 16,
+    "singleEvidenceCount": 24,
+    "multiEvidenceCount": 8,
+    "unanswerableCount": 8,
+    "checksumAndAnchorValidation": "PASSED"
+  },
+  "fixedMetricFixture": {
+    "relevantDocuments": 2,
+    "rankedRelevantPositions": [2, 3],
+    "documentRecallAt5": 1.0,
+    "documentRecallAt10": 1.0,
+    "anchorRecallAt5": 1.0,
+    "anchorRecallAt10": 1.0,
+    "reciprocalRankAt10": 0.5,
+    "ndcgAt10": 0.693426,
+    "controlledRefusalWithoutCitation": "PASSED",
+    "nearestRankPercentiles": "PASSED"
+  },
+  "testCommand": "python -m unittest tools/evaluation/test_n3_eval_tools.py",
+  "testResult": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0
+  },
+  "interpretation": "Metric formula and report-contract baseline only; this is not a retrieval-quality score."
+}

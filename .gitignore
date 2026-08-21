@@ -1,0 +1,16 @@
+target/
+frontend/node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+.idea/
+*.iml
+.env
+*.log
+logs/
+__pycache__/
+*.pyc
+evaluation/**/.render-qa/
+evaluation/mmlongbench-docquery-v1/corpus/*.pdf
+tmp/
+/config/application-secrets.yml

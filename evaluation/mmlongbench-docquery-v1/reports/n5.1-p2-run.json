@@ -1,0 +1,79 @@
+{
+  "phase": "N5.1-P2",
+  "status": "COMPLETED_AWAITING_USER_ACCEPTANCE",
+  "tenantId": 1,
+  "knowledgeBaseId": 1,
+  "applicationId": 1,
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "sourceRevision": "2ff6aa9237fc777b6627dc57a486e9225ac5fb86",
+  "startedAt": "2026-08-17T07:21:53.762216Z",
+  "finishedAt": "2026-08-17T10:59:47.173047Z",
+  "generatedAt": "2026-08-17T11:35:50.3678365Z",
+  "result": {
+    "documentCount": 100,
+    "readyCount": 100,
+    "failedCount": 0,
+    "retainedCaseCount": 80,
+    "excludedCaseCount": 0,
+    "canonicalArtifactCount": 100,
+    "retrievalArtifactCount": 100,
+    "searchProjectionCount": 100,
+    "evidenceDocumentCount": 78062,
+    "navigationDocumentCount": 2422
+  },
+  "providers": {
+    "chatModels": [
+      "deepseek-v4-flash"
+    ],
+    "embeddingModels": [
+      "qwen3.7-text-embedding"
+    ],
+    "artifactGenerationFingerprintCount": 100,
+    "ingestionTokenUsage": "NOT_CAPTURED",
+    "ingestionCost": "NOT_CALCULATED",
+    "retrieveAnswerQuality": "NOT_EXECUTED",
+    "queryCostAndLatency": "NOT_EXECUTED"
+  },
+  "parser": {
+    "service": "DeepDoc HTTP",
+    "imageId": "sha256:ff438a2f4aed54c06d71471fda3dbea091755d0ef959ab2b43bb8d1fab5a9a68",
+    "gpuConcurrency": 1,
+    "pdfPageBatchSize": 1,
+    "maxPdfPages": 300
+  },
+  "regression": {
+    "java": {
+      "total": 160,
+      "passed": 158,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    "frontendVitest": {
+      "total": 13,
+      "passed": 13,
+      "failures": 0,
+      "errors": 0
+    },
+    "deepDocComponent": {
+      "total": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "replacement": {
+    "excluded": "mmdetection-readthedocs-io-en-v2.18.0.pdf",
+    "excludedReason": "468_PAGE_DOCUMENT_EXCEEDS_P2_RESOURCE_BOUNDARY",
+    "replacement": "NUS-Business-School-BBA-Brochure-2024.pdf",
+    "caseSetChanged": false,
+    "excludedDocumentId": 89,
+    "deletionJobId": 1,
+    "deletionStatus": "SUCCEEDED",
+    "deletedAt": "2026-08-17T11:34:40.828129Z"
+  },
+  "source": {
+    "gitCommit": "UNBORN_HEAD",
+    "dirtyWorktree": true
+  }
+}

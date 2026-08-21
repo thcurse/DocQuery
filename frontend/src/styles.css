@@ -1,0 +1,432 @@
+:root {
+  color: #172033;
+  background: #f3f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 1180px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: #f3f6fb;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.center-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(440px, 44%) 1fr;
+  background: #fff;
+}
+
+.login-brand-panel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 76px clamp(58px, 7vw, 110px);
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(100, 170, 255, 0.5), transparent 34%),
+    linear-gradient(146deg, #0d4fbf 0%, #07347e 62%, #092758 100%);
+}
+
+.login-brand-panel::after {
+  content: '';
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  right: -130px;
+  bottom: -120px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 62px rgba(255, 255, 255, 0.04), 0 0 0 124px rgba(255, 255, 255, 0.025);
+}
+
+.login-brand-panel h1.ant-typography,
+.login-brand-panel .ant-typography {
+  color: #fff;
+}
+
+.login-brand-panel h1 {
+  margin: 24px 0 10px;
+  font-size: 48px;
+  letter-spacing: -1.5px;
+}
+
+.login-brand-panel > .ant-typography {
+  max-width: 480px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.brand-mark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  font-size: 28px;
+  color: #0b4bae;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(3, 23, 59, 0.22);
+}
+
+.login-boundary-note {
+  max-width: 500px;
+  margin-top: 48px;
+  padding: 19px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(4, 30, 76, 0.32);
+  backdrop-filter: blur(8px);
+}
+
+.login-boundary-note .ant-typography:last-child {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.login-form-panel {
+  display: grid;
+  place-items: center;
+  padding: 64px;
+  background: linear-gradient(135deg, #fbfcff 0%, #f4f7fc 100%);
+}
+
+.login-card {
+  width: min(430px, 100%);
+  padding: 42px;
+  border: 1px solid #e5eaf2;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(37, 58, 94, 0.1);
+}
+
+.login-title {
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.login-title h2 {
+  margin: 0;
+}
+
+.login-card .ant-alert {
+  margin-bottom: 20px;
+}
+
+.login-card .ant-btn-primary {
+  height: 46px;
+  margin-top: 4px;
+}
+
+.login-help {
+  margin: 24px 0 0 !important;
+  padding-top: 20px;
+  border-top: 1px solid #edf0f5;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-sider {
+  position: fixed !important;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0c4195 0%, #082d6b 100%) !important;
+  box-shadow: 5px 0 24px rgba(20, 45, 82, 0.12);
+}
+
+.app-sider + .ant-layout {
+  margin-left: 236px;
+}
+
+.app-brand {
+  height: 82px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.app-brand-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: #1155b9;
+  font-size: 20px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.app-brand-name,
+.app-brand-subtitle {
+  display: block;
+  color: #fff !important;
+}
+
+.app-brand-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.app-brand-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+.app-sider .ant-menu {
+  padding: 18px 12px;
+  background: transparent;
+}
+
+.app-sider .ant-menu-item {
+  height: 44px;
+  line-height: 44px;
+  margin-block: 5px;
+}
+
+.app-sider .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.scope-card {
+  position: absolute;
+  right: 16px;
+  bottom: 20px;
+  left: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 10px;
+  background: rgba(3, 26, 62, 0.24);
+}
+
+.scope-card strong {
+  max-width: 145px;
+  overflow: hidden;
+  display: block;
+  color: #fff;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  height: 64px;
+  padding: 0 32px;
+  line-height: 64px;
+  border-bottom: 1px solid #e7ebf1;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.identity-button {
+  height: 40px;
+}
+
+.app-content {
+  min-height: calc(100vh - 64px);
+  padding: 30px 32px 52px;
+  background: #f3f6fb;
+}
+
+.page-heading {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.page-heading h2 {
+  margin: 0 0 4px;
+  color: #172033;
+  font-size: 27px;
+}
+
+.page-heading .ant-typography {
+  margin-bottom: 0;
+}
+
+.page-alert {
+  margin-bottom: 20px;
+}
+
+.modal-alert,
+.section-alert {
+  margin-bottom: 20px;
+}
+
+.list-search {
+  width: min(440px, 100%);
+  margin-bottom: 18px;
+}
+
+.document-toolbar {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.query-result-card {
+  min-height: 620px;
+}
+
+.query-result-placeholder {
+  min-height: 520px;
+  display: grid;
+  place-items: center;
+  padding: 40px;
+  text-align: center;
+  border: 1px dashed #d6dde8;
+  border-radius: 10px;
+  background: #fafcff;
+}
+
+.evidence-block {
+  margin: 10px 0;
+  padding: 12px 16px;
+  color: #344056;
+  line-height: 1.75;
+  border-left: 3px solid #4b87df;
+  background: #f6f9fe;
+}
+
+.evidence-block mark {
+  padding: 1px 2px;
+  border-radius: 2px;
+  background: #ffe58f;
+}
+
+.answer-text {
+  padding: 18px 20px;
+  color: #172033;
+  font-size: 16px;
+  line-height: 1.9;
+  border-radius: 10px;
+  background: #f5f9ff;
+  white-space: pre-wrap;
+}
+
+.raw-response {
+  margin-top: 18px;
+}
+
+.raw-response pre,
+.code-block-wrap pre {
+  overflow: auto;
+  margin: 0;
+  padding: 18px;
+  color: #dce8ff;
+  font: 12px/1.7 Consolas, 'Cascadia Code', monospace;
+  border-radius: 8px;
+  background: #10213c;
+  white-space: pre;
+}
+
+.mono-small {
+  max-width: 280px;
+  overflow: hidden;
+  display: inline-block;
+  font-family: Consolas, 'Cascadia Code', monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.audit-filter-form {
+  row-gap: 12px;
+}
+
+.audit-advanced-filter {
+  width: 100%;
+  margin-top: 2px;
+  color: #647086;
+}
+
+.audit-advanced-filter summary {
+  width: fit-content;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.guide-note {
+  margin: 18px 0 0 !important;
+}
+
+.guide-example-alert {
+  margin: 18px 0 0;
+}
+
+.code-block-wrap {
+  position: relative;
+}
+
+.code-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  color: #dce8ff;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.detail-summary-card {
+  margin-bottom: 20px;
+}
+
+.ant-card {
+  border-color: #e4e9f1;
+  box-shadow: 0 4px 18px rgba(43, 66, 103, 0.045);
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  color: #5a6475;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f7f9fc;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  padding-block: 15px;
+}
+
+@media (max-width: 1250px) {
+  .app-content {
+    padding-inline: 24px;
+  }
+}

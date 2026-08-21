@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "docquery-n5.2-r2-heldout-v1",
+  "status": "COMPLETED",
+  "generatedAt": "2026-08-21T07:30:23.914461+00:00",
+  "dataset": {
+    "version": "mmlongbench-docquery-v1",
+    "caseCount": 54,
+    "manifestSha256": "0423bcaf95044b5399f5f5df5e73ef45e2752e0a961a117be3fa141cb247a579",
+    "casesSha256": "c788014e4a1f66a2675a01193af6e1e2de193728cda23508e87ec7d5647aed21",
+    "selectionSha256": "b854d43a2e0da54c143ae201ce164efef45a01cec69038666b520fb427ab1c4b",
+    "pilotSelectionSha256": "5bd1060f2ec981136775402a064cc66c33dc1126cb26483b5cefec58cf170409",
+    "selectionPolicy": "all ANSWERABLE cases excluding the frozen 10-case N5.2-R1 PILOT; ascending sourceRowIndex; no R1 retrieval result or R2 retrieval result used"
+  },
+  "configuration": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "rankingVersion": "retrieve-ranking-v1",
+    "parameterAdjustmentUsed": false,
+    "answerExecuted": false,
+    "credentialEnvironmentVariable": "DOCQUERY_N5_APPLICATION_CREDENTIAL",
+    "python": "3.12.4",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "modeSelectionEvidence": {
+    "r1ReportSha256": "2756aaebed7f7704829432ca3af5af11b798c686b50e568661577136302c2e76",
+    "decision": "HYBRID selected from the frozen R1 three-mode PILOT"
+  },
+  "usageBoundary": {
+    "deepSeekCalls": 0,
+    "queryEmbeddingExactTokenUsage": "NOT_AVAILABLE_IN_CURRENT_PUBLIC_API",
+    "queryEmbeddingLogicalRequestUpperBound": 54
+  },
+  "metrics": {
+    "attempts": 54,
+    "successes": 54,
+    "normalModeResponses": 54,
+    "degradedResponses": 0,
+    "retryCount": 0,
+    "latency": {
+      "count": 54,
+      "p50Ms": 314.883,
+      "p95Ms": 451.525,
+      "p99Ms": 1551.221,
+      "minMs": 165.483,
+      "maxMs": 1551.221,
+      "meanMs": 334.464
+    },
+    "qualityPopulation": 54,
+    "documentHitAt1": 0.537037,
+    "documentHitAt5": 0.740741,
+    "documentHitAt10": 0.796296,
+    "anyGoldPageHitAt10": 0.62963,
+    "evidencePageCoverageAt10": 0.559259,
+    "allGoldPagesHitAt10": 0.481481,
+    "reciprocalRankAt10": 0.618078
+  },
+  "artifacts": {
+    "rawResults": "raw-results.jsonl",
+    "combined64": "combined-64.json"
+  }
+}
