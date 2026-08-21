@@ -1,0 +1,35 @@
+spring:
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+
+server:
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: false
+
+docquery:
+  parsing:
+    # 默认回归不依赖本机 GPU 容器；DeepDoc 由独立 Adapter/HTTP 测试覆盖。
+    deepdoc:
+      enabled: false
+  security:
+    password:
+      # 集成测试只验证业务规则，用较低 cost 缩短临时上下文启动时间。
+      bcrypt-strength: 4
+  object-storage:
+    enabled: false
+  messaging:
+    infrastructure-enabled: false
+    publisher-enabled: false
+    listener-enabled: false

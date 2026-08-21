@@ -1,0 +1,65 @@
+{
+  "info": {
+    "_postman_id": "4d6f3e4c-e5d7-4e60-9ff5-1d6298934277",
+    "name": "DocQuery Service API",
+    "description": "Traditional business backend integration examples for /retrieve and /answer. Keep credential on the server side.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "knowledgeBaseId", "value": "1", "type": "string" },
+    { "key": "credential", "value": "", "type": "secret" }
+  ],
+  "item": [
+    {
+      "name": "Retrieve canonical evidence",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{credential}}", "type": "text" },
+          { "key": "Idempotency-Key", "value": "{{$guid}}", "type": "text" },
+          { "key": "X-DocQuery-Trace-Id", "value": "postman-demo", "type": "text" },
+          { "key": "X-DocQuery-Actor-Ref", "value": "demo-user", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"差旅住宿报销标准是什么？\",\n  \"mode\": \"HYBRID\",\n  \"topK\": 5\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/service/knowledge-bases/{{knowledgeBaseId}}/retrieve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "service", "knowledge-bases", "{{knowledgeBaseId}}", "retrieve"]
+        },
+        "description": "Returns canonical evidence. Save X-DocQuery-Request-Id for troubleshooting."
+      },
+      "response": []
+    },
+    {
+      "name": "Generate controlled answer",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{credential}}", "type": "text" },
+          { "key": "Idempotency-Key", "value": "{{$guid}}", "type": "text" },
+          { "key": "X-DocQuery-Trace-Id", "value": "postman-demo", "type": "text" },
+          { "key": "X-DocQuery-Actor-Ref", "value": "demo-user", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"差旅住宿报销标准是什么？\",\n  \"mode\": \"HYBRID\",\n  \"topK\": 5\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/service/knowledge-bases/{{knowledgeBaseId}}/answer",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "service", "knowledge-bases", "{{knowledgeBaseId}}", "answer"]
+        },
+        "description": "Returns a controlled single-turn answer with canonical citations."
+      },
+      "response": []
+    }
+  ]
+}
