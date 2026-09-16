@@ -4,6 +4,13 @@ import { afterEach } from 'vitest'
 
 afterEach(cleanup)
 
+// JSDOM has no layout engine; Ant Design still needs the browser observer API.
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 const nativeGetComputedStyle = window.getComputedStyle.bind(window)
 window.getComputedStyle = (element: Element) => nativeGetComputedStyle(element)
 

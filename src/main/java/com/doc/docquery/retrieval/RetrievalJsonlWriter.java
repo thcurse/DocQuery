@@ -81,10 +81,11 @@ public class RetrievalJsonlWriter {
         value.put("schemaVersion", artifact.schemaVersion());
         value.put("documentVersionId", artifact.documentVersionId());
         value.put("canonicalArtifactSha256", artifact.canonicalSha256());
-        value.put("chatProvider", "DEEPSEEK");
+        value.put("chatProvider", artifact.chatProvider());
+        value.put("chatProtocol", artifact.chatProtocol());
         value.put("chatModel", artifact.chatModel());
         value.put("promptVersion", artifact.chatPromptVersion());
-        value.put("thinkingMode", "DISABLED");
+        value.put("thinkingMode", artifact.thinkingMode());
         value.put("embeddingProvider", "ALIBABA_MODEL_STUDIO");
         value.put("embeddingModel", artifact.embeddingModel());
         value.put("embeddingDimension", artifact.embeddingDimension());

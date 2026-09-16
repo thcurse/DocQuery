@@ -58,6 +58,7 @@ public class ElasticsearchSearchRetrievalGateway implements SearchRetrievalGatew
                                     "document_version_id",
                                     "block_id",
                                     "heading_node_id",
+                                    "heading_path",
                                     "ordinal",
                                     "canonical_start",
                                     "canonical_end"
@@ -106,6 +107,7 @@ public class ElasticsearchSearchRetrievalGateway implements SearchRetrievalGatew
                         requiredInt(source, "ordinal"),
                         requiredLong(source, "canonical_start"),
                         requiredLong(source, "canonical_end"),
+                        requiredString(source, "heading_path"),
                         parseHighlights(hit.highlight().get("text"))
                 ));
             }
@@ -139,6 +141,7 @@ public class ElasticsearchSearchRetrievalGateway implements SearchRetrievalGatew
                                     "card_id",
                                     "card_type",
                                     "heading_node_id",
+                                    "title_path",
                                     "section_start_block_ordinal",
                                     "section_end_block_ordinal_exclusive",
                                     "canonical_start",
@@ -168,7 +171,8 @@ public class ElasticsearchSearchRetrievalGateway implements SearchRetrievalGatew
                         optionalInt(source, "section_start_block_ordinal"),
                         optionalInt(source, "section_end_block_ordinal_exclusive"),
                         optionalLong(source, "canonical_start"),
-                        optionalLong(source, "canonical_end")
+                        optionalLong(source, "canonical_end"),
+                        optionalString(source, "title_path")
                 ));
             }
             return List.copyOf(hits);

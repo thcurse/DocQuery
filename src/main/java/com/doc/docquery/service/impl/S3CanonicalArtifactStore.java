@@ -1,6 +1,7 @@
 package com.doc.docquery.service.impl;
 
 import com.doc.docquery.config.ObjectStorageProperties;
+import com.doc.docquery.service.ObjectListingPage;
 import com.doc.docquery.service.CanonicalArtifactStore;
 import com.doc.docquery.service.ObjectStorageException;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -21,7 +22,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.List;
 
 /** AWS SDK v2 实现的 canonical JSONL 派生对象适配器。 */
 public class S3CanonicalArtifactStore implements CanonicalArtifactStore {
@@ -117,17 +117,27 @@ public class S3CanonicalArtifactStore implements CanonicalArtifactStore {
     }
 
     @Override
-    public List<ObjectSummary> list(String prefix, int limit) {
+    public ObjectListingPage<ObjectSummary> listPage(
+            String prefix, int limit, String continuationToken
+    ) {
         try {
-            return s3Client.listObjectsV2(ListObjectsV2Request.builder()
+            var response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
                             .bucket(bucket)
                             .prefix(prefix)
-                            .maxKeys(limit)
-                            .build())
-                    .contents()
+                            .maxKeys(Math.max(1, Math.min(limit, 1_000)))
+                            .continuationToken(continuationToken)
+                            .build());
+            String nextToken = Boolean.TRUE.equals(response.isTruncated())
+                    ? response.nextContinuationToken() : null;
+            if (Boolean.TRUE.equals(response.isTruncated())
+                    && (nextToken == null || nextToken.isBlank()
+                    || nextToken.equals(continuationToken))) {
+                throw unavailable("Canonical object listing did not advance", null);
+            }
+            return new ObjectListingPage<>(response.contents()
                     .stream()
                     .map(item -> new ObjectSummary(item.key(), item.lastModified()))
-                    .toList();
+                    .toList(), nextToken);
         } catch (S3Exception | SdkClientException exception) {
             throw unavailable("Canonical objects could not be listed", exception);
         }

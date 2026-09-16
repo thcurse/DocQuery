@@ -240,6 +240,113 @@ class DocumentUploadAcceptanceIT {
     }
 
     @Test
+    void rebuildAllowsExactSourceCopyAndKeepsOldVersionActive() {
+        String content = "rebuild-same-content";
+        DocumentUploadAcceptedVO first = acceptFirstReadyVersion(
+                "Rebuild Manual",
+                "rebuild-v1",
+                content
+        );
+        var rebuildSource = uploadService.loadRebuildSource(
+                tenantAdminA(), tenantAId, knowledgeBaseAId, first.getDocumentId()
+        );
+
+        DocumentUploadAcceptedVO second = uploadService.acceptRebuild(
+                tenantAdminA(),
+                tenantAId,
+                knowledgeBaseAId,
+                first.getDocumentId(),
+                rebuildSource.sourceVersionId(),
+                "rebuild-command",
+                source(
+                        rebuildSource.originalFilename(),
+                        rebuildSource.sourceFormat(),
+                        "tenant-a/rebuild/copied.pdf",
+                        content
+                )
+        );
+
+        assertThat(second.getVersionNo()).isEqualTo(2);
+        assertThat(value(
+                "SELECT active_version_id FROM document WHERE id = ?",
+                Long.class,
+                first.getDocumentId()
+        )).isEqualTo(first.getDocumentVersionId());
+        assertThat(value(
+                "SELECT latest_version_id FROM document WHERE id = ?",
+                Long.class,
+                first.getDocumentId()
+        )).isEqualTo(second.getDocumentVersionId());
+        assertThat(value(
+                "SELECT source_sha256 FROM document_version WHERE id = ?",
+                String.class,
+                second.getDocumentVersionId()
+        )).isEqualTo(rebuildSource.sourceSha256());
+        assertThat(value(
+                "SELECT source_object_key FROM document_version WHERE id = ?",
+                String.class,
+                second.getDocumentVersionId()
+        )).isNotEqualTo(rebuildSource.sourceObjectKey());
+
+        DocumentUploadAcceptedVO replay = uploadService.findRebuildReplay(
+                tenantAdminA(),
+                tenantAId,
+                knowledgeBaseAId,
+                first.getDocumentId(),
+                "rebuild-command"
+        );
+        assertThat(replay.getDocumentVersionId()).isEqualTo(second.getDocumentVersionId());
+        assertCounts(1, 2, 2, 2);
+    }
+
+    @Test
+    void rebuildRejectsChangedCopyAndExistingProcessingCandidate() {
+        String content = "rebuild-guard-content";
+        DocumentUploadAcceptedVO first = acceptFirstReadyVersion(
+                "Rebuild Guard",
+                "rebuild-guard-v1",
+                content
+        );
+        var rebuildSource = uploadService.loadRebuildSource(
+                tenantAdminA(), tenantAId, knowledgeBaseAId, first.getDocumentId()
+        );
+        StoredSourceObjectDTO changed = source(
+                rebuildSource.originalFilename(),
+                rebuildSource.sourceFormat(),
+                "tenant-a/rebuild/changed.pdf",
+                "changed-content"
+        );
+
+        BusinessException mismatch = catchBusiness(() -> uploadService.acceptRebuild(
+                tenantAdminA(), tenantAId, knowledgeBaseAId, first.getDocumentId(),
+                rebuildSource.sourceVersionId(), "rebuild-changed", changed
+        ));
+        assertThat(mismatch.code()).isEqualTo("DOCUMENT_REBUILD_SOURCE_MISMATCH");
+        assertCounts(1, 1, 1, 1);
+
+        uploadService.acceptRebuild(
+                tenantAdminA(),
+                tenantAId,
+                knowledgeBaseAId,
+                first.getDocumentId(),
+                rebuildSource.sourceVersionId(),
+                "rebuild-first",
+                source(
+                        rebuildSource.originalFilename(),
+                        rebuildSource.sourceFormat(),
+                        "tenant-a/rebuild/first.pdf",
+                        content
+                )
+        );
+        BusinessException inProgress = catchBusiness(() ->
+                uploadService.loadRebuildSource(
+                        tenantAdminA(), tenantAId, knowledgeBaseAId, first.getDocumentId()
+                ));
+        assertThat(inProgress.code()).isEqualTo("DOCUMENT_VERSION_IN_PROGRESS");
+        assertCounts(1, 2, 2, 2);
+    }
+
+    @Test
     void failedLatestVersionRequiresRetryForSameContentButAllowsDifferentContent() {
         DocumentUploadAcceptedVO first = acceptFirstReadyVersion(
                 "Failure Manual",

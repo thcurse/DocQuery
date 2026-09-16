@@ -135,6 +135,7 @@ const serviceRequest = async <T>(
   idempotencyKey: string,
   body: { query: string; mode: RetrievalMode; topK: number },
   context: { traceId?: string; actorRef?: string } = {},
+  signal?: AbortSignal,
 ): Promise<ServiceCallResult<T>> => {
   const headers = new Headers({
     Authorization: `Bearer ${credential}`,
@@ -148,6 +149,7 @@ const serviceRequest = async <T>(
     credentials: 'same-origin',
     headers,
     body: JSON.stringify(body),
+    signal,
   })
   if (!response.ok) throw await readError(response)
   return {
@@ -352,6 +354,12 @@ export const api = {
       { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: form },
     )
   },
+  rebuildDocument: (
+    tenantId: number, knowledgeBaseId: number, documentId: number, idempotencyKey: string,
+  ) => request<DocumentUploadAccepted>(
+    `/api/admin/v1/tenants/${tenantId}/knowledge-bases/${knowledgeBaseId}/documents/${documentId}/rebuild`,
+    { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey } },
+  ),
   deleteDocument: (
     tenantId: number, knowledgeBaseId: number, documentId: number, idempotencyKey: string,
   ) => request<DocumentDeletionAccepted | undefined>(
@@ -387,8 +395,9 @@ export const api = {
     idempotencyKey: string,
     body: { query: string; mode: RetrievalMode; topK: number },
     context?: { traceId?: string; actorRef?: string },
+    signal?: AbortSignal,
   ) => serviceRequest<RetrieveResponse>(
-    `/api/v1/service/knowledge-bases/${knowledgeBaseId}/retrieve`, credential, idempotencyKey, body, context,
+    `/api/v1/service/knowledge-bases/${knowledgeBaseId}/retrieve`, credential, idempotencyKey, body, context, signal,
   ),
   answer: (
     knowledgeBaseId: number,
@@ -396,8 +405,9 @@ export const api = {
     idempotencyKey: string,
     body: { query: string; mode: RetrievalMode; topK: number },
     context?: { traceId?: string; actorRef?: string },
+    signal?: AbortSignal,
   ) => serviceRequest<AnswerResponse>(
-    `/api/v1/service/knowledge-bases/${knowledgeBaseId}/answer`, credential, idempotencyKey, body, context,
+    `/api/v1/service/knowledge-bases/${knowledgeBaseId}/answer`, credential, idempotencyKey, body, context, signal,
   ),
 
   listQueryAudits: (

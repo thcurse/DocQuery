@@ -19,6 +19,19 @@ public interface ScopedRetrievalService {
             RetrieveRequestDTO request
     );
 
+    /**
+     * Answer Search 使用的内部检索入口。
+     *
+     * <p>默认保持既有 Retrieve 排序；实现可以在不改变公开 `/retrieve` 契约的前提下，
+     * 为 Agent 构造覆盖面更均衡的候选池。</p>
+     */
+    default RetrieveResponseVO retrieveForAnswer(
+            QueryAccessContext context,
+            RetrieveRequestDTO request
+    ) {
+        return retrieve(context, request);
+    }
+
     ScopedDocument loadDocument(
             QueryAccessContext context,
             long documentId

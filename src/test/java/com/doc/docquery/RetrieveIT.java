@@ -17,6 +17,7 @@ import com.doc.docquery.search.SearchProjectionScope;
 import com.doc.docquery.search.SearchProjectionStore;
 import com.doc.docquery.security.AdminPrincipal;
 import com.doc.docquery.service.AnswerChatGateway;
+import com.doc.docquery.service.AnswerAgentGateway;
 import com.doc.docquery.service.AnswerException;
 import com.doc.docquery.service.CanonicalArtifactStore;
 import com.doc.docquery.service.QueryEmbeddingGateway;
@@ -230,17 +231,21 @@ class RetrieveIT {
 
     @Test
     void answerReturnsCanonicalCitationAndExactlyReplaysSuccessfulResult() throws Exception {
-        answerChat.script(new AnswerChatGateway.Turn(
-                "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。[E1]\","
-                        + "\"citedEvidenceIds\":[\"E1\"]}",
-                List.of()
-        ));
+        answerChat.script(
+                toolTurn("verify", "search", "{\"query\":\"refund policy verification\"}"),
+                new AnswerChatGateway.Turn(
+                        "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。\","
+                                + "\"evidenceIds\":[\"E1\"]}",
+                        List.of()
+                )
+        );
 
         MvcResult first = answer(
                 "answer-replay-key", "tampered-es-only", "KEYWORD", 1
         ).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ANSWERED"))
-                .andExpect(jsonPath("$.citations[0].evidenceId").value("E1"))
+                .andExpect(jsonPath("$.answer").value("七天内可以退款。\n\n参考依据：[1]"))
+                .andExpect(jsonPath("$.citations[0].citationIndex").value(1))
                 .andExpect(jsonPath("$.citations[0].documentVersionId")
                         .value(ACTIVE_VERSION_ID))
                 .andExpect(jsonPath("$.citations[0].blockId").value("active-body"))
@@ -253,28 +258,27 @@ class RetrieveIT {
                 "answer-replay-key", "tampered-es-only", "KEYWORD", 1
         ).andExpect(status().isOk()).andReturn();
         assertThat(replay.getResponse().getContentAsString()).isEqualTo(firstBody);
-        assertThat(answerChat.calls).isOne();
+        assertThat(answerChat.calls).isEqualTo(2);
     }
 
     @Test
     void answerUsesBoundedCanonicalToolsAndReturnsInsufficientAsSuccess() throws Exception {
         answerChat.script(
-                toolTurn("outline", "getDocumentOutline",
-                        "{\"documentId\":" + DOCUMENT_ID + "}"),
-                toolTurn("read", "readDocument", "{\"documentId\":"
-                        + DOCUMENT_ID
-                        + ",\"startBlockId\":\"active-body\",\"maxBlocks\":1}"),
+                toolTurn("search", "search",
+                        "{\"query\":\"refund policy verification\"}"),
+                toolTurn("outline", "open", "{\"ref\":\"D1\"}"),
+                toolTurn("read", "open", "{\"ref\":\"S1\"}"),
                 new AnswerChatGateway.Turn(
-                        "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。[E1]\","
-                                + "\"citedEvidenceIds\":[\"E1\"]}",
+                        "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。\","
+                                + "\"evidenceIds\":[\"E3\"]}",
                         List.of()
                 )
         );
         answer("answer-tools-key", "no-initial-hit", "KEYWORD", 1)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ANSWERED"))
-                .andExpect(jsonPath("$.citations[0].blockId").value("active-body"));
-        assertThat(answerChat.calls).isEqualTo(3);
+                .andExpect(jsonPath("$.citations[0].blockId").value("active-heading"));
+        assertThat(answerChat.calls).isEqualTo(4);
         Map<String, Object> toolAudit = jdbcTemplate.queryForMap("""
                 SELECT tool_rounds, tool_calls, model_calls, canonical_characters,
                        outcome, answer_status
@@ -282,20 +286,29 @@ class RetrieveIT {
                 WHERE operation_type='2'
                 ORDER BY id DESC LIMIT 1
                 """);
-        assertThat(((Number) toolAudit.get("tool_rounds")).intValue()).isEqualTo(2);
-        assertThat(((Number) toolAudit.get("tool_calls")).intValue()).isEqualTo(2);
-        assertThat(((Number) toolAudit.get("model_calls")).intValue()).isEqualTo(3);
+        assertThat(((Number) toolAudit.get("tool_rounds")).intValue()).isEqualTo(3);
+        assertThat(((Number) toolAudit.get("tool_calls")).intValue()).isEqualTo(3);
+        assertThat(((Number) toolAudit.get("model_calls")).intValue()).isEqualTo(4);
         assertThat(((Number) toolAudit.get("canonical_characters")).intValue())
                 .isGreaterThan(0);
         assertThat(toolAudit.get("outcome")).isEqualTo("2");
         assertThat(toolAudit.get("answer_status")).isEqualTo("ANSWERED");
 
         answerChat.reset();
-        answerChat.script(new AnswerChatGateway.Turn(
-                "{\"status\":\"INSUFFICIENT_EVIDENCE\",\"answer\":null,"
-                        + "\"citedEvidenceIds\":[]}",
-                List.of()
-        ));
+        answerChat.script(
+                new AnswerChatGateway.Turn(
+                        "{\"status\":\"INSUFFICIENT_EVIDENCE\",\"answer\":null,"
+                                + "\"evidenceIds\":[]}",
+                        List.of()
+                ),
+                toolTurn("search-a", "search", "{\"query\":\"no evidence alternative\"}"),
+                toolTurn("search-b", "search", "{\"query\":\"missing source synonym\"}"),
+                new AnswerChatGateway.Turn(
+                        "{\"status\":\"INSUFFICIENT_EVIDENCE\",\"answer\":null,"
+                                + "\"evidenceIds\":[]}",
+                        List.of()
+                )
+        );
         answer("answer-insufficient-key", "no-evidence", "KEYWORD", 1)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("INSUFFICIENT_EVIDENCE"))
@@ -336,7 +349,9 @@ class RetrieveIT {
         retrieve("semantic-key", "refund requirement", "SEMANTIC", 1)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.executedMode").value("SEMANTIC"))
-                .andExpect(jsonPath("$.results[0].channels[0]").value("SEMANTIC"));
+                .andExpect(jsonPath("$.results[0].channels[0]").value("SEMANTIC"))
+                .andExpect(jsonPath("$.results[0].evidence[0].blockId")
+                        .value("active-later"));
 
         MvcResult hybrid = retrieve(
                 "hybrid-replay-key",
@@ -563,9 +578,14 @@ class RetrieveIT {
         int answerRequests = 10;
         List<AnswerChatGateway.Turn> scriptedAnswers = new ArrayList<>();
         for (int index = 0; index < answerRequests; index++) {
+            scriptedAnswers.add(toolTurn(
+                    "verify-" + index,
+                    "search",
+                    "{\"query\":\"refund policy verification " + index + "\"}"
+            ));
             scriptedAnswers.add(new AnswerChatGateway.Turn(
-                    "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。[E1]\"," +
-                            "\"citedEvidenceIds\":[\"E1\"]}",
+                    "{\"status\":\"ANSWERED\",\"answer\":\"七天内可以退款。\"," +
+                            "\"evidenceIds\":[\"E1\"]}",
                     List.of()
             ));
         }
@@ -603,7 +623,7 @@ class RetrieveIT {
                 objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(report) + "\n",
                 StandardCharsets.UTF_8
         );
-        assertThat(answerChat.calls).isEqualTo(answerRequests);
+        assertThat(answerChat.calls).isEqualTo(answerRequests * 2);
         assertThat(report.get("auditRows")).isEqualTo(60L);
     }
 
@@ -828,19 +848,27 @@ class RetrieveIT {
                 "active-section", null,
                 SourcePosition.markdown(3, 1, 3, bodyText.length())
         );
-        String canonicalText = headingText + "\n\n" + bodyText;
+        String laterText = "Enterprise refunds require executive approval.";
+        EvidenceBlock later = new EvidenceBlock(
+                "active-later", 2, BlockKind.PARAGRAPH, laterText,
+                body.canonicalEnd() + 2,
+                body.canonicalEnd() + 2 + laterText.length(),
+                "active-section", null,
+                SourcePosition.markdown(5, 1, 5, laterText.length())
+        );
+        String canonicalText = headingText + "\n\n" + bodyText + "\n\n" + laterText;
         CanonicalDocument document = new CanonicalDocument(
                 1, ACTIVE_VERSION_ID, "MARKDOWN", sha256("source-active"),
                 "markdown", "1", Instant.parse("2026-08-11T00:00:00Z"),
-                List.of(heading, body),
+                List.of(heading, body, later),
                 List.of(
                         new HeadingNode(
                                 "root", null, 0, 0, "Refund Manual", null,
-                                "DOCUMENT_ROOT", 0, 2
+                                "DOCUMENT_ROOT", 0, 3
                         ),
                         new HeadingNode(
                                 "active-section", "root", 1, 1, headingText,
-                                heading.blockId(), "MARKDOWN", 0, 2
+                                heading.blockId(), "MARKDOWN", 0, 3
                         )
                 ),
                 List.of(), null, canonicalText.length(), sha256(canonicalText)
@@ -923,7 +951,7 @@ class RetrieveIT {
         navigation.put("embedding_template_version", "retrieval-embedding-v1");
         navigation.put("embedding_input_sha256", "1".repeat(64));
         navigation.put("embedding_value_sha256", "2".repeat(64));
-        navigation.put("embedding", vector());
+        navigation.put("embedding", weakVector());
         navigation.put("canonical_artifact_id", canonical.manifest().getId());
         navigation.put("canonical_artifact_sha256", canonical.manifest().getCanonicalSha256());
         navigation.put("retrieval_artifact_id", 901L);
@@ -931,6 +959,22 @@ class RetrieveIT {
         navigation.put("mapping_version", searchProperties.getNavigationMappingVersion());
         searchStore.indexNavigation(List.of(new SearchProjectionDocument(
                 "active-card", navigation
+        )));
+
+        EvidenceBlock later = canonical.document().blocks().get(2);
+        Map<String, Object> subpartition = new LinkedHashMap<>(navigation);
+        subpartition.put("card_id", "active-subpartition");
+        subpartition.put("card_type", "HEADING_SUBPARTITION");
+        subpartition.put("title", "Enterprise refund approval");
+        subpartition.put("title_path",
+                "Refund Manual > Refund Policy > Enterprise refund approval");
+        subpartition.put("section_start_block_ordinal", 2);
+        subpartition.put("section_end_block_ordinal_exclusive", 3);
+        subpartition.put("canonical_start", later.canonicalStart());
+        subpartition.put("canonical_end", later.canonicalEnd());
+        subpartition.put("embedding", vector());
+        searchStore.indexNavigation(List.of(new SearchProjectionDocument(
+                "active-subpartition", subpartition
         )));
 
         // 历史版本与其他租户都包含更强关键词；前置过滤后不能进入 Java 候选。
@@ -968,6 +1012,14 @@ class RetrieveIT {
         List<Float> vector = new ArrayList<>(2560);
         for (int index = 0; index < 2560; index++) {
             vector.add(index == 0 ? 1.0f : 0.001f);
+        }
+        return vector;
+    }
+
+    private List<Float> weakVector() {
+        List<Float> vector = new ArrayList<>(2560);
+        for (int index = 0; index < 2560; index++) {
+            vector.add(index == 1 ? 1.0f : 0.0f);
         }
         return vector;
     }
@@ -1061,7 +1113,8 @@ class RetrieveIT {
         }
     }
 
-    static final class FakeAnswerChatGateway implements AnswerChatGateway {
+    static final class FakeAnswerChatGateway
+            implements AnswerChatGateway, AnswerAgentGateway {
         private final Deque<Turn> turns = new ArrayDeque<>();
         private volatile boolean fail;
         private int calls;
@@ -1090,5 +1143,30 @@ class RetrieveIT {
             }
             return turns.removeFirst();
         }
+
+        @Override
+        public AgentRun start(Request request, ToolHandler tools, Observer observer) {
+            List<Message> conversation = new ArrayList<>();
+            conversation.add(new SystemPrompt(request.systemPrompt()));
+            return userMessage -> {
+                conversation.add(new UserContent(userMessage));
+                while (true) {
+                    observer.beforeModelCall();
+                    Turn turn = chat(List.copyOf(conversation), true);
+                    if (!turn.hasToolCalls()) {
+                        conversation.add(new AssistantContent(turn.text(), List.of()));
+                        return turn.text();
+                    }
+                    observer.toolRound(turn.toolCalls().size());
+                    conversation.add(new AssistantContent(turn.text(), turn.toolCalls()));
+                    for (ToolCall call : turn.toolCalls()) {
+                        String result = tools.execute(call.name(), call.argumentsJson());
+                        conversation.add(new ToolResultContent(call.id(), call.name(), result));
+                        observer.afterToolCall();
+                    }
+                }
+            };
+        }
+
     }
 }

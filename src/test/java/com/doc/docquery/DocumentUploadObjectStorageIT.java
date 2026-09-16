@@ -1,8 +1,10 @@
 package com.doc.docquery;
 
+import com.doc.docquery.config.ObjectStorageProperties;
 import com.doc.docquery.dto.CreateDocumentUploadMetadataDTO;
 import com.doc.docquery.exception.BusinessException;
 import com.doc.docquery.job.OrphanSourceObjectReaper;
+import com.doc.docquery.mapper.DocumentVersionMapper;
 import com.doc.docquery.security.AdminPrincipal;
 import com.doc.docquery.service.DocumentUploadCoordinator;
 import com.doc.docquery.service.SourceObjectStore;
@@ -33,6 +35,7 @@ import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
@@ -41,6 +44,7 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -103,6 +107,8 @@ class DocumentUploadObjectStorageIT {
     private SourceObjectStore objectStore;
     @Autowired
     private OrphanSourceObjectReaper orphanReaper;
+    @Autowired
+    private DocumentVersionMapper documentVersionMapper;
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
@@ -189,6 +195,89 @@ class DocumentUploadObjectStorageIT {
     }
 
     @Test
+    void rebuildEndpointCopiesSameSourceAndCreatesOneCandidateVersion() throws Exception {
+        byte[] bytes = "受控重建保持原文件不变".getBytes(StandardCharsets.UTF_8);
+        DocumentUploadAcceptedVO original = upload(
+                "Rebuild Source",
+                "rebuild-source-upload",
+                "rebuild.pdf",
+                bytes
+        );
+        markReady(original);
+        String originalKey = value(
+                "SELECT source_object_key FROM document_version WHERE id = ?",
+                String.class,
+                original.getDocumentVersionId()
+        );
+        String originalSha = value(
+                "SELECT source_sha256 FROM document_version WHERE id = ?",
+                String.class,
+                original.getDocumentVersionId()
+        );
+        AdminPrincipal principal = tenantAdmin();
+        var authenticationToken = UsernamePasswordAuthenticationToken.authenticated(
+                principal, null, principal.getAuthorities()
+        );
+
+        String body = mockMvc.perform(post(
+                                "/api/admin/v1/tenants/{tenantId}/knowledge-bases/{kbId}/documents/{documentId}/rebuild",
+                                tenantId,
+                                knowledgeBaseId,
+                                original.getDocumentId()
+                        )
+                        .header("Idempotency-Key", "rebuild-command-1")
+                        .with(authentication(authenticationToken))
+                        .with(csrf()))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.versionNo").value(2))
+                .andExpect(jsonPath("$.versionStatus").value("1"))
+                .andReturn().getResponse().getContentAsString();
+
+        long rebuiltVersionId = JsonPath.<Number>read(
+                body, "$.documentVersionId"
+        ).longValue();
+        String rebuiltKey = value(
+                "SELECT source_object_key FROM document_version WHERE id = ?",
+                String.class,
+                rebuiltVersionId
+        );
+        assertThat(rebuiltKey).isNotEqualTo(originalKey);
+        assertThat(value(
+                "SELECT source_sha256 FROM document_version WHERE id = ?",
+                String.class,
+                rebuiltVersionId
+        )).isEqualTo(originalSha);
+        assertThat(value(
+                "SELECT active_version_id FROM document WHERE id = ?",
+                Long.class,
+                original.getDocumentId()
+        )).isEqualTo(original.getDocumentVersionId());
+        assertThat(value(
+                "SELECT latest_version_id FROM document WHERE id = ?",
+                Long.class,
+                original.getDocumentId()
+        )).isEqualTo(rebuiltVersionId);
+        try (InputStream stored = objectStore.open(rebuiltKey)) {
+            assertThat(stored.readAllBytes()).isEqualTo(bytes);
+        }
+        assertThat(objectStore.list("source/", 100).size()).isEqualTo(2);
+
+        mockMvc.perform(post(
+                                "/api/admin/v1/tenants/{tenantId}/knowledge-bases/{kbId}/documents/{documentId}/rebuild",
+                                tenantId,
+                                knowledgeBaseId,
+                                original.getDocumentId()
+                        )
+                        .header("Idempotency-Key", "rebuild-command-1")
+                        .with(authentication(authenticationToken))
+                        .with(csrf()))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.documentVersionId").value(rebuiltVersionId));
+        assertThat(count("document_version")).isEqualTo(2);
+        assertThat(objectStore.list("source/", 100).size()).isEqualTo(2);
+    }
+
+    @Test
     void allSupportedFormatsWorkAndIdempotentReplayRemovesExtraObject() {
         String[] filenames = {"a.pdf", "b.docx", "c.txt", "d.markdown"};
         for (int index = 0; index < filenames.length; index++) {
@@ -264,6 +353,50 @@ class DocumentUploadObjectStorageIT {
 
         assertThat(objectStore.exists(referencedKey)).isTrue();
         assertThat(objectStore.exists(orphanKey)).isFalse();
+    }
+
+    @Test
+    void orphanReaperPaginatesPastReferencesAndDeletionsThenStartsANewScan()
+            throws InterruptedException {
+        DocumentUploadAcceptedVO accepted = upload(
+                "Paged Reference", "paged-reference", "reference.txt",
+                "kept".getBytes(StandardCharsets.UTF_8)
+        );
+        String referencedKey = value(
+                "SELECT source_object_key FROM document_version WHERE id = ?",
+                String.class, accepted.getDocumentVersionId()
+        );
+        for (int index = 0; index < 3; index++) {
+            String key = "source/zz-pagination/" + index;
+            byte[] bytes = "orphan".getBytes(StandardCharsets.UTF_8);
+            objectStore.put(key, new ByteArrayInputStream(bytes), bytes.length, 1_024, "text/plain");
+            awaitSourceObjectEligibleForOrphanCleanup(key);
+        }
+        ObjectStorageProperties properties = new ObjectStorageProperties();
+        properties.setOrphanBatchSize(1);
+        properties.setOrphanGrace(Duration.ZERO);
+        OrphanSourceObjectReaper pagedReaper = new OrphanSourceObjectReaper(
+                objectStore, documentVersionMapper, properties
+        );
+
+        // 首个对象仍被引用；后续页的令牌必须在前页对象已删除时仍能继续扫描。
+        pagedReaper.runOnce();
+        assertThat(objectStore.list("source/", 100)).hasSize(4);
+        for (int index = 0; index < 3; index++) {
+            pagedReaper.runOnce();
+            assertThat(objectStore.exists("source/zz-pagination/" + index)).isFalse();
+        }
+        assertThat(objectStore.exists(referencedKey)).isTrue();
+        assertThat(objectStore.list("source/", 100)).hasSize(1);
+
+        // 在已扫描位置之前插入对象，下一轮必须从头扫描才能发现。
+        String newOrphanKey = "source/000-pagination-new";
+        byte[] bytes = "new orphan".getBytes(StandardCharsets.UTF_8);
+        objectStore.put(newOrphanKey, new ByteArrayInputStream(bytes), bytes.length, 1_024, "text/plain");
+        awaitSourceObjectEligibleForOrphanCleanup(newOrphanKey);
+        pagedReaper.runOnce();
+        assertThat(objectStore.exists(newOrphanKey)).isFalse();
+        assertThat(objectStore.exists(referencedKey)).isTrue();
     }
 
     private void awaitSourceObjectEligibleForOrphanCleanup(String objectKey)
@@ -349,6 +482,22 @@ class DocumentUploadObjectStorageIT {
                 null,
                 "2",
                 true
+        );
+    }
+
+    private void markReady(DocumentUploadAcceptedVO accepted) {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        jdbcTemplate.update(
+                "UPDATE document_version SET status='2', ready_at=?, updated_at=? WHERE id=?",
+                now, now, accepted.getDocumentVersionId()
+        );
+        jdbcTemplate.update(
+                "UPDATE processing_job SET status='3', finished_at=?, updated_at=? WHERE id=?",
+                now, now, accepted.getProcessingJobId()
+        );
+        jdbcTemplate.update(
+                "UPDATE document SET active_version_id=?, updated_at=? WHERE id=?",
+                accepted.getDocumentVersionId(), now, accepted.getDocumentId()
         );
     }
 

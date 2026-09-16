@@ -17,7 +17,13 @@ public interface RetrievalArtifactStore {
 
     void delete(String objectKey);
 
-    List<ObjectSummary> list(String prefix, int limit);
+    /** 按安全前缀列出首页有限数量对象。 */
+    default List<ObjectSummary> list(String prefix, int limit) {
+        return listPage(prefix, limit, null).objects();
+    }
+
+    /** 读取一页；首轮令牌传 null，后续原样传回上一页令牌。 */
+    ObjectListingPage<ObjectSummary> listPage(String prefix, int limit, String continuationToken);
 
     record WriteResult(long sizeBytes, String sha256) {
     }

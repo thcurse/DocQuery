@@ -32,6 +32,8 @@ import com.doc.docquery.service.ScopedRetrievalService;
 import com.doc.docquery.vo.RetrieveResponseVO;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -67,8 +69,9 @@ import static com.doc.docquery.service.RetrieveException.Reason.SEARCH_UNAVAILAB
 @Service
 public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RetrieveServiceImpl.class);
     private static final String REQUEST_VERSION = "retrieve-request-v1";
-    private static final String RANKING_VERSION = "retrieve-ranking-v1";
+    private static final String RANKING_VERSION = "retrieve-ranking-v2";
     private static final String ROOT_PLACEHOLDER = "@document-profile-root";
 
     private final QueryAccessService accessService;
@@ -196,6 +199,18 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
     }
 
     @Override
+    public RetrieveResponseVO retrieveForAnswer(
+            QueryAccessContext context,
+            RetrieveRequestDTO request
+    ) {
+        if (context == null || context.getKnowledgeBaseId() == null) {
+            throw invalidRequest();
+        }
+        NormalizedRequest normalized = normalize(context.getKnowledgeBaseId(), request);
+        return execute(context, normalized, true);
+    }
+
+    @Override
     public ScopedDocument loadDocument(QueryAccessContext context, long documentId) {
         if (context == null || documentId < 1) {
             throw evidenceUnavailable(null);
@@ -210,6 +225,14 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
     private RetrieveResponseVO execute(
             QueryAccessContext context,
             NormalizedRequest request
+    ) {
+        return execute(context, request, false);
+    }
+
+    private RetrieveResponseVO execute(
+            QueryAccessContext context,
+            NormalizedRequest request,
+            boolean answerCoverage
     ) {
         if (context.getActiveVersions().isEmpty()) {
             return response(context, request, request.mode(), false, null, List.of());
@@ -232,6 +255,9 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                 channels.keywordHits(),
                 channels.semanticHits()
         );
+        if (answerCoverage) {
+            ranked = answerCoverageCandidates(ranked, request.topK());
+        }
         List<RetrieveResponseVO.Result> results = evidence(
                 context,
                 ranked,
@@ -244,6 +270,92 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                 channels.degraded(),
                 channels.degradationReason(),
                 results
+        );
+    }
+
+    /**
+     * 避免同一上层章节的细标题占满 Answer 的有限 rerank 候选池。
+     *
+     * <p>每一轮按原 RRF 顺序从各章节族取一个，循环至达到请求数量。它不删除候选，
+     * 只有 Answer 内部入口使用；公开 Retrieve 仍保持原始 RRF 顺序。</p>
+     */
+    private List<SectionCandidate> answerCoverageCandidates(
+            List<SectionCandidate> ranked,
+            int limit
+    ) {
+        if (ranked == null || ranked.size() <= 1 || limit < 1) {
+            return ranked;
+        }
+        Map<SectionFamilyKey, List<SectionCandidate>> families = new LinkedHashMap<>();
+        for (SectionCandidate candidate : ranked) {
+            SectionFamilyKey family = sectionFamily(candidate);
+            families.computeIfAbsent(family, ignored -> new ArrayList<>()).add(candidate);
+        }
+
+        List<SectionCandidate> selected = new ArrayList<>(Math.min(limit, ranked.size()));
+        int familyOffset = 0;
+        boolean added;
+        do {
+            added = false;
+            for (List<SectionCandidate> family : families.values()) {
+                if (selected.size() >= limit) {
+                    break;
+                }
+                if (familyOffset < family.size()) {
+                    selected.add(family.get(familyOffset));
+                    added = true;
+                }
+            }
+            familyOffset++;
+        } while (selected.size() < limit && added);
+
+        int largestFamily = families.values().stream()
+                .mapToInt(List::size)
+                .max()
+                .orElse(0);
+        LOG.info(
+                "docquery_answer_search_coverage rawCandidateCount={} familyCount={} "
+                        + "largestFamilySize={} selectedCandidateCount={}",
+                ranked.size(),
+                families.size(),
+                largestFamily,
+                selected.size()
+        );
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(
+                    "docquery_answer_search_coverage selectedHeadings={}",
+                    selected.stream()
+                            .map(candidate -> candidate.key.documentVersionId() + ":"
+                                    + candidate.key.headingNodeId())
+                            .toList()
+            );
+        }
+        return List.copyOf(selected);
+    }
+
+    private SectionFamilyKey sectionFamily(
+            SectionCandidate candidate
+    ) {
+        long versionId = candidate.key.documentVersionId();
+        if (ROOT_PLACEHOLDER.equals(candidate.key.headingNodeId())) {
+            return new SectionFamilyKey(versionId, ROOT_PLACEHOLDER);
+        }
+        String path = candidate.keywordHits.stream()
+                .map(SearchRetrievalGateway.KeywordHit::headingPath)
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElseGet(() -> {
+                    SearchRetrievalGateway.SemanticHit semantic = candidate.semanticAddress();
+                    return semantic == null ? null : semantic.titlePath();
+                });
+        if (path == null || path.isBlank()) {
+            return new SectionFamilyKey(versionId, candidate.key.headingNodeId());
+        }
+        String[] parts = path.split("\\s*>\\s*");
+        String family = parts[Math.min(1, parts.length - 1)].strip();
+        return new SectionFamilyKey(
+                versionId,
+                family.isEmpty() ? candidate.key.headingNodeId() : family
         );
     }
 
@@ -393,13 +505,22 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
         }
 
         List<SearchRetrievalGateway.SemanticHit> profiles = new ArrayList<>();
+        Map<String, Integer> compactSemanticRanks = new LinkedHashMap<>();
         for (SearchRetrievalGateway.SemanticHit hit : semanticHits) {
             requireScope(versions, hit.documentId(), hit.documentVersionId());
+            String semanticGroup = "DOCUMENT_PROFILE".equals(hit.cardType())
+                    ? "profile:" + hit.documentVersionId()
+                    : "section:" + hit.documentVersionId() + ":" + hit.headingNodeId();
+            int compactRank = compactSemanticRanks.computeIfAbsent(
+                    semanticGroup,
+                    ignored -> compactSemanticRanks.size() + 1
+            );
             if ("DOCUMENT_PROFILE".equals(hit.cardType())) {
                 profiles.add(hit);
                 continue;
             }
-            if (!"HEADING_NODE".equals(hit.cardType())
+            if (!("HEADING_NODE".equals(hit.cardType())
+                    || "HEADING_SUBPARTITION".equals(hit.cardType()))
                     || hit.headingNodeId() == null
                     || hit.headingNodeId().isBlank()) {
                 throw searchUnavailable(null);
@@ -410,9 +531,14 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                     ignored -> new SectionCandidate(key, hit.documentId())
             );
             candidate.requireDocument(hit.documentId());
-            if (candidate.semanticRank == null || hit.rank() < candidate.semanticRank) {
-                candidate.semanticRank = hit.rank();
+            if (candidate.semanticRank == null || compactRank < candidate.semanticRank) {
+                candidate.semanticRank = compactRank;
                 candidate.semanticHit = hit;
+            }
+            if ("HEADING_SUBPARTITION".equals(hit.cardType())
+                    && (candidate.partitionHit == null
+                    || hit.rank() < candidate.partitionHit.rank())) {
+                candidate.partitionHit = hit;
             }
         }
 
@@ -434,9 +560,11 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                         ignored -> new SectionCandidate(key, profile.documentId())
                 );
             }
-            if (target.semanticRank == null || profile.rank() < target.semanticRank) {
-                target.semanticRank = profile.rank();
-                target.semanticHit = profile;
+            int compactRank = compactSemanticRanks.get(
+                    "profile:" + profile.documentVersionId()
+            );
+            if (target.semanticRank == null || compactRank < target.semanticRank) {
+                target.semanticRank = compactRank;
             }
         }
 
@@ -499,7 +627,8 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                     channels(candidate),
                     candidate.keywordRank,
                     candidate.semanticRank,
-                    materialized.evidence()
+                    materialized.evidence(),
+                    materialized.internalReadTarget()
             ));
         }
         return List.copyOf(results);
@@ -536,7 +665,8 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
         for (EvidenceBlock block : canonical.blocks()) {
             blocksById.put(block.blockId(), block);
         }
-        validateSemanticAddress(candidate.semanticHit, heading, canonical.blocks());
+        SearchRetrievalGateway.SemanticHit semanticAddress = candidate.semanticAddress();
+        validateSemanticAddress(semanticAddress, heading, canonical.blocks());
 
         List<EvidenceBlock> keywordBlocks = new ArrayList<>();
         Map<String, List<SearchRetrievalGateway.HighlightFragment>> highlights =
@@ -560,7 +690,8 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
         List<EvidenceBlock> selected = selectBlocks(
                 heading,
                 canonical.blocks(),
-                keywordBlocks
+                keywordBlocks,
+                semanticAddress
         );
         int resultBudget = Math.min(
                 properties.getMaxEvidenceCharsPerResult(),
@@ -593,13 +724,34 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
             ));
             used += text.length();
         }
-        return new Materialized(heading, List.copyOf(evidence), used);
+        String cardType = semanticAddress != null
+                && "HEADING_SUBPARTITION".equals(semanticAddress.cardType())
+                ? "HEADING_SUBPARTITION"
+                : "HEADING_NODE";
+        int sectionStart = "HEADING_SUBPARTITION".equals(cardType)
+                ? semanticAddress.sectionStartBlockOrdinal()
+                : heading.sectionStartBlockOrdinal();
+        int sectionEnd = "HEADING_SUBPARTITION".equals(cardType)
+                ? semanticAddress.sectionEndBlockOrdinalExclusive()
+                : heading.sectionEndBlockOrdinalExclusive();
+        return new Materialized(
+                heading,
+                List.copyOf(evidence),
+                used,
+                new RetrieveResponseVO.InternalReadTarget(
+                        semanticAddress == null ? null : semanticAddress.cardId(),
+                        cardType,
+                        sectionStart,
+                        sectionEnd
+                )
+        );
     }
 
     private List<EvidenceBlock> selectBlocks(
             HeadingNode heading,
             List<EvidenceBlock> allBlocks,
-            List<EvidenceBlock> keywordBlocks
+            List<EvidenceBlock> keywordBlocks,
+            SearchRetrievalGateway.SemanticHit semanticAddress
     ) {
         Set<String> selectedIds = new LinkedHashSet<>();
         List<EvidenceBlock> selected = new ArrayList<>();
@@ -607,10 +759,18 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
             addSelected(selected, selectedIds, block);
         }
 
+        int navigationStart = semanticAddress != null
+                && "HEADING_SUBPARTITION".equals(semanticAddress.cardType())
+                ? semanticAddress.sectionStartBlockOrdinal()
+                : heading.sectionStartBlockOrdinal();
+        int navigationEnd = semanticAddress != null
+                && "HEADING_SUBPARTITION".equals(semanticAddress.cardType())
+                ? semanticAddress.sectionEndBlockOrdinalExclusive()
+                : heading.sectionEndBlockOrdinalExclusive();
         List<EvidenceBlock> sectionBlocks = allBlocks.stream()
                 .filter(block -> keywordBlocks.isEmpty()
-                        ? block.ordinal() >= heading.sectionStartBlockOrdinal()
-                        && block.ordinal() < heading.sectionEndBlockOrdinalExclusive()
+                        ? block.ordinal() >= navigationStart
+                        && block.ordinal() < navigationEnd
                         : heading.nodeId().equals(block.headingNodeId()))
                 .filter(block -> block.text() != null && !block.text().isBlank())
                 .toList();
@@ -663,15 +823,24 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
         if (!heading.nodeId().equals(hit.headingNodeId())
                 || hit.sectionStartBlockOrdinal() == null
                 || hit.sectionEndBlockOrdinalExclusive() == null
-                || hit.sectionStartBlockOrdinal() != heading.sectionStartBlockOrdinal()
+                || "HEADING_NODE".equals(hit.cardType())
+                && (hit.sectionStartBlockOrdinal() != heading.sectionStartBlockOrdinal()
                 || hit.sectionEndBlockOrdinalExclusive()
-                != heading.sectionEndBlockOrdinalExclusive()) {
+                != heading.sectionEndBlockOrdinalExclusive())
+                || "HEADING_SUBPARTITION".equals(hit.cardType())
+                && (hit.sectionStartBlockOrdinal() < heading.sectionStartBlockOrdinal()
+                || hit.sectionEndBlockOrdinalExclusive()
+                > heading.sectionEndBlockOrdinalExclusive()
+                || hit.sectionStartBlockOrdinal()
+                >= hit.sectionEndBlockOrdinalExclusive())
+                || !("HEADING_NODE".equals(hit.cardType())
+                || "HEADING_SUBPARTITION".equals(hit.cardType()))) {
             throw evidenceUnavailable(null);
         }
-        EvidenceBlock first = blockAtOrdinal(blocks, heading.sectionStartBlockOrdinal());
+        EvidenceBlock first = blockAtOrdinal(blocks, hit.sectionStartBlockOrdinal());
         EvidenceBlock last = blockAtOrdinal(
                 blocks,
-                heading.sectionEndBlockOrdinalExclusive() - 1
+                hit.sectionEndBlockOrdinalExclusive() - 1
         );
         if (hit.canonicalStart() != null
                 && first != null
@@ -790,7 +959,11 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                 position.startLine(),
                 position.startColumn(),
                 position.endLine(),
-                position.endColumn()
+                position.endColumn(),
+                position.tableId(),
+                position.tableRowSpan(),
+                position.tableColumnSpan(),
+                position.tableColumnHeader()
         );
     }
 
@@ -1001,6 +1174,9 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
     private record SectionKey(long documentVersionId, String headingNodeId) {
     }
 
+    private record SectionFamilyKey(long documentVersionId, String headingNodeId) {
+    }
+
     private static final class SectionCandidate {
         private final SectionKey key;
         private final long documentId;
@@ -1009,6 +1185,7 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
         private Integer keywordRank;
         private Integer semanticRank;
         private SearchRetrievalGateway.SemanticHit semanticHit;
+        private SearchRetrievalGateway.SemanticHit partitionHit;
         private double score;
 
         private SectionCandidate(SectionKey key, long documentId) {
@@ -1028,12 +1205,17 @@ public class RetrieveServiceImpl implements RetrieveService, ScopedRetrievalServ
                     semanticRank == null ? Integer.MAX_VALUE : semanticRank
             );
         }
+
+        private SearchRetrievalGateway.SemanticHit semanticAddress() {
+            return partitionHit != null ? partitionHit : semanticHit;
+        }
     }
 
     private record Materialized(
             HeadingNode heading,
             List<RetrieveResponseVO.Evidence> evidence,
-            int characters
+            int characters,
+            RetrieveResponseVO.InternalReadTarget internalReadTarget
     ) {
     }
 

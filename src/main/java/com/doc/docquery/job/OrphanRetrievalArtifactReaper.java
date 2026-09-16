@@ -3,6 +3,7 @@ package com.doc.docquery.job;
 import com.doc.docquery.config.DocumentRetrievalProperties;
 import com.doc.docquery.mapper.DocumentRetrievalArtifactMapper;
 import com.doc.docquery.service.RetrievalArtifactStore;
+import com.doc.docquery.service.ObjectListingPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -28,6 +29,8 @@ public class OrphanRetrievalArtifactReaper {
     );
 
     private final RetrievalArtifactStore objectStore;
+    /** 每次调度只处理一页，扫描结束后从头检查先前保留的对象。 */
+    private String continuationToken;
     private final DocumentRetrievalArtifactMapper artifactMapper;
     private final DocumentRetrievalProperties properties;
 
@@ -42,13 +45,15 @@ public class OrphanRetrievalArtifactReaper {
     }
 
     @Scheduled(fixedDelayString = "${docquery.retrieval.orphan-scan-delay:15m}")
-    public void runOnce() {
+    public synchronized void runOnce() {
         Instant cutoff = Instant.now().minus(properties.getOrphanGrace());
         int removed = 0;
-        for (RetrievalArtifactStore.ObjectSummary object : objectStore.list(
+        ObjectListingPage<RetrievalArtifactStore.ObjectSummary> page = objectStore.listPage(
                 properties.getRetrievalPrefix(),
-                properties.getOrphanBatchSize()
-        )) {
+                properties.getOrphanBatchSize(),
+                continuationToken
+        );
+        for (RetrievalArtifactStore.ObjectSummary object : page.objects()) {
             if (object.lastModified() == null || !object.lastModified().isBefore(cutoff)) {
                 continue;
             }
@@ -66,6 +71,7 @@ public class OrphanRetrievalArtifactReaper {
                 LOG.warn("Orphan retrieval object check failed; object was retained");
             }
         }
+        continuationToken = page.nextContinuationToken();
         if (removed > 0) {
             LOG.info("Removed {} unreferenced retrieval objects", removed);
         }

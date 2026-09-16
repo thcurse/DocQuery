@@ -12,6 +12,13 @@ public interface RetrievalCardChatGateway {
 
     DocumentProfileSemantic generateProfile(ProfileInput input, String correctionHint);
 
+    default List<BoundaryCandidate> generateBoundaryCandidates(
+            BoundaryInput input,
+            String correctionHint
+    ) {
+        throw new UnsupportedOperationException("Boundary generation is not implemented");
+    }
+
     record NodeInput(String requestId, String titlePath, String sourceText) {
     }
 
@@ -19,5 +26,37 @@ public interface RetrievalCardChatGateway {
     }
 
     record ProfileInput(String requestId, String documentTitle, String sourceText) {
+    }
+
+    record BoundaryInput(
+            String requestId,
+            String documentName,
+            String titlePath,
+            int sectionStartBlockOrdinal,
+            int sectionEndBlockOrdinalExclusive,
+            int estimatedSectionTokens,
+            int minimumPartitions,
+            int maximumPartitions,
+            int minimumCandidates,
+            int maximumCandidates,
+            List<BoundaryBlock> blocks
+    ) {
+        public BoundaryInput {
+            blocks = List.copyOf(blocks);
+        }
+    }
+
+    record BoundaryBlock(int ordinal, Integer page, String kind, String text) {
+    }
+
+    record BoundaryCandidate(
+            String title,
+            int startBlockOrdinal,
+            int boundaryStrength,
+            List<String> topics
+    ) {
+        public BoundaryCandidate {
+            topics = topics == null ? null : List.copyOf(topics);
+        }
     }
 }

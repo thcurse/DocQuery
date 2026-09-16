@@ -3,11 +3,13 @@ package com.doc.docquery;
 import com.doc.docquery.cache.QueryIdempotencyClaim;
 import com.doc.docquery.cache.QueryIdempotencyException;
 import com.doc.docquery.cache.QueryOperation;
+import com.doc.docquery.config.QueryIdempotencyProperties;
 import com.doc.docquery.security.ActiveDocumentVersionSnapshot;
 import com.doc.docquery.security.QueryAccessContext;
 import com.doc.docquery.security.QueryAccessException;
 import com.doc.docquery.service.QueryAccessService;
 import com.doc.docquery.service.QueryIdempotencyService;
+import com.doc.docquery.service.impl.RedisQueryIdempotencyServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -293,6 +296,68 @@ class QueryAccessAndIdempotencyIT {
         assertThat(replay.getReplayResult()).isEqualTo(response);
         assertThat(redisTemplate.getExpire(owner.getStorageKey()))
                 .isBetween(1L, 30L);
+    }
+
+    @Test
+    void replayKeepsOriginalResultWhenKeyIsReusedAfterAtomicClaim() {
+        QueryAccessContext context = authorize(TOKEN_A, KNOWLEDGE_BASE_A);
+        String key = "atomic-replay-key";
+        String originalFingerprint = sha256("original-request");
+        String replacementFingerprint = sha256("replacement-request");
+        String originalResponse = "{\"answer\":\"原结果\\n第二行\"}";
+        String replacementResponse = "{\"answer\":\"另一请求的结果\"}";
+        QueryIdempotencyClaim owner = idempotencyService.claim(
+                context, QueryOperation.RETRIEVE, key, originalFingerprint
+        );
+        idempotencyService.complete(owner, originalResponse);
+
+        StringRedisTemplate replacingTemplate = new StringRedisTemplate(
+                redisTemplate.getRequiredConnectionFactory()
+        ) {
+            @Override
+            public <T> T execute(RedisScript<T> script, List<String> keys, Object... args) {
+                T result = super.execute(script, keys, args);
+                // 精确模拟脚本执行后 Key 过期，另一请求复用并完成的交错，无需计时等待。
+                redisTemplate.delete(owner.getStorageKey());
+                QueryIdempotencyClaim replacement = idempotencyService.claim(
+                        context, QueryOperation.RETRIEVE, key, replacementFingerprint
+                );
+                idempotencyService.complete(replacement, replacementResponse);
+                return result;
+            }
+        };
+        QueryIdempotencyProperties properties = new QueryIdempotencyProperties();
+        properties.setEnabled(true);
+        QueryIdempotencyService racingService = new RedisQueryIdempotencyServiceImpl(
+                replacingTemplate, properties
+        );
+
+        QueryIdempotencyClaim replay = racingService.claim(
+                context, QueryOperation.RETRIEVE, key, originalFingerprint
+        );
+
+        assertThat(replay.getStatus()).isEqualTo(QueryIdempotencyClaim.Status.REPLAY);
+        assertThat(replay.getReplayResult()).isEqualTo(originalResponse);
+        assertThat(idempotencyService.claim(
+                context, QueryOperation.RETRIEVE, key, replacementFingerprint
+        ).getReplayResult()).isEqualTo(replacementResponse);
+    }
+
+    @Test
+    void succeededStateWithoutResultIsRejectedAtomically() {
+        QueryAccessContext context = authorize(TOKEN_A, KNOWLEDGE_BASE_A);
+        String key = "missing-result-key";
+        String fingerprint = sha256("request-with-missing-result");
+        QueryIdempotencyClaim owner = idempotencyService.claim(
+                context, QueryOperation.RETRIEVE, key, fingerprint
+        );
+        idempotencyService.complete(owner, "{\"answer\":\"result\"}");
+        redisTemplate.opsForHash().delete(owner.getStorageKey(), "result");
+
+        assertIdempotencyFailure(
+                () -> idempotencyService.claim(context, QueryOperation.RETRIEVE, key, fingerprint),
+                QueryIdempotencyException.Reason.CORRUPTED_STATE
+        );
     }
 
     @Test

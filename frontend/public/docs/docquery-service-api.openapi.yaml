@@ -305,7 +305,7 @@ components:
                 $ref: '#/components/schemas/Citation'
     Citation:
       type: object
-      required: [evidenceId, documentId, documentVersionId, versionNo, documentName, headingPath, blockId, text, truncated, canonicalStart, canonicalEnd]
+      required: [evidenceId, documentId, documentVersionId, versionNo, documentName, headingPath, pageNumber, blockId, text, truncated, canonicalStart, canonicalEnd]
       properties:
         evidenceId: { type: string }
         documentId: { type: integer, format: int64 }
@@ -316,7 +316,12 @@ components:
         headingPath:
           type: array
           items: { type: string }
-        blockId: { type: string }
+        pageNumber:
+          type: [integer, 'null']
+          description: User-facing 1-based physical PDF page; null for non-paged formats.
+        blockId:
+          type: string
+          description: Compatibility and audit field; do not display as the user citation location.
         text: { type: string }
         truncated: { type: boolean }
         canonicalStart: { type: integer, format: int64 }

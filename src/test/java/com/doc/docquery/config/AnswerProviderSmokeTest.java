@@ -1,75 +1,81 @@
 package com.doc.docquery.config;
 
-import com.doc.docquery.service.AnswerChatGateway;
+import com.doc.docquery.service.AnswerAgentGateway;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** 显式真实 DeepSeek Tool Calling 冒烟；默认回归不调用收费供应商。 */
+/** 显式真实 Sonnet Tool Calling 冒烟；默认回归不调用收费供应商。 */
 class AnswerProviderSmokeTest {
 
     @Test
-    void realDeepSeekCompletesOneToolCallAndReturnsStrictFinalJson() {
-        String apiKey = System.getenv("DEEPSEEK_API_KEY");
+    void realPackyGptCompletesOneToolCallAndReturnsStrictFinalJson() {
+        String apiKey = System.getenv("DOCQUERY_CLAUDE_SONNET_5_API_KEY");
         Assumptions.assumeTrue(
                 "true".equalsIgnoreCase(
                         System.getenv("DOCQUERY_REAL_PROVIDER_SMOKE_ENABLED")
                 ) && hasText(apiKey),
-                "Real Answer smoke requires explicit enablement and DeepSeek key"
+                "Real Answer smoke requires explicit enablement and PackyAPI key"
         );
 
-        DocumentRetrievalProperties provider = new DocumentRetrievalProperties();
-        provider.setChatApiKey(apiKey);
-        String configuredBaseUrl = System.getenv("DOCQUERY_DEEPSEEK_BASE_URL");
+        ChatProfilesProperties profiles = new ChatProfilesProperties();
+        ChatProfilesProperties.Profile profile = new ChatProfilesProperties.Profile();
+        profile.setModel("claude-sonnet-5");
+        profile.setProtocol("ANTHROPIC_MESSAGES");
+        profile.setApiKey(apiKey);
+        String configuredBaseUrl = System.getenv("DOCQUERY_CLAUDE_SONNET_5_BASE_URL");
         if (hasText(configuredBaseUrl)) {
-            provider.setChatBaseUrl(configuredBaseUrl);
+            profile.setBaseUrl(configuredBaseUrl);
+        } else {
+            profile.setBaseUrl("https://slb-v1.api.fan/v1");
         }
+        profiles.setProfiles(java.util.Map.of("claude-sonnet-5", profile));
         AnswerProperties answer = new AnswerProperties();
         answer.setMaxOutputTokens(512);
         RetrievalProviderConfig config = new RetrievalProviderConfig();
-        AnswerChatGateway gateway = config.answerChatGateway(
-                config.answerChatModel(provider, answer),
-                answer
+        AnswerAgentGateway gateway = config.answerAgentGateway(
+                config.answerChatModel(profiles, answer)
         );
 
-        List<AnswerChatGateway.Message> messages = new ArrayList<>();
-        messages.add(new AnswerChatGateway.SystemPrompt("""
-                This is a Tool Calling protocol smoke test. First call searchDocuments
-                exactly once with query "refund" and limit 1. After the tool result,
-                return JSON only: {"status":"ANSWERED","answer":"ok [E1]",
-                "citedEvidenceIds":["E1"]}.
-                """));
-        messages.add(new AnswerChatGateway.UserContent("Run the protocol test."));
+        AnswerAgentGateway.AgentRun run = gateway.start(new AnswerAgentGateway.Request("""
+                This is a Tool Calling protocol smoke test. First call search
+                exactly once with query "refund". After the tool result,
+                call submit_evidence with {"evidenceIds":["E1"]}.
+                """, 10),
+                (name, arguments) -> {
+                    assertThat(name).isEqualTo("search");
+                    assertThat(arguments).contains("refund");
+                    return "{\"status\":\"OK\",\"candidates\":[{\"evidence\":[{"
+                            + "\"evidenceId\":\"E1\",\"text\":\"refund policy\"}]}]}";
+                },
+                new NoopObserver()
+        );
+        String output = run.next("Run the protocol test.");
 
-        AnswerChatGateway.Turn toolTurn = gateway.chat(List.copyOf(messages), true);
-        assertThat(toolTurn.toolCalls()).singleElement().satisfies(call ->
-                assertThat(call.name()).isEqualTo("searchDocuments"));
-        AnswerChatGateway.ToolCall call = toolTurn.toolCalls().get(0);
-        messages.add(new AnswerChatGateway.AssistantContent(
-                toolTurn.text(), toolTurn.toolCalls()
-        ));
-        messages.add(new AnswerChatGateway.ToolResultContent(
-                call.id(),
-                call.name(),
-                "{\"status\":\"OK\",\"documents\":[{\"evidence\":[{"
-                        + "\"evidenceId\":\"E1\",\"text\":\"refund policy\"}]}]}"
-        ));
-
-        AnswerChatGateway.Turn finalTurn = gateway.chat(List.copyOf(messages), false);
-        assertThat(finalTurn.toolCalls()).isEmpty();
-        JsonNode result = new ObjectMapper().readTree(finalTurn.text());
-        assertThat(result.get("status").asText()).isEqualTo("ANSWERED");
-        assertThat(result.get("answer").asText()).contains("[E1]");
-        assertThat(result.get("citedEvidenceIds").get(0).asText()).isEqualTo("E1");
+        JsonNode result = new ObjectMapper().readTree(output);
+        assertThat(result.get("evidenceIds"))
+                .extracting(JsonNode::asText)
+                .containsExactly("E1");
     }
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private static final class NoopObserver implements AnswerAgentGateway.Observer {
+        @Override
+        public void beforeModelCall() {
+        }
+
+        @Override
+        public void toolRound(int requestedCalls) {
+        }
+
+        @Override
+        public void afterToolCall() {
+        }
     }
 }

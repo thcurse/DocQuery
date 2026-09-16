@@ -41,7 +41,8 @@ public class RetrievalArtifactValidator {
     public ValidationResult validate(RetrievalArtifact artifact) {
         try {
             if (artifact.profile() == null
-                    || artifact.schemaVersion() != properties.getSchemaVersion()
+                    || artifact.schemaVersion() < 1
+                    || artifact.schemaVersion() > properties.getSchemaVersion()
                     || artifact.embeddingDimension() != properties.getEmbeddingDimension()
                     || artifact.generationFingerprint() == null
                     || artifact.generationFingerprint().length() != 64
@@ -52,6 +53,9 @@ public class RetrievalArtifactValidator {
             MessageDigest vectorDigest = sha256Digest();
             Set<String> cardIds = new HashSet<>();
             Set<String> headingIds = new HashSet<>();
+            Set<String> fullHeadingIds = new HashSet<>();
+            Map<String, Integer> nextPartitionOrdinals = new LinkedHashMap<>();
+            Map<String, Integer> lastPartitionEnds = new LinkedHashMap<>();
 
             if (artifact.profile().documentVersionId() != artifact.documentVersionId()
                     || !artifact.profile().cardId().equals(
@@ -90,10 +94,19 @@ public class RetrievalArtifactValidator {
                         cardIds,
                         vectorDigest
                 );
-                if (!node.cardId().equals(artifact.documentVersionId()
-                        + ":rn:" + "%06d".formatted(index + 1))
+                boolean fullNode = RetrievalNode.HEADING_NODE.equals(node.cardType());
+                boolean partition = RetrievalNode.HEADING_SUBPARTITION.equals(
+                        node.cardType()
+                );
+                String normalPrefix = artifact.documentVersionId() + ":rn:";
+                String partitionPrefix = artifact.documentVersionId() + ":rsp:";
+                if ((!fullNode && !partition)
+                        || fullNode && (!node.cardId().startsWith(normalPrefix)
+                        || node.partitionOrdinal() != null)
+                        || partition && (!node.cardId().startsWith(partitionPrefix)
+                        || node.partitionOrdinal() == null
+                        || node.partitionOrdinal() < 0)
                         || node.headingNodeId() == null
-                        || !headingIds.add(node.headingNodeId())
                         || node.parentHeadingNodeId() == null
                         || node.depth() < 1
                         || node.siblingOrder() < 0
@@ -104,13 +117,37 @@ public class RetrievalArtifactValidator {
                         || node.canonicalStart() > node.canonicalEnd()) {
                     fail("Retrieval node structural fields are invalid");
                 }
-                if (node.depth() == 1) {
+                if (fullNode && (!fullHeadingIds.add(node.headingNodeId())
+                        || nextPartitionOrdinals.containsKey(node.headingNodeId()))) {
+                    fail("A real heading cannot have duplicate or mixed navigation cards");
+                }
+                if (partition) {
+                    if (fullHeadingIds.contains(node.headingNodeId())) {
+                        fail("A real heading cannot keep both full and partition cards");
+                    }
+                    int expectedOrdinal = nextPartitionOrdinals.getOrDefault(
+                            node.headingNodeId(), 0
+                    );
+                    Integer previousEnd = lastPartitionEnds.get(node.headingNodeId());
+                    if (node.partitionOrdinal() != expectedOrdinal
+                            || previousEnd != null
+                            && previousEnd != node.sectionStartBlockOrdinal()) {
+                        fail("Navigation partitions are not ordered and contiguous");
+                    }
+                    nextPartitionOrdinals.put(node.headingNodeId(), expectedOrdinal + 1);
+                    lastPartitionEnds.put(
+                            node.headingNodeId(), node.sectionEndBlockOrdinalExclusive()
+                    );
+                }
+                boolean firstForHeading = headingIds.add(node.headingNodeId());
+                if (firstForHeading && node.depth() == 1) {
                     if (rootHeadingId == null) {
                         rootHeadingId = node.parentHeadingNodeId();
                     } else if (!rootHeadingId.equals(node.parentHeadingNodeId())) {
                         fail("Top-level retrieval nodes do not share one canonical root");
                     }
-                } else if (!headingIds.contains(node.parentHeadingNodeId())) {
+                } else if (firstForHeading && node.depth() > 1
+                        && !headingIds.contains(node.parentHeadingNodeId())) {
                     fail("Retrieval node parent must precede its child");
                 }
                 RetrievalNodeSemantic nodeSemantic = new RetrievalNodeSemantic(
@@ -125,7 +162,7 @@ public class RetrievalArtifactValidator {
                 ))) {
                     fail("Retrieval node embedding text does not match stable template");
                 }
-                updateSemantic(semanticDigest, nodeSemantic(node));
+                updateSemantic(semanticDigest, nodeSemantic(node, artifact.schemaVersion()));
             }
             return new ValidationResult(
                     HexFormat.of().formatHex(semanticDigest.digest()),
@@ -176,9 +213,13 @@ public class RetrievalArtifactValidator {
         return value;
     }
 
-    private Map<String, Object> nodeSemantic(RetrievalNode node) {
+    private Map<String, Object> nodeSemantic(RetrievalNode node, int schemaVersion) {
         Map<String, Object> value = new LinkedHashMap<>();
         value.put("cardId", node.cardId());
+        if (schemaVersion >= 2) {
+            value.put("cardType", node.cardType());
+            value.put("partitionOrdinal", node.partitionOrdinal());
+        }
         value.put("headingNodeId", node.headingNodeId());
         value.put("summary", node.summary());
         value.put("topics", node.topics());

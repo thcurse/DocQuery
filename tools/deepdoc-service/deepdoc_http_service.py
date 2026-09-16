@@ -15,6 +15,7 @@ import unicodedata
 import uuid
 import zipfile
 from collections import Counter, defaultdict
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -63,12 +64,15 @@ def _sha256(path: Path) -> str:
 
 
 def _normalized_text_sha256(values: list[str]) -> str:
-    normalized = " ".join(
+    return hashlib.sha256(_normalized_text(values).encode("utf-8")).hexdigest()
+
+
+def _normalized_text(values: list[str]) -> str:
+    return " ".join(
         " ".join(str(value).split())
         for value in values
         if str(value).strip()
     )
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _utf16_length(value: str) -> int:
@@ -81,6 +85,140 @@ def _safe_request_id(candidate: str | None) -> str:
     ):
         return candidate
     return str(uuid.uuid4())
+
+
+class _TableGridParser(HTMLParser):
+    """Extract visible DeepDoc HTML table cells with stable zero-based coordinates."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.cells: list[dict[str, Any]] = []
+        self._table_depth = 0
+        self._row = -1
+        self._column = 0
+        self._occupied_until: dict[int, int] = {}
+        self._cell: dict[str, Any] | None = None
+
+    def handle_starttag(
+        self, tag: str, attrs: list[tuple[str, str | None]]
+    ) -> None:
+        tag = tag.lower()
+        if tag == "table":
+            self._table_depth += 1
+            if self._table_depth == 1:
+                self._row = -1
+                self._column = 0
+                self._occupied_until = {}
+            return
+        if self._table_depth != 1:
+            return
+        if tag == "tr":
+            self._finish_cell()
+            self._row += 1
+            self._column = 0
+            return
+        if tag in {"td", "th"}:
+            self._finish_cell()
+            if self._row < 0:
+                self._row = 0
+            while self._occupied_until.get(self._column, -1) >= self._row:
+                self._column += 1
+            attributes = {name.lower(): value for name, value in attrs}
+            row_span = self._positive_span(attributes.get("rowspan"))
+            column_span = self._positive_span(attributes.get("colspan"))
+            column = self._column
+            for occupied in range(column, column + column_span):
+                self._occupied_until[occupied] = self._row + row_span - 1
+            self._cell = {
+                "row": self._row,
+                "column": column,
+                "rowSpan": row_span,
+                "columnSpan": column_span,
+                "header": tag == "th",
+                "parts": [],
+            }
+            self._column += column_span
+            return
+        if self._cell is not None and tag in {"br", "p", "div", "li"}:
+            self._cell["parts"].append(" ")
+
+    def handle_startendtag(
+        self, tag: str, attrs: list[tuple[str, str | None]]
+    ) -> None:
+        self.handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in {"td", "th"} and self._table_depth == 1:
+            self._finish_cell()
+            return
+        if tag == "tr" and self._table_depth == 1:
+            self._finish_cell()
+            return
+        if tag == "table" and self._table_depth > 0:
+            if self._table_depth == 1:
+                self._finish_cell()
+            self._table_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None and self._table_depth == 1:
+            self._cell["parts"].append(data)
+
+    def close(self) -> None:
+        super().close()
+        self._finish_cell()
+
+    def _finish_cell(self) -> None:
+        if self._cell is None:
+            return
+        text = " ".join("".join(self._cell.pop("parts")).split())
+        self._cell["text"] = text
+        self.cells.append(self._cell)
+        self._cell = None
+
+    @staticmethod
+    def _positive_span(value: str | None) -> int:
+        try:
+            parsed = int(value or "1")
+        except ValueError:
+            return 1
+        return parsed if 1 <= parsed <= 1000 else 1
+
+
+def _table_grid_cells(value: str) -> list[dict[str, Any]]:
+    if "<table" not in value.casefold():
+        return []
+    parser = _TableGridParser()
+    try:
+        parser.feed(value)
+        parser.close()
+    except (ValueError, TypeError):
+        return []
+    return [cell for cell in parser.cells if str(cell.get("text") or "").strip()]
+
+
+def _table_column_count(cells: list[dict[str, Any]]) -> int:
+    return max(
+        (
+            int(cell.get("column") or 0)
+            + max(1, int(cell.get("columnSpan") or 1))
+            for cell in cells
+        ),
+        default=0,
+    )
+
+
+def _first_complete_table_row(
+    cells: list[dict[str, Any]], column_count: int
+) -> int:
+    occupied: defaultdict[int, set[int]] = defaultdict(set)
+    for cell in cells:
+        row = int(cell.get("row") or 0)
+        start = int(cell.get("column") or 0)
+        span = max(1, int(cell.get("columnSpan") or 1))
+        occupied[row].update(range(start, min(column_count, start + span)))
+    complete = [row for row, columns in occupied.items() if len(columns) == column_count]
+    return min(complete) if complete else min(occupied, default=0)
 
 
 def collect_onnx_sessions(root: object) -> dict[str, list[str]]:
@@ -188,6 +326,7 @@ class DeepDocRuntime:
                         boxes,
                         page_count,
                         getattr(self.parsers["PDF"], "outlines", []),
+                        path,
                     )
                 elif source_format == "DOCX":
                     page_count = None
@@ -369,24 +508,63 @@ class DeepDocRuntime:
         boxes: list[dict[str, Any]],
         page_count: int,
         outlines: list[tuple[Any, Any, Any]] | None = None,
+        pdf_path: Path | None = None,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        source_text_sha256 = _normalized_text_sha256(
-            [str(box.get("text") or "") for box in boxes]
-        )
+        boxes = [
+            dict(box)
+            for box in boxes
+            if str(box.get("text") or "").strip()
+        ]
         boxes, merged_title_fragments = self._merge_pdf_title_fragments(
             boxes, outlines or []
         )
+        boxes, reconstructed_inline_headings = (
+            self._reconstruct_pdf_inline_numbered_headings(boxes)
+        )
+        boxes, split_numbered_headings = self._split_pdf_numbered_heading_prefixes(
+            boxes
+        )
+        boxes, reordered_numbered_titles = self._normalize_pdf_numbered_title_order(
+            boxes
+        )
+        structured_tables = {
+            index: _table_grid_cells(str(box.get("text") or ""))
+            for index, box in enumerate(boxes)
+            if str(box.get("layout_type") or "").lower() == "table"
+        }
+        digital_tables, table_covered_boxes = self._pdf_digital_table_cells(
+            pdf_path,
+            boxes,
+            structured_tables,
+        )
+        structured_tables.update(digital_tables)
+        table_contexts = self._pdf_table_contexts(boxes, structured_tables)
+        source_text_values: list[str] = []
+        for index, box in enumerate(boxes):
+            if index in table_covered_boxes:
+                continue
+            cells = structured_tables.get(index) or []
+            if cells:
+                source_text_values.extend(str(cell["text"]) for cell in cells)
+            else:
+                source_text_values.append(str(box.get("text") or ""))
+        source_text_sha256 = _normalized_text_sha256(source_text_values)
         blocks: list[dict[str, Any]] = []
         page_ordinals: defaultdict[int, int] = defaultdict(int)
         page_offsets: defaultdict[int, int] = defaultdict(int)
         layout_counts: Counter[str] = Counter()
         multi_page_blocks = 0
+        structured_table_blocks = 0
+        structured_table_cells = 0
+        flattened_table_blocks = 0
         document_title_emitted = False
         title_decisions, title_stats = self._govern_pdf_title_candidates(
             boxes, outlines or []
         )
 
         for box_index, box in enumerate(boxes):
+            if box_index in table_covered_boxes:
+                continue
             text = str(box.get("text") or "").strip()
             if not text:
                 continue
@@ -418,6 +596,65 @@ class DeepDocRuntime:
 
             layout_type = str(box.get("layout_type") or "unknown").lower()
             layout_counts[layout_type] += 1
+            table_cells = structured_tables.get(box_index) or []
+            if layout_type == "table" and table_cells:
+                structured_table_blocks += 1
+                table_context = table_contexts[box_index]
+                for cell in table_cells:
+                    cell_text = str(cell["text"])
+                    if len(blocks) >= self.max_blocks:
+                        raise StableServiceError(
+                            "DOCUMENT_PARSE_LIMIT_EXCEEDED",
+                            "DeepDoc returned too many blocks",
+                            False,
+                            422,
+                        )
+                    ordinal = page_ordinals[page_number]
+                    start = page_offsets[page_number]
+                    end = start + _utf16_length(cell_text)
+                    table_row = int(cell["row"])
+                    table_column = int(cell["column"])
+                    column_header = (
+                        table_context["columnHeaders"].get(table_column)
+                        if table_row >= int(table_context["headerStartRow"])
+                        else None
+                    )
+                    blocks.append(
+                        {
+                            "kind": "TABLE_CELL",
+                            "text": cell_text,
+                            "sourceType": "PDF",
+                            "pageNumber": page_number,
+                            "pageBlockOrdinal": ordinal,
+                            "pageCharacterStart": start,
+                            "pageCharacterEnd": end,
+                            "tableRow": table_row,
+                            "tableColumn": table_column,
+                            "tableRowSpan": int(cell.get("rowSpan") or 1),
+                            "tableColumnSpan": int(cell.get("columnSpan") or 1),
+                            "tableId": str(table_context["tableId"]),
+                            "tableGroupId": str(table_context["tableGroupId"]),
+                            "tableContinuationOf": table_context["continuationOf"],
+                            "tableCaption": table_context["caption"],
+                            "tableColumnHeader": column_header,
+                            "tableRowHeader": table_context["rowHeaders"].get(
+                                table_row
+                            ),
+                            "tableCellHeading": self._table_cell_heading(
+                                cell,
+                                column_header,
+                            ),
+                            "headingLevel": None,
+                            "detectionSource": None,
+                            "documentTitle": False,
+                        }
+                    )
+                    structured_table_cells += 1
+                    page_ordinals[page_number] += 1
+                    page_offsets[page_number] = end + 2
+                continue
+            if layout_type == "table":
+                flattened_table_blocks += 1
             kind = {
                 "text": "PARAGRAPH",
                 "table": "TABLE_CELL",
@@ -465,6 +702,39 @@ class DeepDocRuntime:
             page_offsets[page_number] = end + 2
 
         warnings: list[dict[str, Any]] = []
+        if reconstructed_inline_headings:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_INLINE_NUMBERED_HEADING_RECONSTRUCTED",
+                    "message": (
+                        f"Reconstructed {reconstructed_inline_headings} numbered "
+                        "headings from same-row DeepDoc fragments"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        if reordered_numbered_titles:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_NUMBERED_TITLE_ORDER_NORMALIZED",
+                    "message": (
+                        f"Normalized {reordered_numbered_titles} numbered title candidates "
+                        "whose visual number was returned after the title text"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        if split_numbered_headings:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_NUMBERED_PARAGRAPH_HEADING_SPLIT",
+                    "message": (
+                        f"Split {split_numbered_headings} high-confidence numbered "
+                        "heading prefixes from their following body text"
+                    ),
+                    "pageNumber": None,
+                }
+            )
         output_text_sha256 = _normalized_text_sha256(
             [str(block.get("text") or "") for block in blocks]
         )
@@ -542,11 +812,72 @@ class DeepDocRuntime:
                     "pageNumber": None,
                 }
             )
-        if layout_counts["table"]:
+        if structured_table_blocks:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_TABLE_CELLS_STRUCTURED",
+                    "message": (
+                        f"Expanded {structured_table_blocks} DeepDoc HTML table blocks "
+                        f"into {structured_table_cells} cells with row and column coordinates"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        if digital_tables:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_DIGITAL_TABLE_ORDER_PRESERVED",
+                    "message": (
+                        f"Preferred the PDF text layer for {len(digital_tables)} "
+                        "high-confidence tables and preserved their physical row/column order"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        bound_table_headers = sum(
+            1 for context in table_contexts.values() if context["columnHeaders"]
+        )
+        if bound_table_headers:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_TABLE_COLUMN_HEADERS_BOUND",
+                    "message": (
+                        f"Bound column headers for {bound_table_headers} structured "
+                        "tables using explicit HTML headers or high-confidence PDF layout"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        bound_table_relations = sum(
+            1
+            for context in table_contexts.values()
+            if context["caption"]
+            or context["rowHeaders"]
+            or any(
+                str(cell.get("headingText") or "").strip()
+                for cell in structured_tables.get(context["tableIndex"], [])
+            )
+        )
+        if bound_table_relations:
+            warnings.append(
+                {
+                    "code": "DEEPDOC_TABLE_RELATIONS_BOUND",
+                    "message": (
+                        f"Bound captions, row labels, or item headings for "
+                        f"{bound_table_relations} structured tables without "
+                        "promoting them to document headings"
+                    ),
+                    "pageNumber": None,
+                }
+            )
+        if flattened_table_blocks:
             warnings.append(
                 {
                     "code": "DEEPDOC_TABLE_STRUCTURE_FLATTENED",
-                    "message": "DeepDoc table blocks retain text without a cell grid",
+                    "message": (
+                        f"Retained {flattened_table_blocks} non-HTML DeepDoc table blocks "
+                        "without a cell grid"
+                    ),
                     "pageNumber": None,
                 }
             )
@@ -567,6 +898,1009 @@ class DeepDocRuntime:
                 }
             )
         return blocks, warnings
+
+    def _pdf_digital_table_cells(
+        self,
+        pdf_path: Path | None,
+        boxes: list[dict[str, Any]],
+        structured_tables: dict[int, list[dict[str, Any]]],
+    ) -> tuple[dict[int, list[dict[str, Any]]], set[int]]:
+        """Prefer a trustworthy PDF text-layer table without duplicating its children.
+
+        DeepDoc's TSR is retained as the table detector and fallback.  For a digital
+        PDF, pdfplumber can often recover the same physical table with its original
+        reading order, including visual headings that DeepDoc emitted as separate
+        title boxes.  The replacement is deliberately conservative: the table bounds
+        must strongly overlap, the column counts must agree, and the digital text
+        must cover most of the DeepDoc table text.
+        """
+        if pdf_path is None or not structured_tables:
+            return {}, set()
+        try:
+            import pdfplumber
+        except ImportError:
+            return {}, set()
+
+        replacements: dict[int, list[dict[str, Any]]] = {}
+        covered_boxes: set[int] = set()
+        try:
+            with pdfplumber.open(str(pdf_path)) as document:
+                page_tables: dict[int, list[Any]] = {}
+                used_tables: defaultdict[int, set[int]] = defaultdict(set)
+                for table_index, deepdoc_cells in structured_tables.items():
+                    position = self._first_pdf_position(boxes[table_index])
+                    if position is None:
+                        continue
+                    page, left, right, top, bottom = position
+                    if page < 1 or page > len(document.pages):
+                        continue
+                    if page not in page_tables:
+                        page_tables[page] = list(document.pages[page - 1].find_tables())
+                    candidates = page_tables[page]
+                    best_index = None
+                    best_overlap = 0.0
+                    for candidate_index, candidate in enumerate(candidates):
+                        if candidate_index in used_tables[page]:
+                            continue
+                        overlap = self._pdf_bbox_iou(
+                            (left, top, right, bottom),
+                            tuple(float(value) for value in candidate.bbox),
+                        )
+                        if overlap > best_overlap:
+                            best_overlap = overlap
+                            best_index = candidate_index
+                    column_count = _table_column_count(deepdoc_cells)
+                    digital_cells: list[dict[str, Any]] = []
+                    selected_candidate = None
+                    if best_index is not None and best_overlap >= 0.75:
+                        candidate = candidates[best_index]
+                        matrix = candidate.extract() or []
+                        candidate_cells = self._pdf_table_candidate_cells(
+                            document.pages[page - 1],
+                            candidate,
+                            matrix,
+                        )
+                        if (
+                            column_count >= 1
+                            and _table_column_count(candidate_cells) == column_count
+                            and self._pdf_digital_table_text_covers(
+                                deepdoc_cells, candidate_cells
+                            )
+                        ):
+                            digital_cells = candidate_cells
+                            selected_candidate = best_index
+                    if not digital_cells:
+                        digital_cells = self._pdf_relational_table_cells(
+                            document.pages[page - 1],
+                            (left, top, right, bottom),
+                            deepdoc_cells,
+                        )
+                    if not digital_cells:
+                        continue
+                    replacements[table_index] = digital_cells
+                    if selected_candidate is not None:
+                        used_tables[page].add(selected_candidate)
+                    digital_text = self._pdf_match_text(
+                        "\n".join(str(cell["text"]) for cell in digital_cells)
+                    )
+                    for box_index, box in enumerate(boxes):
+                        if box_index == table_index:
+                            continue
+                        box_position = self._first_pdf_position(box)
+                        if box_position is None or box_position[0] != page:
+                            continue
+                        _, box_left, box_right, box_top, box_bottom = box_position
+                        center_x = (box_left + box_right) / 2
+                        center_y = (box_top + box_bottom) / 2
+                        box_text = self._pdf_match_text(str(box.get("text") or ""))
+                        if (
+                            left <= center_x <= right
+                            and top <= center_y <= bottom
+                            and len(box_text) >= 3
+                            and box_text in digital_text
+                        ):
+                            covered_boxes.add(box_index)
+        except Exception:
+            # The DeepDoc HTML table remains the complete, deterministic fallback.
+            return {}, set()
+        return replacements, covered_boxes
+
+    @classmethod
+    def _pdf_relational_table_cells(
+        cls,
+        page: Any,
+        bbox: tuple[float, float, float, float],
+        deepdoc_cells: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Repair a multi-row two-column grid from trustworthy PDF word geometry.
+
+        This fallback is intentionally narrower than generic table guessing.  DeepDoc
+        must already have detected a multi-row, two-column table.  The PDF text layer
+        must then expose one stable vertical separator shared by several physical
+        lines, and the reconstructed text must substantially cover DeepDoc's text.
+        Independent newspaper/page columns and one-row layout tables therefore never
+        enter this path.
+        """
+        column_count = _table_column_count(deepdoc_cells)
+        source_rows = {int(cell.get("row") or 0) for cell in deepdoc_cells}
+        if column_count != 2 or len(source_rows) < 3:
+            return []
+        try:
+            words = page.crop(bbox).extract_words(extra_attrs=["fontname", "size"])
+        except Exception:
+            return []
+        lines = cls._pdf_table_visual_lines(words or [])
+        if len(lines) < 4:
+            return []
+        split = cls._pdf_two_column_separator(lines, bbox)
+        if split is None:
+            return []
+
+        cells: list[dict[str, Any]] = []
+        paired_rows = 0
+        for row, line in enumerate(lines):
+            left_words: list[dict[str, Any]] = []
+            right_words: list[dict[str, Any]] = []
+            crosses_separator = False
+            for word in line["words"]:
+                x0 = float(word.get("x0") or 0)
+                x1 = float(word.get("x1") or x0)
+                if x0 < split < x1:
+                    crosses_separator = True
+                    break
+                (left_words if (x0 + x1) / 2 < split else right_words).append(word)
+            if crosses_separator:
+                return []
+            texts = [
+                cls._pdf_words_text(left_words),
+                cls._pdf_words_text(right_words),
+            ]
+            if texts[0] and texts[1]:
+                paired_rows += 1
+            for column, text in enumerate(texts):
+                if text:
+                    cells.append(
+                        {
+                            "row": row,
+                            "column": column,
+                            "rowSpan": 1,
+                            "columnSpan": 1,
+                            "header": False,
+                            "text": text,
+                            "geometryReconstructed": True,
+                        }
+                    )
+        if paired_rows < max(3, (len(lines) + 2) // 3):
+            return []
+        if not cls._pdf_digital_table_text_covers(deepdoc_cells, cells):
+            return []
+        return cells
+
+    @staticmethod
+    def _pdf_table_visual_lines(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        lines: list[dict[str, Any]] = []
+        for word in sorted(
+            words,
+            key=lambda item: (
+                float(item.get("top") or 0),
+                float(item.get("x0") or 0),
+            ),
+        ):
+            text = str(word.get("text") or "").strip()
+            if not text:
+                continue
+            top = float(word.get("top") or 0)
+            if not lines or abs(top - float(lines[-1]["top"])) > 2.0:
+                lines.append({"top": top, "words": [word]})
+            else:
+                lines[-1]["words"].append(word)
+        for line in lines:
+            line["words"].sort(key=lambda item: float(item.get("x0") or 0))
+        return lines
+
+    @staticmethod
+    def _pdf_two_column_separator(
+        lines: list[dict[str, Any]],
+        bbox: tuple[float, float, float, float],
+    ) -> float | None:
+        left, _top, right, _bottom = bbox
+        width = right - left
+        if width <= 0:
+            return None
+        minimum_gap = max(18.0, width * 0.08)
+        gaps: list[tuple[float, float]] = []
+        for line in lines:
+            words = line["words"]
+            for first, second in zip(words, words[1:]):
+                gap_left = float(first.get("x1") or first.get("x0") or 0)
+                gap_right = float(second.get("x0") or 0)
+                if gap_right - gap_left >= minimum_gap:
+                    gaps.append((gap_left, gap_right))
+        if not gaps:
+            return None
+        candidates = sorted(
+            {
+                (gap_left + gap_right) / 2
+                for gap_left, gap_right in gaps
+            }
+            | {gap_left for gap_left, _gap_right in gaps}
+            | {gap_right for _gap_left, gap_right in gaps}
+        )
+        candidates = [
+            value
+            for value in candidates
+            if left + width * 0.18 <= value <= right - width * 0.18
+        ]
+        if not candidates:
+            return None
+        scored = [
+            (
+                sum(1 for gap_left, gap_right in gaps if gap_left <= value <= gap_right),
+                sum(
+                    gap_right - gap_left
+                    for gap_left, gap_right in gaps
+                    if gap_left <= value <= gap_right
+                ),
+                value,
+            )
+            for value in candidates
+        ]
+        coverage, _gap_width, separator = max(scored)
+        return separator if coverage >= max(3, (len(lines) + 2) // 3) else None
+
+    @staticmethod
+    def _pdf_words_text(words: list[dict[str, Any]]) -> str:
+        return " ".join(
+            str(word.get("text") or "").strip()
+            for word in sorted(words, key=lambda item: float(item.get("x0") or 0))
+            if str(word.get("text") or "").strip()
+        )
+
+    @staticmethod
+    def _pdf_table_matrix_cells(matrix: list[list[Any]]) -> list[dict[str, Any]]:
+        cells: list[dict[str, Any]] = []
+        for row, values in enumerate(matrix):
+            for column, value in enumerate(values or []):
+                lines = [" ".join(line.split()) for line in str(value or "").splitlines()]
+                text = "\n".join(line for line in lines if line)
+                if not text:
+                    continue
+                cells.append(
+                    {
+                        "row": row,
+                        "column": column,
+                        "rowSpan": 1,
+                        "columnSpan": 1,
+                        "header": False,
+                        "text": text,
+                    }
+                )
+        return cells
+
+    @classmethod
+    def _pdf_table_candidate_cells(
+        cls,
+        page: Any,
+        candidate: Any,
+        matrix: list[list[Any]],
+    ) -> list[dict[str, Any]]:
+        """Split a digital table cell at physical bold-title boundaries."""
+        result: list[dict[str, Any]] = []
+        candidate_rows = list(getattr(candidate, "rows", []) or [])
+        for row, values in enumerate(matrix):
+            row_cells = (
+                list(getattr(candidate_rows[row], "cells", []) or [])
+                if row < len(candidate_rows)
+                else []
+            )
+            for column, value in enumerate(values or []):
+                fallback = cls._pdf_table_matrix_cells([[value]])
+                if not fallback:
+                    continue
+                bbox = row_cells[column] if column < len(row_cells) else None
+                if bbox is None:
+                    fallback[0]["row"] = row
+                    fallback[0]["column"] = column
+                    result.extend(fallback)
+                    continue
+                try:
+                    words = page.crop(tuple(float(item) for item in bbox)).extract_words(
+                        extra_attrs=["fontname", "size"]
+                    )
+                except Exception:
+                    words = []
+                lines = cls._pdf_table_word_lines(words or [])
+                segments = cls._pdf_table_line_cells(lines, row, column)
+                if segments:
+                    result.extend(segments)
+                else:
+                    fallback[0]["row"] = row
+                    fallback[0]["column"] = column
+                    result.extend(fallback)
+        return result
+
+    @staticmethod
+    def _pdf_table_word_lines(
+        words: list[dict[str, Any]],
+    ) -> list[tuple[str, bool, bool]]:
+        grouped: list[dict[str, Any]] = []
+        for word in sorted(
+            words,
+            key=lambda item: (
+                float(item.get("top") or 0),
+                float(item.get("x0") or 0),
+            ),
+        ):
+            text = str(word.get("text") or "").strip()
+            if not text:
+                continue
+            top = float(word.get("top") or 0)
+            if not grouped or abs(top - float(grouped[-1]["top"])) > 2.0:
+                grouped.append({"top": top, "words": [word]})
+            else:
+                grouped[-1]["words"].append(word)
+        lines: list[tuple[str, bool, bool]] = []
+        for group in grouped:
+            line_words = sorted(
+                group["words"], key=lambda item: float(item.get("x0") or 0)
+            )
+            text = " ".join(
+                str(word.get("text") or "").strip()
+                for word in line_words
+                if str(word.get("text") or "").strip()
+            )
+            if not text:
+                continue
+            bold = [
+                "bold" in str(word.get("fontname") or "").casefold()
+                for word in line_words
+            ]
+            leading_bold = bool(bold and bold[0])
+            mixed_body = leading_bold and any(not value for value in bold[1:])
+            lines.append((text, leading_bold, mixed_body))
+        return lines
+
+    @staticmethod
+    def _pdf_table_line_cells(
+        lines: list[tuple[str, bool, bool]],
+        row: int,
+        column: int,
+    ) -> list[dict[str, Any]]:
+        segments: list[tuple[list[str], list[str]]] = []
+        current: list[str] = []
+        current_heading: list[str] = []
+        body_seen = False
+        for text, heading, mixed_body in lines:
+            normalized = " ".join(str(text).split())
+            if not normalized:
+                continue
+            if heading and current and body_seen:
+                segments.append((current, current_heading))
+                current = []
+                current_heading = []
+                body_seen = False
+            current.append(normalized)
+            if heading and not body_seen:
+                current_heading.append(normalized)
+            if not heading or mixed_body:
+                body_seen = True
+        if current:
+            segments.append((current, current_heading))
+        return [
+            {
+                "row": row,
+                "column": column,
+                "rowSpan": 1,
+                "columnSpan": 1,
+                "header": False,
+                "text": "\n".join(segment),
+                "headingText": "\n".join(heading) or None,
+            }
+            for segment, heading in segments
+            if segment
+        ]
+
+    @staticmethod
+    def _pdf_bbox_iou(
+        first: tuple[float, float, float, float],
+        second: tuple[float, float, float, float],
+    ) -> float:
+        left = max(first[0], second[0])
+        top = max(first[1], second[1])
+        right = min(first[2], second[2])
+        bottom = min(first[3], second[3])
+        intersection = max(0.0, right - left) * max(0.0, bottom - top)
+        first_area = max(0.0, first[2] - first[0]) * max(0.0, first[3] - first[1])
+        second_area = max(0.0, second[2] - second[0]) * max(0.0, second[3] - second[1])
+        union = first_area + second_area - intersection
+        return intersection / union if union > 0 else 0.0
+
+    @classmethod
+    def _pdf_digital_table_text_covers(
+        cls,
+        deepdoc_cells: list[dict[str, Any]],
+        digital_cells: list[dict[str, Any]],
+    ) -> bool:
+        deepdoc_value = " ".join(
+            str(cell.get("text") or "") for cell in deepdoc_cells
+        )
+        digital_value = " ".join(
+            str(cell.get("text") or "") for cell in digital_cells
+        )
+        deepdoc_text = cls._pdf_match_text(deepdoc_value)
+        digital_text = cls._pdf_match_text(digital_value)
+        if not digital_text:
+            return False
+        if not deepdoc_text:
+            return True
+        if len(digital_text) < max(1, int(len(deepdoc_text) * 0.75)):
+            return False
+        source_tokens = Counter(cls._pdf_match_tokens(deepdoc_value))
+        candidate_tokens = Counter(cls._pdf_match_tokens(digital_value))
+        source_weight = sum(len(token) * count for token, count in source_tokens.items())
+        covered_weight = sum(
+            len(token) * min(count, candidate_tokens[token])
+            for token, count in source_tokens.items()
+        )
+        return source_weight == 0 or covered_weight / source_weight >= 0.72
+
+    @staticmethod
+    def _pdf_match_text(value: str) -> str:
+        normalized = unicodedata.normalize("NFKC", value).casefold()
+        return "".join(character for character in normalized if character.isalnum())
+
+    @staticmethod
+    def _pdf_match_tokens(value: str) -> list[str]:
+        normalized = unicodedata.normalize("NFKC", value).casefold()
+        return re.findall(r"[^\W_]+", normalized, flags=re.UNICODE)
+
+    def _pdf_table_contexts(
+        self,
+        boxes: list[dict[str, Any]],
+        structured_tables: dict[int, list[dict[str, Any]]],
+    ) -> dict[int, dict[str, Any]]:
+        """Assign conservative table roles without creating document headings."""
+        table_ordinals: defaultdict[int, int] = defaultdict(int)
+        contexts: dict[int, dict[str, Any]] = {}
+        for table_index, cells in structured_tables.items():
+            position = self._first_pdf_position(boxes[table_index])
+            if position is None:
+                continue
+            page, left, right, top, bottom = position
+            ordinal = table_ordinals[page]
+            table_ordinals[page] += 1
+            column_count = _table_column_count(cells)
+            headers = self._html_table_column_headers(cells, column_count)
+            header_start_row = 0
+            if not headers:
+                headers = self._layout_table_column_headers(
+                    boxes,
+                    table_index,
+                    page,
+                    left,
+                    right,
+                    top,
+                    bottom,
+                    column_count,
+                )
+                header_start_row = _first_complete_table_row(cells, column_count)
+            table_id = f"pdf:p{page}:t{ordinal}"
+            layout_mode = self._table_layout_mode(cells, column_count)
+            contexts[table_index] = {
+                "tableIndex": table_index,
+                "tableId": table_id,
+                "tableGroupId": table_id,
+                "continuationOf": None,
+                "page": page,
+                "top": top,
+                "bottom": bottom,
+                "columnCount": column_count,
+                "columnHeaders": headers,
+                "headerStartRow": header_start_row,
+                "caption": self._layout_table_caption(
+                    boxes,
+                    table_index,
+                    page,
+                    left,
+                    right,
+                    top,
+                ),
+                "layoutMode": layout_mode,
+                "rowHeaders": self._table_row_headers(cells, layout_mode),
+            }
+        self._link_pdf_table_continuations(boxes, contexts)
+        return contexts
+
+    def _html_table_column_headers(
+        self,
+        cells: list[dict[str, Any]],
+        column_count: int,
+    ) -> dict[int, str]:
+        if column_count < 1 or not cells:
+            return {}
+        first_row = min(int(cell.get("row") or 0) for cell in cells)
+        header_cells = [
+            cell
+            for cell in cells
+            if cell.get("header") and int(cell.get("row") or 0) == first_row
+        ]
+        headers: dict[int, str] = {}
+        for cell in header_cells:
+            text = str(cell.get("text") or "").strip()
+            if not text:
+                continue
+            start = int(cell.get("column") or 0)
+            span = max(1, int(cell.get("columnSpan") or 1))
+            for column in range(start, min(column_count, start + span)):
+                headers.setdefault(column, text)
+        return headers if len(headers) == column_count else {}
+
+    @staticmethod
+    def _table_layout_mode(
+        cells: list[dict[str, Any]],
+        column_count: int,
+    ) -> str:
+        occupied: defaultdict[int, set[int]] = defaultdict(set)
+        for cell in cells:
+            row = int(cell.get("row") or 0)
+            start = int(cell.get("column") or 0)
+            span = max(1, int(cell.get("columnSpan") or 1))
+            occupied[row].update(range(start, min(column_count, start + span)))
+        if len(occupied) < 2 or column_count < 2:
+            return "COLUMN_FLOW"
+        complete_rows = sum(
+            1 for columns in occupied.values() if len(columns) == column_count
+        )
+        return (
+            "ROW"
+            if complete_rows >= max(1, (len(occupied) + 2) // 3)
+            else "COLUMN_FLOW"
+        )
+
+    @staticmethod
+    def _table_row_headers(
+        cells: list[dict[str, Any]],
+        layout_mode: str,
+    ) -> dict[int, str]:
+        if layout_mode != "ROW":
+            return {}
+        row_headers: dict[int, str] = {}
+        for cell in cells:
+            row = int(cell.get("row") or 0)
+            column = int(cell.get("column") or 0)
+            if column != 0 or cell.get("header"):
+                continue
+            text = " ".join(str(cell.get("text") or "").split())
+            if text:
+                row_headers.setdefault(row, text)
+        return row_headers
+
+    def _layout_table_caption(
+        self,
+        boxes: list[dict[str, Any]],
+        table_index: int,
+        page: int,
+        left: float,
+        right: float,
+        top: float,
+    ) -> str | None:
+        candidates: list[tuple[float, float, str]] = []
+        table_width = max(1.0, right - left)
+        for index, box in enumerate(boxes):
+            if index == table_index:
+                continue
+            layout_type = str(box.get("layout_type") or "").lower()
+            if layout_type not in {"text", "title"}:
+                continue
+            text = " ".join(str(box.get("text") or "").split())
+            if not text or len(text) > 240:
+                continue
+            position = self._first_pdf_position(box)
+            if position is None:
+                continue
+            candidate_page, candidate_left, candidate_right, candidate_top, candidate_bottom = position
+            overlap = max(0.0, min(right, candidate_right) - max(left, candidate_left))
+            candidate_width = max(1.0, candidate_right - candidate_left)
+            if (
+                candidate_page != page
+                or candidate_bottom > top + 2
+                or top - candidate_bottom > 48
+                or overlap / min(table_width, candidate_width) < 0.35
+            ):
+                continue
+            candidates.append((candidate_top, candidate_bottom, text))
+        if not candidates:
+            return None
+        selected: list[tuple[float, float, str]] = []
+        for candidate in sorted(candidates, key=lambda item: item[1], reverse=True):
+            if not selected:
+                selected.append(candidate)
+                continue
+            if len(selected) >= 2 or selected[-1][0] - candidate[1] > 18:
+                break
+            selected.append(candidate)
+        return "\n".join(item[2] for item in reversed(selected)) or None
+
+    @staticmethod
+    def _table_cell_heading(
+        cell: dict[str, Any],
+        column_header: str | None,
+    ) -> str | None:
+        heading = str(cell.get("headingText") or "").strip()
+        if not heading:
+            return None
+        lines = [" ".join(line.split()) for line in heading.splitlines() if line.strip()]
+        header_lines = [
+            " ".join(line.split())
+            for line in str(column_header or "").splitlines()
+            if line.strip()
+        ]
+        while header_lines and lines[: len(header_lines)] == header_lines:
+            lines = lines[len(header_lines) :]
+        return "\n".join(lines) or None
+
+    def _link_pdf_table_continuations(
+        self,
+        boxes: list[dict[str, Any]],
+        contexts: dict[int, dict[str, Any]],
+    ) -> None:
+        by_page: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
+        page_bottoms: defaultdict[int, float] = defaultdict(float)
+        for box in boxes:
+            position = self._first_pdf_position(box)
+            if position is not None:
+                page_bottoms[position[0]] = max(page_bottoms[position[0]], position[4])
+        for context in contexts.values():
+            by_page[int(context["page"])].append(context)
+        for values in by_page.values():
+            values.sort(key=lambda item: (float(item["top"]), item["tableId"]))
+        for page in sorted(by_page):
+            if page - 1 not in by_page:
+                continue
+            previous = by_page[page - 1][-1]
+            current = by_page[page][0]
+            if int(previous["columnCount"]) != int(current["columnCount"]):
+                continue
+            previous_extent = max(1.0, page_bottoms[page - 1])
+            current_extent = max(1.0, page_bottoms[page])
+            if (
+                float(previous["bottom"]) < previous_extent * 0.8
+                or float(current["top"]) > current_extent * 0.25
+            ):
+                continue
+            previous_headers = self._table_context_signature(
+                previous["columnHeaders"].values()
+            )
+            current_headers = self._table_context_signature(
+                current["columnHeaders"].values()
+            )
+            previous_caption = self._table_context_signature([previous["caption"]])
+            current_caption = self._table_context_signature([current["caption"]])
+            explicit_continuation = "continu" in current_caption
+            repeated_structure = bool(
+                previous_headers
+                and previous_headers == current_headers
+                or previous_caption
+                and previous_caption == current_caption
+            )
+            if not explicit_continuation and not repeated_structure:
+                continue
+            current["tableGroupId"] = previous["tableGroupId"]
+            current["continuationOf"] = previous["tableId"]
+
+    @staticmethod
+    def _table_context_signature(values: Any) -> str:
+        return "|".join(
+            "".join(
+                character
+                for character in unicodedata.normalize("NFKC", str(value or "")).casefold()
+                if character.isalnum()
+            )
+            for value in values
+            if str(value or "").strip()
+        )
+
+    def _layout_table_column_headers(
+        self,
+        boxes: list[dict[str, Any]],
+        table_index: int,
+        page: int,
+        left: float,
+        right: float,
+        top: float,
+        bottom: float,
+        column_count: int,
+    ) -> dict[int, str]:
+        if column_count < 2 or right <= left or bottom <= top:
+            return {}
+        candidates: defaultdict[int, list[tuple[float, float, str]]] = defaultdict(list)
+        width = right - left
+        for index, box in enumerate(boxes):
+            if index == table_index or str(box.get("layout_type") or "").lower() != "title":
+                continue
+            text = " ".join(str(box.get("text") or "").split())
+            if not text or len(text) > 120 or len(text.split()) > 12:
+                continue
+            position = self._first_pdf_position(box)
+            if position is None:
+                continue
+            candidate_page, candidate_left, candidate_right, candidate_top, candidate_bottom = position
+            center_x = (candidate_left + candidate_right) / 2
+            if (
+                candidate_page != page
+                or center_x < left
+                or center_x > right
+                or candidate_top < top - 2
+                or candidate_bottom > bottom + 2
+            ):
+                continue
+            column = min(
+                column_count - 1,
+                max(0, int((center_x - left) / width * column_count)),
+            )
+            candidates[column].append((candidate_top, candidate_bottom, text))
+        if len(candidates) != column_count:
+            return {}
+        selected = {column: min(values) for column, values in candidates.items()}
+        centers = [(value[0] + value[1]) / 2 for value in selected.values()]
+        alignment_tolerance = max(24.0, min(80.0, (bottom - top) * 0.08))
+        if max(centers) - min(centers) > alignment_tolerance:
+            return {}
+        return {column: value[2] for column, value in selected.items()}
+
+    def _reconstruct_pdf_inline_numbered_headings(
+        self,
+        boxes: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Repair only high-confidence number/title fragments on one visual row.
+
+        DeepDoc occasionally returns a hierarchical section number as one box and
+        the short title (sometimes followed by body text) as the next ``text`` box.
+        Requiring the number to be hierarchical, the phrase to look like a title,
+        and both boxes to overlap vertically keeps ordinary numbered list items out.
+        """
+        source_hash = _normalized_text_sha256(
+            [str(box.get("text") or "") for box in boxes]
+        )
+        result: list[dict[str, Any]] = []
+        reconstructed = 0
+        index = 0
+        while index < len(boxes):
+            current = dict(boxes[index])
+            current_text = str(current.get("text") or "").strip()
+            if index + 1 < len(boxes):
+                following = dict(boxes[index + 1])
+                following_text = str(following.get("text") or "").strip()
+                phrase_and_body = self._pdf_heading_phrase_and_body(current_text)
+                current_position = self._first_pdf_position(current)
+                following_position = self._first_pdf_position(following)
+                if (
+                    str(current.get("layout_type") or "").lower() in {"text", "title"}
+                    and str(following.get("layout_type") or "").lower() == "title"
+                    and self._is_hierarchical_number_only_pdf_title(following_text)
+                    and phrase_and_body is not None
+                    and not phrase_and_body[1]
+                    and self._can_merge_inline_numbered_pdf_title(
+                        following_position,
+                        current_position,
+                        phrase_and_body[0],
+                    )
+                ):
+                    heading = self._joined_pdf_boxes(current, following)
+                    heading["text"] = f"{following_text} {phrase_and_body[0]}"
+                    heading["layout_type"] = "title"
+                    result.append(heading)
+                    reconstructed += 1
+                    index += 2
+                    continue
+            if (
+                index + 1 >= len(boxes)
+                or not self._is_hierarchical_number_only_pdf_title(current_text)
+            ):
+                result.append(current)
+                index += 1
+                continue
+
+            following = dict(boxes[index + 1])
+            if str(following.get("layout_type") or "").lower() not in {"text", "title"}:
+                result.append(current)
+                index += 1
+                continue
+            following_text = str(following.get("text") or "").strip()
+            phrase_and_body = self._pdf_heading_phrase_and_body(following_text)
+            if phrase_and_body is None:
+                result.append(current)
+                index += 1
+                continue
+
+            phrase, body = phrase_and_body
+            current_layout = str(current.get("layout_type") or "").lower()
+            geometry_matches = self._can_merge_inline_numbered_pdf_title(
+                current_position,
+                following_position,
+                phrase,
+            )
+            conservative_sequence_fallback = (
+                self._pdf_boxes_share_page(current, following)
+                and (
+                    (
+                        current_layout == "title"
+                        and str(following.get("layout_type") or "").lower()
+                        == "text"
+                        and not body
+                    )
+                    or (current_layout == "text" and bool(body))
+                )
+            )
+            if not geometry_matches and not conservative_sequence_fallback:
+                result.append(current)
+                index += 1
+                continue
+            heading = self._joined_pdf_boxes(current, following)
+            heading["text"] = f"{current_text} {phrase}"
+            heading["layout_type"] = "title"
+            result.append(heading)
+            if body:
+                following["text"] = body
+                result.append(following)
+            reconstructed += 1
+            index += 2
+
+        output_hash = _normalized_text_sha256(
+            [str(box.get("text") or "") for box in result]
+        )
+        source_characters = Counter(
+            character
+            for character in unicodedata.normalize(
+                "NFKC", "".join(str(box.get("text") or "") for box in boxes)
+            )
+            if not character.isspace()
+        )
+        output_characters = Counter(
+            character
+            for character in unicodedata.normalize(
+                "NFKC", "".join(str(box.get("text") or "") for box in result)
+            )
+            if not character.isspace()
+        )
+        if output_hash != source_hash and output_characters != source_characters:
+            raise StableServiceError(
+                "DEEPDOC_TITLE_GOVERNANCE_TEXT_MISMATCH",
+                "Inline numbered heading reconstruction changed or dropped source text",
+                False,
+                500,
+            )
+        return result, reconstructed
+
+    def _pdf_heading_phrase_and_body(self, value: str) -> tuple[str, str] | None:
+        text = unicodedata.normalize("NFKC", value).strip()
+        if self._is_plausible_pdf_heading_phrase(text):
+            return text, ""
+        match = re.fullmatch(r"(.{1,120}?[.!?])\s+(.+)", text, re.DOTALL)
+        if not match or not self._is_plausible_pdf_heading_phrase(match.group(1)):
+            return None
+        return match.group(1).strip(), match.group(2).strip()
+
+    def _joined_pdf_boxes(
+        self,
+        first: dict[str, Any],
+        second: dict[str, Any],
+    ) -> dict[str, Any]:
+        joined = dict(first)
+        first_position = self._first_pdf_position(first)
+        second_position = self._first_pdf_position(second)
+        if first_position is None or second_position is None:
+            if first_position is None and second.get("positions"):
+                joined["positions"] = list(second["positions"])
+            if joined.get("page_number") is None and second.get("page_number") is not None:
+                joined["page_number"] = second["page_number"]
+            return joined
+        page, left, right, top, bottom = first_position
+        _page2, left2, right2, top2, bottom2 = second_position
+        joined["positions"] = [[
+            page,
+            min(left, left2),
+            max(right, right2),
+            min(top, top2),
+            max(bottom, bottom2),
+        ]]
+        joined["x0"] = min(left, left2)
+        joined["x1"] = max(right, right2)
+        joined["top"] = min(top, top2)
+        joined["bottom"] = max(bottom, bottom2)
+        return joined
+
+    def _pdf_boxes_share_page(
+        self,
+        first: dict[str, Any],
+        second: dict[str, Any],
+    ) -> bool:
+        return bool(self._pages(first) & self._pages(second))
+
+    def _normalize_pdf_numbered_title_order(
+        self,
+        boxes: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], int]:
+        normalized: list[dict[str, Any]] = []
+        reordered = 0
+        for original in boxes:
+            box = dict(original)
+            text = str(box.get("text") or "").strip()
+            if str(box.get("layout_type") or "").lower() != "title" or not text:
+                normalized.append(box)
+                continue
+            leading = re.fullmatch(
+                r"(\d+(?:\.\d+){1,5}\.)(\S.{0,118})",
+                unicodedata.normalize("NFKC", text),
+            )
+            if leading and self._is_plausible_pdf_heading_phrase(leading.group(2)):
+                box["text"] = f"{leading.group(1)} {leading.group(2).strip()}"
+                normalized.append(box)
+                reordered += 1
+                continue
+            trailing = re.fullmatch(
+                r"(.{2,120}?)(\d+(?:\.\d+){1,5}\.)",
+                unicodedata.normalize("NFKC", text),
+            )
+            if trailing and self._is_plausible_pdf_heading_phrase(trailing.group(1)):
+                candidate = f"{trailing.group(2)} {trailing.group(1).strip()}"
+                if sorted(character for character in candidate if not character.isspace()) \
+                        != sorted(character for character in text if not character.isspace()):
+                    raise StableServiceError(
+                        "DEEPDOC_TITLE_GOVERNANCE_TEXT_MISMATCH",
+                        "Numbered title order normalization changed source characters",
+                        False,
+                        500,
+                    )
+                box["text"] = candidate
+                reordered += 1
+            normalized.append(box)
+        return normalized, reordered
+
+    def _split_pdf_numbered_heading_prefixes(
+        self,
+        boxes: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], int]:
+        result: list[dict[str, Any]] = []
+        split_count = 0
+        for original in boxes:
+            text = str(original.get("text") or "").strip()
+            if str(original.get("layout_type") or "").lower() != "text":
+                result.append(dict(original))
+                continue
+            match = re.fullmatch(
+                r"(\d+(?:\.\d+){1,5}\.)\s*(.{1,120}?[.!?])\s+(.+)",
+                text,
+                re.DOTALL,
+            )
+            if not match or not self._is_plausible_pdf_heading_phrase(match.group(2)):
+                result.append(dict(original))
+                continue
+            heading = dict(original)
+            heading["text"] = f"{match.group(1)} {match.group(2).strip()}"
+            heading["layout_type"] = "title"
+            body = dict(original)
+            body["text"] = match.group(3).strip()
+            result.extend((heading, body))
+            split_count += 1
+        return result, split_count
+
+    def _is_plausible_pdf_heading_phrase(self, value: str) -> bool:
+        text = unicodedata.normalize("NFKC", value).strip()
+        if not text or len(text) > 120 or "\n" in text:
+            return False
+        words = re.findall(r"[A-Za-z][A-Za-z'’-]*", text)
+        if not 1 <= len(words) <= 12:
+            return False
+        insignificant = {
+            "a", "an", "and", "as", "at", "by", "for", "from", "in",
+            "of", "on", "or", "the", "to", "with",
+        }
+        significant = [word for word in words if word.casefold() not in insignificant]
+        if not significant:
+            return False
+        titled = sum(1 for word in significant if word[0].isupper())
+        return titled / len(significant) >= 0.75
 
     def _merge_pdf_title_fragments(
         self,
@@ -634,13 +1968,19 @@ class DeepDocRuntime:
         second_text = str(second.get("text") or "").strip()
         if not first_text or not second_text:
             return False
-        if self._strong_pdf_heading_level(first_text) is not None:
-            return False
-        if self._strong_pdf_heading_level(second_text) is not None:
-            return False
         first_position = self._first_pdf_position(first)
         second_position = self._first_pdf_position(second)
         if first_position is None or second_position is None:
+            return False
+        if self._is_number_only_pdf_title(first_text):
+            return self._can_merge_inline_numbered_pdf_title(
+                first_position,
+                second_position,
+                second_text,
+            )
+        if self._strong_pdf_heading_level(first_text) is not None:
+            return False
+        if self._strong_pdf_heading_level(second_text) is not None:
             return False
         page, left, right, top, bottom = first_position
         page2, left2, right2, top2, bottom2 = second_position
@@ -662,6 +2002,47 @@ class DeepDocRuntime:
         overlap = max(0.0, min(right, right2) - max(left, left2))
         aligned = overlap / min(first_width, second_width) >= 0.2 or abs(left - left2) <= 12
         return aligned
+
+    def _is_number_only_pdf_title(self, value: str) -> bool:
+        text = unicodedata.normalize("NFKC", value).strip()
+        return re.fullmatch(
+            r"(?:\d+(?:\.\d+){0,5}|[IVXLCDM]+)[.、)）:]?",
+            text,
+            re.IGNORECASE,
+        ) is not None
+
+    def _is_hierarchical_number_only_pdf_title(self, value: str) -> bool:
+        text = unicodedata.normalize("NFKC", value).strip()
+        return re.fullmatch(r"\d+(?:\.\d+){1,5}\.", text) is not None
+
+    def _can_merge_inline_numbered_pdf_title(
+        self,
+        first_position: tuple[int, float, float, float, float] | None,
+        second_position: tuple[int, float, float, float, float] | None,
+        second_text: str,
+    ) -> bool:
+        if first_position is None or second_position is None:
+            return False
+        if not second_text or len(second_text) > 120:
+            return False
+        if self._is_number_only_pdf_title(second_text):
+            return False
+        page, left, right, top, bottom = first_position
+        page2, left2, _right2, top2, bottom2 = second_position
+        if page != page2:
+            return False
+        first_height = max(1.0, bottom - top)
+        second_height = max(1.0, bottom2 - top2)
+        vertical_overlap = max(0.0, min(bottom, bottom2) - max(top, top2))
+        if vertical_overlap / min(first_height, second_height) < 0.6:
+            return False
+        if left2 <= left and abs(left2 - left) > 12:
+            return False
+        horizontal_gap = left2 - right
+        return -min(first_height, second_height) * 0.6 <= horizontal_gap <= max(
+            24.0,
+            max(first_height, second_height) * 4.0,
+        )
 
     def _govern_pdf_title_candidates(
         self,
@@ -1045,6 +2426,9 @@ class DeepDocRuntime:
                 len(sections) + table_ordinal,
             )
             values = table if isinstance(table, list) else [table]
+            if not any(str(value or "").strip() for value in values):
+                # RAGFlow keeps an empty list placeholder for tables with <2 rows.
+                values = self._docx_empty_table_cells(parser, table_ordinal, len(tables))
             for value in values:
                 text = str(value or "").strip()
                 if text:
@@ -1056,6 +2440,9 @@ class DeepDocRuntime:
                             body_element_index=body_index,
                         )
                     )
+        if exact:
+            # Stable sorting restores body order and preserves each table's cell order.
+            blocks.sort(key=lambda block: block["bodyElementIndex"])
         if tables:
             warnings.append(
                 {
@@ -1081,6 +2468,31 @@ class DeepDocRuntime:
                 }
             )
         return self._bounded(blocks), warnings
+
+    def _docx_empty_table_cells(
+        self, parser: object, table_ordinal: int, table_count: int
+    ) -> list[str]:
+        try:
+            source_tables = parser.doc.tables
+            # Only use ordinal correspondence when all source tables are represented.
+            if len(source_tables) != table_count:
+                return []
+            source_table = source_tables[table_ordinal]
+        except (AttributeError, IndexError, TypeError):
+            return []
+
+        values: list[str] = []
+        seen_cells = set()
+        for row in source_table.rows:
+            for cell in row.cells:
+                # Merged grid positions may expose the same physical XML cell repeatedly.
+                if cell._tc in seen_cells:
+                    continue
+                seen_cells.add(cell._tc)
+                text = cell.text.strip()
+                if text:
+                    values.append(text)
+        return values
 
     def _docx_positions(
         self, parser: object

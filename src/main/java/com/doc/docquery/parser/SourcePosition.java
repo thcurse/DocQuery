@@ -19,7 +19,16 @@ public record SourcePosition(
         Integer startLine,
         Integer startColumn,
         Integer endLine,
-        Integer endColumn
+        Integer endColumn,
+        String tableId,
+        Integer tableRowSpan,
+        Integer tableColumnSpan,
+        String tableColumnHeader,
+        String tableCaption,
+        String tableRowHeader,
+        String tableCellHeading,
+        String tableGroupId,
+        String tableContinuationOf
 ) {
 
     /** PDF 物理页内的位置。 */
@@ -33,7 +42,75 @@ public record SourcePosition(
                 "PDF", pageNumber, pageBlockOrdinal,
                 pageCharacterStart, pageCharacterEnd,
                 null, null, null, null,
-                null, null, null, null
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null, null
+        );
+    }
+
+    /** PDF 表格单元格，同时保留物理页位置和零基行列坐标。 */
+    public static SourcePosition pdfTable(
+            int pageNumber,
+            int pageBlockOrdinal,
+            int pageCharacterStart,
+            int pageCharacterEnd,
+            int tableRow,
+            int tableColumn
+    ) {
+        return pdfTable(
+                pageNumber, pageBlockOrdinal, pageCharacterStart, pageCharacterEnd,
+                tableRow, tableColumn, 1, 1, null, null,
+                null, null, null, null, null
+        );
+    }
+
+    /** PDF 表格单元格的完整结构位置。 */
+    public static SourcePosition pdfTable(
+            int pageNumber,
+            int pageBlockOrdinal,
+            int pageCharacterStart,
+            int pageCharacterEnd,
+            int tableRow,
+            int tableColumn,
+            int tableRowSpan,
+            int tableColumnSpan,
+            String tableId,
+            String tableColumnHeader
+    ) {
+        return pdfTable(
+                pageNumber, pageBlockOrdinal, pageCharacterStart, pageCharacterEnd,
+                tableRow, tableColumn, tableRowSpan, tableColumnSpan,
+                tableId, tableColumnHeader,
+                null, null, null, tableId, null
+        );
+    }
+
+    /** PDF 表格单元格的完整结构位置和局部关系。 */
+    public static SourcePosition pdfTable(
+            int pageNumber,
+            int pageBlockOrdinal,
+            int pageCharacterStart,
+            int pageCharacterEnd,
+            int tableRow,
+            int tableColumn,
+            int tableRowSpan,
+            int tableColumnSpan,
+            String tableId,
+            String tableColumnHeader,
+            String tableCaption,
+            String tableRowHeader,
+            String tableCellHeading,
+            String tableGroupId,
+            String tableContinuationOf
+    ) {
+        return new SourcePosition(
+                "PDF", pageNumber, pageBlockOrdinal,
+                pageCharacterStart, pageCharacterEnd,
+                null, tableRow, tableColumn, null,
+                null, null, null, null,
+                tableId, tableRowSpan, tableColumnSpan, tableColumnHeader,
+                tableCaption, tableRowHeader, tableCellHeading,
+                tableGroupId, tableContinuationOf
         );
     }
 
@@ -42,7 +119,9 @@ public record SourcePosition(
         return new SourcePosition(
                 "DOCX", null, null, null, null,
                 bodyElementIndex, null, null, null,
-                null, null, null, null
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null, null
         );
     }
 
@@ -56,7 +135,9 @@ public record SourcePosition(
         return new SourcePosition(
                 "DOCX", null, null, null, null,
                 bodyElementIndex, row, column, cellParagraphIndex,
-                null, null, null, null
+                null, null, null, null,
+                null, null, null, null,
+                null, null, null, null, null
         );
     }
 
@@ -70,7 +151,9 @@ public record SourcePosition(
         return new SourcePosition(
                 "MARKDOWN", null, null, null, null,
                 null, null, null, null,
-                startLine, startColumn, endLine, endColumn
+                startLine, startColumn, endLine, endColumn,
+                null, null, null, null,
+                null, null, null, null, null
         );
     }
 
@@ -79,7 +162,9 @@ public record SourcePosition(
         return new SourcePosition(
                 "TXT", null, null, null, null,
                 null, null, null, null,
-                startLine, null, endLine, null
+                startLine, null, endLine, null,
+                null, null, null, null,
+                null, null, null, null, null
         );
     }
 }

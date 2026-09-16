@@ -117,6 +117,8 @@ public class DocumentSearchProjectionServiceImpl implements DocumentSearchProjec
     @Override
     public DocumentSearchProjectionEntity ensureProjection(long documentVersionId) {
         DocumentVersionEntity version = requiredVersion(documentVersionId);
+        DocumentSearchProjectionEntity existing =
+                projectionMapper.findByDocumentVersionId(version.getId());
         DocumentEntity document = requiredDocument(version);
         DocumentCanonicalArtifactEntity canonicalManifest =
                 canonicalService.ensureCanonical(documentVersionId);
@@ -145,8 +147,6 @@ public class DocumentSearchProjectionServiceImpl implements DocumentSearchProjec
         int evidenceExpected = canonical.blocks().size();
         int navigationExpected = retrieval.nodes().size() + 1;
 
-        DocumentSearchProjectionEntity existing =
-                projectionMapper.findByDocumentVersionId(version.getId());
         if (isReusable(
                 existing,
                 canonicalManifest,
@@ -412,7 +412,7 @@ public class DocumentSearchProjectionServiceImpl implements DocumentSearchProjec
         for (RetrievalNode node : retrieval.nodes()) {
             Map<String, Object> source = common(document, version, projectionFingerprint);
             put(source, "card_id", node.cardId());
-            put(source, "card_type", "HEADING_NODE");
+            put(source, "card_type", node.cardType());
             put(source, "document_title", profile.documentTitle());
             put(source, "heading_node_id", node.headingNodeId());
             put(source, "parent_heading_node_id", node.parentHeadingNodeId());

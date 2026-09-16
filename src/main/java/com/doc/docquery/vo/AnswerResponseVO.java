@@ -29,7 +29,7 @@ public class AnswerResponseVO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Citation {
-        private String evidenceId;
+        private Integer citationIndex;
         private Long documentId;
         private Long documentVersionId;
         private Integer versionNo;
@@ -42,5 +42,10 @@ public class AnswerResponseVO {
         private long canonicalStart;
         private long canonicalEnd;
         private RetrieveResponseVO.SourcePosition sourcePosition;
+
+        /** 用户可理解的 PDF 物理页；内部 block 定位不会作为模型引用语义。 */
+        public Integer getPageNumber() {
+            return sourcePosition == null ? null : sourcePosition.getPageNumber();
+        }
     }
 }

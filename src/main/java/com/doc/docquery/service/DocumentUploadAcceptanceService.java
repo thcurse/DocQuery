@@ -2,6 +2,7 @@ package com.doc.docquery.service;
 
 import com.doc.docquery.dto.CreateDocumentUploadDTO;
 import com.doc.docquery.dto.CreateDocumentVersionDTO;
+import com.doc.docquery.dto.DocumentRebuildSourceDTO;
 import com.doc.docquery.dto.StoredSourceObjectDTO;
 import com.doc.docquery.security.AdminPrincipal;
 import com.doc.docquery.vo.DocumentUploadAcceptedVO;
@@ -46,5 +47,33 @@ public interface DocumentUploadAcceptanceService {
             long documentId,
             CreateDocumentVersionDTO dto,
             StoredSourceObjectDTO source
+    );
+
+    /** 幂等重放已存在时直接返回旧结果；首次命令返回 null。 */
+    DocumentUploadAcceptedVO findRebuildReplay(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            String idempotencyKey
+    );
+
+    /** 读取当前 READY activeVersion 的可信原文件快照，不暴露到 HTTP。 */
+    DocumentRebuildSourceDTO loadRebuildSource(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId
+    );
+
+    /** 受理已复制且内容不变的重建对象，创建候选版本、任务和 Outbox。 */
+    DocumentUploadAcceptedVO acceptRebuild(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            long sourceVersionId,
+            String idempotencyKey,
+            StoredSourceObjectDTO copiedSource
     );
 }

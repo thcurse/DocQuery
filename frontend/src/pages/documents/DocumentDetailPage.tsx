@@ -1,5 +1,5 @@
 import { DeleteOutlined, FileAddOutlined, RedoOutlined } from '@ant-design/icons'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import {
   Alert,
   Button,
@@ -17,7 +17,7 @@ import {
   message,
 } from 'antd'
 import type { UploadFile } from 'antd'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { api } from '../../api/client'
 import { PageHeader } from '../../components/PageHeader'
@@ -36,8 +36,18 @@ export function DocumentDetailPage() {
   const tenantId = useTenantId()
   const knowledgeBaseId = Number(useParams().knowledgeBaseId)
   const documentId = Number(useParams().documentId)
+
+  return <DocumentDetail key={`${tenantId}:${knowledgeBaseId}:${documentId}`} tenantId={tenantId} knowledgeBaseId={knowledgeBaseId} documentId={documentId} />
+}
+
+function DocumentDetail({ tenantId, knowledgeBaseId, documentId }: {
+  tenantId: number
+  knowledgeBaseId: number
+  documentId: number
+}) {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState<number>()
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 20 })
   const [form] = Form.useForm<VersionUploadForm>()
 
   const validIds = Number.isSafeInteger(knowledgeBaseId) && knowledgeBaseId > 0
@@ -52,11 +62,19 @@ export function DocumentDetailPage() {
     },
   })
   const versions = useQuery({
-    queryKey: ['document-versions', tenantId, knowledgeBaseId, documentId],
-    queryFn: () => api.listDocumentVersions(tenantId, knowledgeBaseId, documentId, 0, 100),
+    queryKey: ['document-versions', tenantId, knowledgeBaseId, documentId, pagination.current, pagination.pageSize],
+    queryFn: () => api.listDocumentVersions(tenantId, knowledgeBaseId, documentId, pagination.current - 1, pagination.pageSize),
     enabled: document.isSuccess,
-    refetchInterval: (query) => query.state.data?.items.some((version) => version.status === '1') ? 3000 : false,
+    placeholderData: keepPreviousData,
+    refetchInterval: (query) => document.data?.latestVersion?.status === '1'
+      || query.state.data?.items.some((version) => version.status === '1') ? 3000 : false,
   })
+  useEffect(() => {
+    // The latest processing version can be outside the current history page.
+    // Refresh that page when processing finishes or the active version changes.
+    void queryClient.invalidateQueries({ queryKey: ['document-versions', tenantId, knowledgeBaseId, documentId] })
+  }, [tenantId, knowledgeBaseId, documentId, document.data?.latestVersion?.documentVersionId,
+    document.data?.latestVersion?.status, document.data?.activeVersion?.documentVersionId, document.data?.documentStatus])
   const job = useQuery({
     queryKey: ['processing-job', tenantId, selectedJobId],
     queryFn: () => api.getProcessingJob(tenantId, selectedJobId!),
@@ -82,6 +100,7 @@ export function DocumentDetailPage() {
       setUploadOpen(false)
       form.resetFields()
       message.success(`新版本 v${accepted.versionNo} 已受理`)
+      setPagination((previous) => ({ ...previous, current: 1 }))
       await refresh()
     },
     onError: (error) => message.error(error instanceof Error ? error.message : errorMessage(error)),
@@ -89,6 +108,17 @@ export function DocumentDetailPage() {
   const retryProcessing = useMutation({
     mutationFn: (processingJobId: number) => api.retryProcessingJob(tenantId, processingJobId, crypto.randomUUID()),
     onSuccess: async (accepted) => { message.success(`重试任务 #${accepted.processingJobId} 已创建`); await refresh() },
+    onError: (error) => message.error(errorMessage(error)),
+  })
+  const rebuildDocument = useMutation({
+    mutationFn: () => api.rebuildDocument(
+      tenantId, knowledgeBaseId, documentId, crypto.randomUUID(),
+    ),
+    onSuccess: async (accepted) => {
+      message.success(`重建版本 v${accepted.versionNo} 已受理`)
+      setPagination((previous) => ({ ...previous, current: 1 }))
+      await refresh()
+    },
     onError: (error) => message.error(errorMessage(error)),
   })
   const deleteDocument = useMutation({
@@ -108,6 +138,9 @@ export function DocumentDetailPage() {
   if (!document.data) return null
   const data = document.data
   const deletionFailed = data.latestDeletionJob?.status === '4'
+  const canRebuild = data.documentStatus === '1'
+    && data.activeVersion?.status === '2'
+    && data.latestVersion?.status !== '1'
 
   const columns = [
     {
@@ -146,6 +179,19 @@ export function DocumentDetailPage() {
         action={data.documentStatus !== '3' && (
           <Space>
             <Button icon={<FileAddOutlined />} disabled={data.documentStatus !== '1'} onClick={() => setUploadOpen(true)}>上传新版本</Button>
+            <Popconfirm
+              title="确认重建该文档？"
+              description="系统将复用原始文件，重新解析并生成检索数据，可能产生供应商费用。重建期间当前版本继续可用，成功后自动切换。"
+              okText="确认重建"
+              cancelText="取消"
+              onConfirm={() => rebuildDocument.mutate()}
+            >
+              <Button
+                icon={<RedoOutlined />}
+                disabled={!canRebuild}
+                loading={rebuildDocument.isPending}
+              >重建</Button>
+            </Popconfirm>
             {deletionFailed ? (
               <Button danger icon={<RedoOutlined />} loading={retryDeletion.isPending} onClick={() => retryDeletion.mutate()}>重试删除</Button>
             ) : (
@@ -179,7 +225,23 @@ export function DocumentDetailPage() {
       <Card title="版本与处理记录">
         {versions.isLoading ? <PageLoading /> : versions.isError
           ? <ErrorState error={versions.error} onRetry={() => versions.refetch()} />
-          : <Table rowKey="documentVersionId" columns={columns} dataSource={versions.data?.items} pagination={false} />}
+          : <Table
+              rowKey="documentVersionId"
+              columns={columns}
+              dataSource={versions.data?.items}
+              loading={versions.isFetching}
+              pagination={{
+                ...pagination,
+                total: versions.data?.total ?? 0,
+                showSizeChanger: true,
+                pageSizeOptions: [10, 20, 50, 100],
+                showTotal: (total) => `共 ${total} 个版本`,
+                onChange: (current, pageSize) => setPagination((previous) => ({
+                  current: pageSize === previous.pageSize ? current : 1,
+                  pageSize,
+                })),
+              }}
+            />}
       </Card>
 
       <Modal

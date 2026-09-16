@@ -84,27 +84,35 @@ docquery:
   retrieval:
     # 默认关闭真实供应商；显式开启后才读取 Key 并产生外部调用费用。
     provider-enabled: ${DOCQUERY_RETRIEVAL_PROVIDER_ENABLED:false}
-    schema-version: 1
+    schema-version: 2
     retrieval-prefix: retrieval/
     max-retrieval-bytes: ${DOCQUERY_RETRIEVAL_MAX_BYTES:67108864}
-    max-source-chars-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_CHAT_SOURCE_CHARS:64000}
+    # PackyAPI Chat 链路先按 18 万原文 token 保守控制，为提示词、JSON 输出和网关差异留余量。
+    max-source-tokens-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_CHAT_SOURCE_TOKENS:180000}
+    # 导航子分区尚未通过正式效果评测，默认不进入生产生成链路。
+    navigation-partition-enabled: ${DOCQUERY_RETRIEVAL_NAVIGATION_PARTITION_ENABLED:false}
+    navigation-partition-threshold-tokens: ${DOCQUERY_RETRIEVAL_NAVIGATION_PARTITION_THRESHOLD_TOKENS:64000}
+    navigation-partition-minimum-tokens: ${DOCQUERY_RETRIEVAL_NAVIGATION_PARTITION_MINIMUM_TOKENS:8000}
+    navigation-partition-max-count: ${DOCQUERY_RETRIEVAL_NAVIGATION_PARTITION_MAX_COUNT:6}
+    navigation-partition-max-candidates: ${DOCQUERY_RETRIEVAL_NAVIGATION_PARTITION_MAX_CANDIDATES:256}
+    navigation-partition-estimator-version: mixed-char-v1
     max-total-source-chars: ${DOCQUERY_RETRIEVAL_MAX_TOTAL_SOURCE_CHARS:4000000}
     max-cards: ${DOCQUERY_RETRIEVAL_MAX_CARDS:2000}
     max-chat-calls: ${DOCQUERY_RETRIEVAL_MAX_CHAT_CALLS:128}
-    max-items-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_ITEMS_PER_CHAT_CALL:16}
+    # GLM 单次生成 16 张卡片会超过 90 秒；4 张的真实请求稳定在约 40～45 秒。
+    max-items-per-chat-call: ${DOCQUERY_RETRIEVAL_MAX_ITEMS_PER_CHAT_CALL:4}
+    # 同层批次并发执行；全局共享有界线程池，避免按文档无限放大供应商并发。
+    max-concurrent-chat-calls: ${DOCQUERY_RETRIEVAL_MAX_CONCURRENT_CHAT_CALLS:4}
     chat-max-output-tokens: ${DOCQUERY_RETRIEVAL_CHAT_MAX_OUTPUT_TOKENS:8192}
     embedding-dimension: 2560
     embedding-batch-size: 20
     provider-max-retries: 2
-    chat-timeout: 180s
+    chat-timeout: ${DOCQUERY_RETRIEVAL_CHAT_TIMEOUT:90s}
     embedding-timeout: 60s
     orphan-grace: ${DOCQUERY_RETRIEVAL_ORPHAN_GRACE:24h}
     orphan-scan-delay: ${DOCQUERY_RETRIEVAL_ORPHAN_SCAN_DELAY:15m}
     orphan-batch-size: ${DOCQUERY_RETRIEVAL_ORPHAN_BATCH_SIZE:100}
-    chat-base-url: ${DOCQUERY_DEEPSEEK_BASE_URL:https://api.deepseek.com}
-    chat-api-key: ${DEEPSEEK_API_KEY:}
-    chat-model: deepseek-v4-flash
-    chat-prompt-version: retrieval-card-v1
+    chat-prompt-version: retrieval-card-v2
     # 北京地域 OpenAI 兼容 Endpoint 可含 Workspace ID，故不写死到仓库。
     embedding-base-url: ${DOCQUERY_ALIBABA_EMBEDDING_BASE_URL:}
     embedding-api-key: ${DASHSCOPE_API_KEY:}
@@ -148,26 +156,34 @@ docquery:
       max-total-evidence-chars: 80000
       executor-threads: ${DOCQUERY_RETRIEVE_EXECUTOR_THREADS:8}
     answer:
-      prompt-version: answer-agent-v1
-      policy-version: answer-policy-v1
-      max-tool-rounds: 3
-      max-tool-calls: 6
-      max-parallel-tool-calls: 2
-      max-model-calls: 4
-      max-repair-calls: 1
+      prompt-version: answer-agent-v22
+      policy-version: answer-policy-v22
+      # 前 11 轮 AUTO 探索，最后 1 轮保留给 submit_evidence 检索终止。
+      max-tool-rounds: 12
+      max-tool-calls: 200
+      max-model-calls: 120
       max-tool-query-code-points: 2000
       max-search-limit: 5
-      max-read-blocks: 3
-      max-read-characters: 12000
-      max-canonical-characters: 60000
+      # 与 PackyAPI Chat 链路一致，18 万仅为整轮 canonical 原文安全预算，不是固定切块阈值。
+      max-canonical-source-tokens: ${DOCQUERY_ANSWER_MAX_CANONICAL_SOURCE_TOKENS:180000}
+      # 最终生成只接收原问题与 Agent 明确选中的完整原始证据，不重放工具上下文。
+      max-finalization-source-tokens: ${DOCQUERY_ANSWER_MAX_FINALIZATION_SOURCE_TOKENS:32000}
       max-outline-nodes: 200
-      max-outline-nodes-per-call: 100
-      max-answer-code-points: 4000
-      max-citations: 8
       max-citation-characters: 16000
       max-output-tokens: 4096
-      model-timeout: ${DOCQUERY_ANSWER_MODEL_TIMEOUT:45s}
-      total-timeout: ${DOCQUERY_ANSWER_TOTAL_TIMEOUT:120s}
+      model-timeout: ${DOCQUERY_ANSWER_MODEL_TIMEOUT:120s}
+      total-timeout: ${DOCQUERY_ANSWER_TOTAL_TIMEOUT:300s}
+      rerank:
+        enabled: ${DOCQUERY_ANSWER_RERANK_ENABLED:false}
+        model: ${DOCQUERY_ANSWER_RERANK_MODEL:qwen3-rerank}
+        endpoint: ${DOCQUERY_ANSWER_RERANK_ENDPOINT:}
+        api-key: ${DOCQUERY_ANSWER_RERANK_API_KEY:}
+        candidate-pool-size: ${DOCQUERY_ANSWER_RERANK_CANDIDATE_POOL_SIZE:20}
+        timeout: ${DOCQUERY_ANSWER_RERANK_TIMEOUT:15s}
+        max-retries: ${DOCQUERY_ANSWER_RERANK_MAX_RETRIES:1}
+        instruct: >-
+          Rank canonical knowledge-base sections by how directly and completely they support
+          answering the user's question.
   messaging:
     infrastructure-enabled: ${DOCQUERY_RABBITMQ_INFRASTRUCTURE_ENABLED:true}
     publisher-enabled: ${DOCQUERY_OUTBOX_PUBLISHER_ENABLED:true}

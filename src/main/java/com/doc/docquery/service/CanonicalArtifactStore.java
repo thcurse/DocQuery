@@ -22,8 +22,13 @@ public interface CanonicalArtifactStore {
     /** 删除精确对象，不存在时视为幂等成功。 */
     void delete(String objectKey);
 
-    /** 按安全前缀列出有限对象，供孤立对象回收使用。 */
-    List<ObjectSummary> list(String prefix, int limit);
+    /** 按安全前缀列出首页有限数量对象。 */
+    default List<ObjectSummary> list(String prefix, int limit) {
+        return listPage(prefix, limit, null).objects();
+    }
+
+    /** 读取一页；首轮令牌传 null，后续原样传回上一页令牌。 */
+    ObjectListingPage<ObjectSummary> listPage(String prefix, int limit, String continuationToken);
 
     /** 一次完整派生对象写入的可信结果。 */
     record WriteResult(long sizeBytes, String sha256) {
