@@ -80,6 +80,25 @@ public class DocumentUploadController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted);
     }
 
+    /** 复用当前活动版本原文件并创建完整重建候选，不接收文件正文。 */
+    @PostMapping("/{documentId}/rebuild")
+    public ResponseEntity<DocumentUploadAcceptedVO> rebuildDocument(
+            Authentication authentication,
+            @PathVariable long tenantId,
+            @PathVariable long knowledgeBaseId,
+            @PathVariable long documentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey
+    ) {
+        DocumentUploadAcceptedVO accepted = uploadCoordinator.rebuildDocument(
+                principal(authentication),
+                tenantId,
+                knowledgeBaseId,
+                documentId,
+                idempotencyKey
+        );
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted);
+    }
+
     private AdminPrincipal principal(Authentication authentication) {
         return (AdminPrincipal) authentication.getPrincipal();
     }

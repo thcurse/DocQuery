@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-claude-chat-completions-two-case-v1",
+  "model": "claude-sonnet-5",
+  "protocol": "CHAT_COMPLETIONS",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+      "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "3f17ccef-9ee8-446c-a8e5-048f86458fbf",
+        "latencyMs": 5695.028,
+        "finalAttemptLatencyMs": 1342.824,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "3ab832ee-8966-4d05-ae7a-7fb0ed348430",
+            "latencyMs": 4352.204
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "3f17ccef-9ee8-446c-a8e5-048f86458fbf",
+            "latencyMs": 1342.824
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_MODEL_UNAVAILABLE"
+      }
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "question": "What amount did  personnel-related costs increase for Netfilx in 2015? Answer in millions.",
+      "referenceAnswer": "253.3",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "6e6ad715-9e25-4227-86f6-64cc43e3882e",
+        "latencyMs": 3094.379,
+        "finalAttemptLatencyMs": 1586.926,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "a408bce4-970b-4031-a846-8f1da759d89b",
+            "latencyMs": 1507.453
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "6e6ad715-9e25-4227-86f6-64cc43e3882e",
+            "latencyMs": 1586.926
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_MODEL_UNAVAILABLE"
+      }
+    }
+  ]
+}

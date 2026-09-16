@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a32-v22-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count a refusal on an answerable question as incorrect.",
+    "Judge semantic correctness rather than exact wording or formatting.",
+    "Require the cited text to support the requested entity, relation, period, and answer.",
+    "Record a dataset issue when the reference answer or Gold page omits source-grounded evidence."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-text-0013","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Berlin School of Experimental Psychology directly answers the question; page 2 supports it."},
+    {"caseId":"mmlongbench-text-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The definition and explanation match the page-11 source."},
+    {"caseId":"mmlongbench-text-0022","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_MALFORMED","note":"The answer reproduces the complete source list; the public reference contains malformed items."},
+    {"caseId":"mmlongbench-text-0023","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"NARL is correctly expanded and supported on page 19."},
+    {"caseId":"mmlongbench-text-0132","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The telephone number exactly matches page 1."},
+    {"caseId":"mmlongbench-text-0239","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"538 square miles matches the source on page 11."},
+    {"caseId":"mmlongbench-text-0368","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both plant locations and full addresses are returned from page 15."},
+    {"caseId":"mmlongbench-text-0576","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"1954 and the teacher context are directly supported on page 8."},
+    {"caseId":"mmlongbench-text-0585","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The fax number exactly matches page 14."},
+    {"caseId":"mmlongbench-text-0588","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The email address is correct; page 14 supplies sufficient evidence, while later citations are redundant."},
+    {"caseId":"mmlongbench-text-0902","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both consequences of using an adaptor below 1.5 A are correctly stated and cited."},
+    {"caseId":"mmlongbench-text-0915","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All four IA support areas and their descriptions are supported on page 8."},
+    {"caseId":"mmlongbench-text-1025","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"1,358,000 repurchased shares matches the FY2021 source on page 29."},
+    {"caseId":"mmlongbench-text-1027","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The requested U.S. and Canadian dependence is answered; all additional claims are supported, though unnecessarily broad."},
+    {"caseId":"mmlongbench-text-1033","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The prior refusal is fixed: $714.3 million is correctly returned and supported on page 47."},
+    {"caseId":"mmlongbench-text-1037","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The prior wrong cash-dividend answer is fixed: the seven-for-one stock split paid as a stock dividend is correctly stated and supported."},
+    {"caseId":"mmlongbench-text-1050","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All six Nike product categories are correctly returned and supported on page 3."},
+    {"caseId":"mmlongbench-text-1060","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"All five cost-of-sales components are correctly supported; the answer also adds supported but unnecessary details."},
+    {"caseId":"mmlongbench-text-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The FY2017 unredeemed gift-card liability is correctly reported as $3.0 billion."},
+    {"caseId":"mmlongbench-text-1063","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The 2017 depreciation expense is correctly reported as $8.8 billion."}
+  ]
+}

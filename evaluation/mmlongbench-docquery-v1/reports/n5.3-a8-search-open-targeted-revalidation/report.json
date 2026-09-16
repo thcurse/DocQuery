@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "docquery-n5.3-a8-search-open-targeted-revalidation-v1",
+  "status": "COMPLETED_FAILED_REVALIDATION",
+  "generatedAt": "2026-08-24T09:45:19.639956+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0562",
+      "mmlongbench-r3-0607",
+      "mmlongbench-r3-0831",
+      "mmlongbench-r3-0937",
+      "mmlongbench-r3-1032"
+    ],
+    "caseCount": 5,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v5"
+  },
+  "metrics": {
+    "successes": 4,
+    "attempts": 5,
+    "answered": 0,
+    "controlledRefusals": 4,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 0,
+    "anyGoldPageCitations": 0,
+    "goldPageCitationCoverage": 0.0,
+    "allGoldPagesCited": 0,
+    "latency": {
+      "count": 4,
+      "p50Ms": 23733.28,
+      "p95Ms": 85233.899,
+      "p99Ms": 85233.899,
+      "minMs": 23008.963,
+      "maxMs": 85233.899,
+      "meanMs": 40151.975
+    },
+    "errorCounts": {
+      "ANSWER_EXECUTION_LIMIT_EXCEEDED": 1
+    },
+    "manualReview": {
+      "status": "COMPLETED",
+      "correctAnswers": 0,
+      "unsupportedCitations": 0,
+      "artifact": "manual-adjudication.json"
+    }
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 5,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a8-search-open-v1",
+    "actorRef": "n5.3-a8-search-open-targeted-revalidation"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": "manual-adjudication.json",
+    "auditSummary": "audit-summary.json"
+  }
+}

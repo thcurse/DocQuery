@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v7-audit-summary-v1",
+  "source": "application_query_audit",
+  "rows": [
+    {"caseId":"mmlongbench-r3-0562","requestId":"12f72447-8fb9-4e76-a6c7-7a3f78c17a6e","queryExecutionId":"80204db0-f1ec-4d49-8e4d-caa7168da3b8","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":2,"toolCalls":4,"modelCalls":9,"canonicalCharacters":58575,"durationMs":111973},
+    {"caseId":"mmlongbench-r3-0607","requestId":"bcca9b75-36b6-485f-ab2f-0056ca801c51","queryExecutionId":"10f33285-aa39-45e6-bfff-30089e9817b5","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":3,"toolCalls":3,"modelCalls":6,"canonicalCharacters":16013,"durationMs":53954},
+    {"caseId":"mmlongbench-r3-0831","requestId":"e345bcac-799a-48c4-bdf8-d263a513cc6b","queryExecutionId":"8b511e6d-80bc-4fb0-a338-c9b629928950","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":3,"toolCalls":8,"modelCalls":9,"canonicalCharacters":19342,"durationMs":193419},
+    {"caseId":"mmlongbench-r3-0937","requestId":"1b75bd39-b5d3-4322-bdba-0319427b074e","queryExecutionId":"4076f17a-b4e7-493f-a84b-b96f846803b5","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":2,"toolCalls":6,"modelCalls":6,"canonicalCharacters":17416,"durationMs":68550},
+    {"caseId":"mmlongbench-r3-1032","attempts":[
+      {"requestId":"26ad1540-e312-4888-94ac-3a3a04889f8b","httpStatus":503,"failureCode":"ANSWER_MODEL_UNAVAILABLE","toolRounds":1,"toolCalls":1,"modelCalls":6,"canonicalCharacters":0,"durationMs":184242},
+      {"requestId":"5d08557c-4cf1-4d53-b71d-06000e4937d2","httpStatus":503,"failureCode":"ANSWER_MODEL_UNAVAILABLE","toolRounds":0,"toolCalls":0,"modelCalls":1,"canonicalCharacters":0,"durationMs":988}
+    ]}
+  ],
+  "diagnosis": [
+    "The ANSWERED verification gate worked mechanically: all four successful answers used Agent tools, including eight calls for 0831.",
+    "0831 improved from one reference action to all three, but still selected pages 7-8 rather than the frozen Gold page 16 and over-answered outside the required list.",
+    "1032 did not hit a local execution-limit code; both attempts were mapped to ANSWER_MODEL_UNAVAILABLE, and the backend remained healthy with HTTP 200 afterward.",
+    "The v7 fixed-five acceptance result is therefore still failed."
+  ]
+}

@@ -27,4 +27,13 @@ public interface DocumentUploadCoordinator {
             String idempotencyKey,
             MultipartFile file
     );
+
+    /** 复用当前活动版本原文件，创建一次完整处理链路的重建候选。 */
+    DocumentUploadAcceptedVO rebuildDocument(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            String idempotencyKey
+    );
 }

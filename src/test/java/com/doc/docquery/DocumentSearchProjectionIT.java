@@ -2,6 +2,8 @@ package com.doc.docquery;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.doc.docquery.config.DocumentRetrievalProperties;
+import com.doc.docquery.config.DocumentParsingProperties;
+import com.doc.docquery.config.ChatProfilesProperties;
 import com.doc.docquery.config.MessagingProperties;
 import com.doc.docquery.config.SearchProjectionProperties;
 import com.doc.docquery.dto.CreateDocumentUploadMetadataDTO;
@@ -11,6 +13,14 @@ import com.doc.docquery.entity.DocumentRetrievalArtifactEntity;
 import com.doc.docquery.entity.DocumentSearchProjectionEntity;
 import com.doc.docquery.entity.DocumentVersionEntity;
 import com.doc.docquery.entity.ProcessingJobEntity;
+import com.doc.docquery.enums.DocumentSourceFormat;
+import com.doc.docquery.parser.BlockKind;
+import com.doc.docquery.parser.CanonicalDocumentAssembler;
+import com.doc.docquery.parser.CanonicalDocumentValidator;
+import com.doc.docquery.parser.CanonicalJsonlWriter;
+import com.doc.docquery.parser.DeepDocDocumentParser;
+import com.doc.docquery.parser.DocumentFormatParser;
+import com.doc.docquery.parser.ParsedDocument;
 import com.doc.docquery.mapper.DocumentCanonicalArtifactMapper;
 import com.doc.docquery.mapper.DocumentMapper;
 import com.doc.docquery.mapper.DocumentRetrievalArtifactMapper;
@@ -27,6 +37,7 @@ import com.doc.docquery.retrieval.CanonicalArtifactReader;
 import com.doc.docquery.retrieval.DocumentProfileSemantic;
 import com.doc.docquery.retrieval.EmbeddingCodec;
 import com.doc.docquery.retrieval.NavigationTextBuilder;
+import com.doc.docquery.retrieval.NavigationPartitionPlanner;
 import com.doc.docquery.retrieval.RetrievalArtifactGenerator;
 import com.doc.docquery.retrieval.RetrievalArtifactValidator;
 import com.doc.docquery.retrieval.RetrievalGenerationFingerprint;
@@ -52,11 +63,17 @@ import com.doc.docquery.service.RetrievalArtifactStore;
 import com.doc.docquery.service.RetrievalCardChatGateway;
 import com.doc.docquery.service.SourceObjectStore;
 import com.doc.docquery.service.impl.DocumentIngestionProcessorImpl;
+import com.doc.docquery.service.impl.DocumentCanonicalServiceImpl;
 import com.doc.docquery.service.impl.DocumentRetrievalServiceImpl;
 import com.doc.docquery.service.impl.DocumentSearchProjectionServiceImpl;
 import com.doc.docquery.vo.DocumentUploadAcceptedVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyle;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STStyleType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -79,6 +96,7 @@ import org.testcontainers.containers.RabbitMQContainer;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
@@ -192,6 +210,8 @@ class DocumentSearchProjectionIT {
     private DocumentCanonicalArtifactMapper canonicalArtifactMapper;
     @Autowired
     private DocumentRetrievalArtifactMapper retrievalArtifactMapper;
+    @Autowired
+    private DocumentSearchProjectionMapper projectionMapper;
     @Autowired
     private ProcessingJobMapper jobMapper;
     @Autowired
@@ -379,6 +399,176 @@ class DocumentSearchProjectionIT {
                 Integer.class,
                 second.getDocumentVersionId()
         )).isEqualTo(2);
+    }
+
+    @Test
+    void rebuildRunsCompleteFakePipelineAndSwitchesOnlyAfterReady() throws Exception {
+        byte[] content = "# Stable Source\n\nThe same original file is rebuilt safely.\n"
+                .getBytes(StandardCharsets.UTF_8);
+        DocumentUploadAcceptedVO first = upload(
+                "Rebuild Pipeline Guide",
+                "rebuild-pipeline-v1",
+                "rebuild-pipeline.md",
+                content
+        );
+        publishPendingOutbox();
+        awaitJobStatus(first.getProcessingJobId(), "3", 30_000);
+        String firstKey = value(
+                "SELECT source_object_key FROM document_version WHERE id=?",
+                String.class,
+                first.getDocumentVersionId()
+        );
+        String firstSha = value(
+                "SELECT source_sha256 FROM document_version WHERE id=?",
+                String.class,
+                first.getDocumentVersionId()
+        );
+
+        DocumentUploadAcceptedVO rebuilt = uploadCoordinator.rebuildDocument(
+                tenantAdmin(),
+                tenantId,
+                knowledgeBaseId,
+                first.getDocumentId(),
+                "rebuild-pipeline-command"
+        );
+
+        assertThat(rebuilt.getVersionNo()).isEqualTo(2);
+        assertThat(value(
+                "SELECT active_version_id FROM document WHERE id=?",
+                Long.class,
+                first.getDocumentId()
+        )).isEqualTo(first.getDocumentVersionId());
+        assertThat(value(
+                "SELECT source_sha256 FROM document_version WHERE id=?",
+                String.class,
+                rebuilt.getDocumentVersionId()
+        )).isEqualTo(firstSha);
+        assertThat(value(
+                "SELECT source_object_key FROM document_version WHERE id=?",
+                String.class,
+                rebuilt.getDocumentVersionId()
+        )).isNotEqualTo(firstKey);
+
+        publishPendingOutbox();
+        awaitJobStatus(rebuilt.getProcessingJobId(), "3", 30_000);
+
+        assertThat(value(
+                "SELECT active_version_id FROM document WHERE id=?",
+                Long.class,
+                first.getDocumentId()
+        )).isEqualTo(rebuilt.getDocumentVersionId());
+        assertThat(value(
+                "SELECT status FROM document_version WHERE id=?",
+                String.class,
+                first.getDocumentVersionId()
+        )).isEqualTo("2");
+        assertThat(canonicalArtifactMapper.findByDocumentVersionId(
+                rebuilt.getDocumentVersionId()
+        )).isNotNull();
+        assertThat(retrievalArtifactMapper.findByDocumentVersionId(
+                rebuilt.getDocumentVersionId()
+        ).getSchemaVersion()).isEqualTo(2);
+        assertThat(projectionMapper.findByDocumentVersionId(
+                rebuilt.getDocumentVersionId()
+        )).isNotNull();
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "DOCQUERY_DOCX_PARSER_URL", matches = ".+")
+    void rebuildCorrectsLegacyDocxTableHeadingThroughRealDeepDoc() throws Exception {
+        byte[] content;
+        try (XWPFDocument docx = new XWPFDocument();
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            CTStyle headingStyle = CTStyle.Factory.newInstance();
+            headingStyle.setStyleId("Heading1");
+            headingStyle.setType(STStyleType.PARAGRAPH);
+            headingStyle.addNewName().setVal("Heading 1");
+            headingStyle.addNewPPr().addNewOutlineLvl().setVal(java.math.BigInteger.ZERO);
+            docx.createStyles().addStyle(new XWPFStyle(headingStyle));
+            var firstHeading = docx.createParagraph();
+            firstHeading.setStyle("Heading1");
+            firstHeading.createRun().setText("Section A");
+            docx.createTable(1, 1).getRow(0).getCell(0).setText("ZephyrQuota is 42 units.");
+            var secondHeading = docx.createParagraph();
+            secondHeading.setStyle("Heading1");
+            secondHeading.createRun().setText("Section B");
+            docx.createParagraph().createRun().setText("Unrelated closing notes.");
+            docx.write(output);
+            content = output.toByteArray();
+        }
+        DocumentParsingProperties parsing = new DocumentParsingProperties();
+        parsing.getDeepdoc().setBaseUrl(System.getenv("DOCQUERY_DOCX_PARSER_URL"));
+        DocumentFormatParser realParser = new DeepDocDocumentParser(parsing, objectMapper);
+        // 重现旧实现先输出段落、再追加所有表格的顺序，作为待修复的历史版本。
+        DocumentFormatParser legacyParser = new DocumentFormatParser() {
+            @Override
+            public boolean supports(DocumentSourceFormat format) {
+                return realParser.supports(format);
+            }
+
+            @Override
+            public ParsedDocument parse(ParseSource source) {
+                ParsedDocument parsed = realParser.parse(source);
+                return new ParsedDocument(parsed.blocks().stream()
+                        .sorted(java.util.Comparator.comparing(block -> block.kind() == BlockKind.TABLE_CELL))
+                        .toList(), parsed.warnings(), parsed.pageCount());
+            }
+        };
+        var first = upload("DOCX heading repair", "docx-legacy", "heading-repair.docx", content);
+        ensureDocxCanonical(first.getDocumentVersionId(), legacyParser, parsing);
+        publishPendingOutbox();
+        awaitJobStatus(first.getProcessingJobId(), "3", 30_000);
+        assertDocxTableHeading(first.getDocumentVersionId(), "Section B");
+
+        var rebuilt = uploadCoordinator.rebuildDocument(tenantAdmin(), tenantId, knowledgeBaseId,
+                first.getDocumentId(), "docx-correct-order");
+        assertThat(value("SELECT active_version_id FROM document WHERE id=?", Long.class,
+                first.getDocumentId())).isEqualTo(first.getDocumentVersionId());
+        assertThat(value("SELECT source_sha256 FROM document_version WHERE id=?", String.class,
+                rebuilt.getDocumentVersionId())).isEqualTo(value(
+                        "SELECT source_sha256 FROM document_version WHERE id=?", String.class,
+                        first.getDocumentVersionId()));
+        ensureDocxCanonical(rebuilt.getDocumentVersionId(), realParser, parsing);
+        publishPendingOutbox();
+        awaitJobStatus(rebuilt.getProcessingJobId(), "3", 30_000);
+        assertThat(value("SELECT active_version_id FROM document WHERE id=?", Long.class,
+                first.getDocumentId())).isEqualTo(rebuilt.getDocumentVersionId());
+        assertDocxTableHeading(rebuilt.getDocumentVersionId(), "Section A");
+        assertThat(retrievalArtifactMapper.findByDocumentVersionId(rebuilt.getDocumentVersionId()))
+                .isNotNull();
+        assertThat(projectionMapper.findByDocumentVersionId(rebuilt.getDocumentVersionId()))
+                .isNotNull();
+    }
+
+    private void ensureDocxCanonical(long versionId, DocumentFormatParser parser,
+                                     DocumentParsingProperties parsing) {
+        new DocumentCanonicalServiceImpl(versionMapper, documentMapper, canonicalArtifactMapper,
+                sourceStore, canonicalStore, List.of(parser), new CanonicalDocumentAssembler(parsing),
+                new CanonicalDocumentValidator(), new CanonicalJsonlWriter(objectMapper, parsing), parsing)
+                .ensureCanonical(versionId);
+    }
+
+    private void assertDocxTableHeading(long versionId, String expectedTitle) throws Exception {
+        var artifact = canonicalArtifactMapper.findByDocumentVersionId(versionId);
+        try (var input = canonicalStore.open(artifact.getCanonicalObjectKey())) {
+            var canonical = new CanonicalArtifactReader(objectMapper, new CanonicalDocumentValidator())
+                    .read(input);
+            var table = canonical.blocks().stream()
+                    .filter(block -> block.kind() == BlockKind.TABLE_CELL && block.text().contains("ZephyrQuota"))
+                    .findFirst().orElseThrow();
+            assertThat(canonical.headings().stream()
+                    .filter(heading -> heading.nodeId().equals(table.headingNodeId()))
+                    .findFirst().orElseThrow().title()).isEqualTo(expectedTitle);
+            var hits = elasticsearch.search(search -> search.index("docquery-evidence")
+                    .query(query -> query.bool(bool -> bool
+                            .filter(filter -> filter.term(term -> term.field("document_version_id").value(versionId)))
+                            .must(must -> must.match(match -> match.field("text").query("ZephyrQuota"))))), Map.class);
+            assertThat(hits.hits().hits()).hasSize(1);
+            assertThat(hits.hits().hits().get(0).source())
+                    .containsEntry("heading_node_id", table.headingNodeId());
+            assertThat((String) hits.hits().hits().get(0).source().get("heading_path"))
+                    .contains(expectedTitle);
+        }
     }
 
     @Test
@@ -800,11 +990,13 @@ class DocumentSearchProjectionIT {
                 NavigationTextBuilder textBuilder,
                 EmbeddingCodec codec,
                 RetrievalGenerationFingerprint fingerprint,
-                DocumentRetrievalProperties properties
+                DocumentRetrievalProperties properties,
+                ChatProfilesProperties chatProfiles
         ) {
             return new RetrievalArtifactGenerator(
-                    chat, embedding, semanticValidator, textBuilder, codec,
-                    fingerprint, properties
+                    chat, embedding, semanticValidator,
+                    new NavigationPartitionPlanner(properties), textBuilder, codec,
+                    fingerprint, properties, chatProfiles, Runnable::run
             );
         }
 

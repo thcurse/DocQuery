@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "phase": "N5.2-O1-P0",
+  "generatedAt": "2026-08-21T11:44:51.431732+00:00",
+  "selectionSha256": "b4b19e84f09925bf8738bbb6961f12b12c1da157bace377e7ddf018788b6ad15",
+  "thresholdEstimatedTokens": 64000,
+  "tokenEstimator": "UTF16_CHARS_DIV_4_CEILING",
+  "model": "deepseek-v4-flash",
+  "paidRequestsAttempted": 2,
+  "samples": [
+    {
+      "sampleId": "3m-overview",
+      "documentVersionId": 28,
+      "documentName": "3M_2018_10K.pdf",
+      "headingNodeId": "28:h:000001",
+      "headingTitle": "OVERVIEW",
+      "sectionStartBlockOrdinal": 262,
+      "sectionEndBlockOrdinalExclusive": 1606,
+      "sourceChars": 529780,
+      "estimatedTokens": 132445,
+      "minimumPartitions": 3,
+      "maximumPartitions": 4,
+      "minimumBoundaryCandidates": 9,
+      "maximumBoundaryCandidates": 13,
+      "sectionInputSha256": "6b0cd13f5fdd23af2d0aed2de66e5b9c40c4700dcf7a3aab211d4e51cc643822",
+      "providerRequestId": "4368e770-49a4-453c-8251-65f1759666e9",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 159513,
+        "completion_tokens": 4470,
+        "total_tokens": 163983,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 159513
+      },
+      "modelBoundaryCandidateCount": 115,
+      "partitions": [
+        {
+          "partitionOrdinal": 0,
+          "title": "OVERVIEW",
+          "startBlockOrdinal": 262,
+          "boundaryStrength": 5,
+          "topics": [
+            "Company overview",
+            "Earnings per share summary",
+            "Non-GAAP measures"
+          ],
+          "endBlockOrdinalExclusive": 756,
+          "startPage": 15,
+          "endPage": 60,
+          "sourceChars": 175096,
+          "estimatedTokens": 43774
+        },
+        {
+          "partitionOrdinal": 1,
+          "title": "Notes to Consolidated Financial Statements",
+          "startBlockOrdinal": 756,
+          "boundaryStrength": 5,
+          "topics": [
+            "Notes to financial statements",
+            "Accounting policies",
+            "Disclosures"
+          ],
+          "endBlockOrdinalExclusive": 1095,
+          "startPage": 61,
+          "endPage": 99,
+          "sourceChars": 176356,
+          "estimatedTokens": 44089
+        },
+        {
+          "partitionOrdinal": 2,
+          "title": "NOTE 14. Derivatives",
+          "startBlockOrdinal": 1095,
+          "boundaryStrength": 5,
+          "topics": [
+            "Derivatives",
+            "Hedging",
+            "Foreign currency"
+          ],
+          "endBlockOrdinalExclusive": 1606,
+          "startPage": 99,
+          "endPage": 142,
+          "sourceChars": 178328,
+          "estimatedTokens": 44582
+        }
+      ],
+      "validation": {
+        "partitionCount": 3,
+        "boundaryCandidateCount": 115,
+        "coverageRatio": 1.0,
+        "gapCount": 0,
+        "overlapCount": 0,
+        "oversizedPartitionCount": 0,
+        "maximumPartitionEstimatedTokens": 44582,
+        "canonicalHeadingTreeChanged": false
+      },
+      "status": "VALID",
+      "latencyMs": 29584
+    },
+    {
+      "sampleId": "activision-overview",
+      "documentVersionId": 36,
+      "documentName": "ACTIVISIONBLIZZARD_2019_10K.pdf",
+      "headingNodeId": "36:h:000001",
+      "headingTitle": "Overview",
+      "sectionStartBlockOrdinal": 126,
+      "sectionEndBlockOrdinalExclusive": 926,
+      "sourceChars": 274178,
+      "estimatedTokens": 68545,
+      "minimumPartitions": 2,
+      "maximumPartitions": 3,
+      "minimumBoundaryCandidates": 6,
+      "maximumBoundaryCandidates": 10,
+      "sectionInputSha256": "991edeef74895d3afd685c5af38c61c7097eee5dbfade4b3425b45bfbe557d8d",
+      "providerRequestId": "f74e86fd-57f0-4a42-9c53-62d620361b49",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 74677,
+        "completion_tokens": 526,
+        "total_tokens": 75203,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 74677
+      },
+      "modelBoundaryCandidateCount": 10,
+      "partitions": [
+        {
+          "partitionOrdinal": 0,
+          "title": "Overview and Strategy",
+          "startBlockOrdinal": 126,
+          "boundaryStrength": 5,
+          "topics": [
+            "Company overview",
+            "Strategy",
+            "Audience reach",
+            "Engagement",
+            "Player investment"
+          ],
+          "endBlockOrdinalExclusive": 412,
+          "startPage": 4,
+          "endPage": 30,
+          "sourceChars": 128293,
+          "estimatedTokens": 32074
+        },
+        {
+          "partitionOrdinal": 1,
+          "title": "Management's Discussion and Analysis",
+          "startBlockOrdinal": 412,
+          "boundaryStrength": 5,
+          "topics": [
+            "Business overview",
+            "Financial results",
+            "Operating metrics",
+            "Liquidity"
+          ],
+          "endBlockOrdinalExclusive": 926,
+          "startPage": 31,
+          "endPage": 74,
+          "sourceChars": 145885,
+          "estimatedTokens": 36472
+        }
+      ],
+      "validation": {
+        "partitionCount": 2,
+        "boundaryCandidateCount": 10,
+        "coverageRatio": 1.0,
+        "gapCount": 0,
+        "overlapCount": 0,
+        "oversizedPartitionCount": 0,
+        "maximumPartitionEstimatedTokens": 36472,
+        "canonicalHeadingTreeChanged": false
+      },
+      "status": "VALID",
+      "latencyMs": 5914
+    }
+  ]
+}

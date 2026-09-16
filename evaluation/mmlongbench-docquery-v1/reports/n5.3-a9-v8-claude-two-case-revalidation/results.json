@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-claude-two-case-v1",
+  "model": "claude-sonnet-5",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+      "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "76fe7296-0af1-430e-8752-f5ea8ab10c01",
+        "latencyMs": 4426.211,
+        "finalAttemptLatencyMs": 1365.27,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "1cac6204-08ab-4cb1-bbff-2b964235f85f",
+            "latencyMs": 3060.941
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "76fe7296-0af1-430e-8752-f5ea8ab10c01",
+            "latencyMs": 1365.27
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_MODEL_UNAVAILABLE"
+      }
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "question": "What amount did  personnel-related costs increase for Netfilx in 2015? Answer in millions.",
+      "referenceAnswer": "253.3",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "908e1971-8087-4954-9a59-43f4c229c2a1",
+        "latencyMs": 2847.265,
+        "finalAttemptLatencyMs": 1449.232,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "1ba8f531-286f-417d-89c1-98638c69369c",
+            "latencyMs": 1398.033
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "908e1971-8087-4954-9a59-43f4c229c2a1",
+            "latencyMs": 1449.232
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_MODEL_UNAVAILABLE"
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "docquery-n5.3-normal-text20-b-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Independent second batch of ordinary single-page text questions over the documents already present in knowledge base 1",
+  "selectionPolicy": [
+    "Keep the existing knowledge-base documents; do not upload, rebuild, or replace documents for this selection.",
+    "Do not reuse any source row from n5.3-normal-text20-selection.json.",
+    "Use only original public-dataset questions whose complete evidence is on one physical page.",
+    "Require evidence_sources to be exactly Pure-text (Plain-text).",
+    "Exclude questions involving tables, charts, figures, diagrams, visual styling, cross-page aggregation, or multi-step arithmetic.",
+    "Prefer ordinary factual, definitional, procedural, and list questions whose answer can be verified directly from prose or text lists.",
+    "Manually inspect the rendered evidence page before authorizing the paid Answer run."
+  ],
+  "sourceRowIndexes": [
+    134,
+    238,
+    364,
+    366,
+    578,
+    583,
+    587,
+    594,
+    595,
+    656,
+    668,
+    700,
+    704,
+    833,
+    836,
+    932,
+    937,
+    1026,
+    1038,
+    1061
+  ],
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "documentIds": "OMITTED",
+    "paidModelRun": "NOT_STARTED"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "docquery-n5.2-o1-p3-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Post-optimization diagnostic rerun; selected from known N5.2-R2 failures and therefore not an unbiased held-out set",
+  "mode": "HYBRID",
+  "topK": 10,
+  "documentIds": [22, 45, 62, 79],
+  "primaryCaseIds": [
+    "mmlongbench-0137",
+    "mmlongbench-0141",
+    "mmlongbench-0595",
+    "mmlongbench-0908",
+    "mmlongbench-0912",
+    "mmlongbench-0932"
+  ],
+  "visualBoundaryCaseIds": [
+    "mmlongbench-0142",
+    "mmlongbench-0938"
+  ],
+  "acceptance": {
+    "preservePriorDocumentHits": true,
+    "minimumPriorDocumentMissesRecovered": 1,
+    "minimumPriorZeroPageCasesImproved": 2,
+    "requirePrimaryMacroPageCoverageIncrease": true,
+    "visualBoundaryCasesAffectAcceptance": false
+  }
+}

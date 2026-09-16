@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "docquery-n5.2-o2-p0-v1",
+  "status": "COMPLETED",
+  "diagnosticOnly": true,
+  "paidRequests": 0,
+  "selection": {
+    "selected": 25,
+    "excluded": 39,
+    "selectionBasedOnRetrievalResults": false,
+    "selectionSha256": "6354c4f6cb7e8d2c222fa9b474ba3b7f5b8a8c0d622d51f20e7133c75671ebb7"
+  },
+  "pageMapping": {
+    "method": "PDF Page Labels mapped to one-based physical PDF pages",
+    "mappedCases": 25,
+    "shiftedCaseIds": [
+      "mmlongbench-0093",
+      "mmlongbench-0908"
+    ],
+    "scoreChanges": [
+      {
+        "caseId": "mmlongbench-0093",
+        "printedToPhysical": {
+          "11": 13,
+          "12": 14
+        },
+        "beforeAnyPageHitAt10": 1.0,
+        "afterAnyPageHitAt10": 0.0,
+        "beforePageCoverageAt10": 1.0,
+        "afterPageCoverageAt10": 0.0
+      },
+      {
+        "caseId": "mmlongbench-0908",
+        "printedToPhysical": {
+          "28": 30
+        },
+        "beforeAnyPageHitAt10": 0.0,
+        "afterAnyPageHitAt10": 1.0,
+        "beforePageCoverageAt10": 0.0,
+        "afterPageCoverageAt10": 1.0
+      }
+    ],
+    "artifact": "page-mapping.json"
+  },
+  "duplicateContentGroups": [
+    {
+      "sha256": "13562992665a0bcb5b7ae43f633c32005b03a78f189db00890cefdd4db862ba8",
+      "documents": [
+        "dr-vorapptchapter1emissionsources-121120210508-phpapp02_95.pdf",
+        "digitalmeasurementframework22feb2011v6novideo-110221233835-phpapp01_95.pdf"
+      ]
+    },
+    {
+      "sha256": "16ee1cfbd58f9c6a3793c66ff5f4ec38dd864ac9fd7a9b7186f8af7db53f870b",
+      "documents": [
+        "NYU_graduate.pdf",
+        "mi_phone.pdf"
+      ]
+    },
+    {
+      "sha256": "7515cd264f0a33a782169d938a291e9ec4fc81a094a30a4ecf951d4cfa7ff336",
+      "documents": [
+        "StudentSupport_Guidebook.pdf",
+        "SAO-StudentSupport_Guidebook-Content.pdf"
+      ]
+    }
+  ],
+  "metrics": {
+    "frozenOriginalScoring": {
+      "cases": 25,
+      "documentRecallAt1": 0.88,
+      "documentRecallAt5": 0.96,
+      "documentRecallAt10": 0.96,
+      "evidencePageRecallAt10": 0.84,
+      "evidencePageCoverageAt10": 0.82,
+      "allEvidencePagesHitAt10": 0.8,
+      "reciprocalRankAt10": 0.92
+    },
+    "correctedContentEquivalentAndPhysicalPageScoring": {
+      "cases": 25,
+      "documentRecallAt1": 0.88,
+      "documentRecallAt5": 0.96,
+      "documentRecallAt10": 0.96,
+      "evidencePageRecallAt10": 0.84,
+      "evidencePageCoverageAt10": 0.82,
+      "allEvidencePagesHitAt10": 0.8,
+      "reciprocalRankAt10": 0.92
+    }
+  },
+  "boundary": "This is a post-result, question-text-curated diagnostic subset. It is not a new held-out score and does not replace the frozen R2 report.",
+  "sources": {
+    "manifestSha256": "0423bcaf95044b5399f5f5df5e73ef45e2752e0a961a117be3fa141cb247a579",
+    "r1RawSha256": "6031559709771f89427708a711dfcee877c9598c9ab2018b2b53eb0cad76968c",
+    "r2RawSha256": "72bc2d3603daa205e2f18359dbc19c3b4f08c9e982b6c9ff8d0f309347f107d5"
+  }
+}

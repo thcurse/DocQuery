@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "docquery-n5.3-a11-v11-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge semantic correctness against the frozen public reference answer and source evidence.",
+    "Finding only part of a requested list is incomplete and incorrect.",
+    "Finding arithmetic operands without returning the requested total is incomplete and incorrect.",
+    "Citation support and answer correctness are judged separately."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": false,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Returned two of the required three preparations and omitted 'Pick a specific product that you use frequently'. The Agent had registered and opened physical Gold page 16 but finalized from page 8 evidence instead."
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "correct": false,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Correctly returned the two supported components, 133.2 and 120.1 million, but did not provide the explicitly requested total of 253.3 million."
+    }
+  ]
+}

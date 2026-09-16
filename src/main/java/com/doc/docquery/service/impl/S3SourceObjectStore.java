@@ -1,6 +1,7 @@
 package com.doc.docquery.service.impl;
 
 import com.doc.docquery.config.ObjectStorageProperties;
+import com.doc.docquery.service.ObjectListingPage;
 import com.doc.docquery.service.ObjectStorageException;
 import com.doc.docquery.service.SourceObjectStore;
 import jakarta.annotation.PostConstruct;
@@ -23,7 +24,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.List;
 
 /** AWS SDK v2 实现的 S3 兼容原文件适配器。 */
 public class S3SourceObjectStore implements SourceObjectStore {
@@ -146,17 +146,27 @@ public class S3SourceObjectStore implements SourceObjectStore {
     }
 
     @Override
-    public List<ObjectSummary> list(String prefix, int limit) {
+    public ObjectListingPage<ObjectSummary> listPage(
+            String prefix, int limit, String continuationToken
+    ) {
         try {
-            return s3Client.listObjectsV2(ListObjectsV2Request.builder()
+            var response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
                             .bucket(bucket)
                             .prefix(prefix)
-                            .maxKeys(limit)
-                            .build())
-                    .contents()
+                            .maxKeys(Math.max(1, Math.min(limit, 1_000)))
+                            .continuationToken(continuationToken)
+                            .build());
+            String nextToken = Boolean.TRUE.equals(response.isTruncated())
+                    ? response.nextContinuationToken() : null;
+            if (Boolean.TRUE.equals(response.isTruncated())
+                    && (nextToken == null || nextToken.isBlank()
+                    || nextToken.equals(continuationToken))) {
+                throw unavailable("Source object listing did not advance", null);
+            }
+            return new ObjectListingPage<>(response.contents()
                     .stream()
                     .map(item -> new ObjectSummary(item.key(), item.lastModified()))
-                    .toList();
+                    .toList(), nextToken);
         } catch (S3Exception | SdkClientException exception) {
             throw unavailable("Source objects could not be listed", exception);
         }

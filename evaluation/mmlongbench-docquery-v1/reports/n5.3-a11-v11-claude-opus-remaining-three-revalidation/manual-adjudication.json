@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "docquery-n5.3-a11-v11-opus-remaining-three-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge semantic correctness manually; the answer wording and list order do not need to exactly match the public reference unless order is requested.",
+    "An answer is correct when it covers every requested reference item without contradicting the source.",
+    "A failed HTTP request with no final answer is incorrect.",
+    "Finding arithmetic operands without returning the requested total is incomplete and incorrect."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "correct": true,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Returns the requested list [46, 27, 64] in order and cites physical Gold pages 2 and 11, which support the adults, Republicans, and Democrats percentages."
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Both HTTP attempts exhausted the Answer execution timeout after repeated search reformulations, returning ANSWER_EXECUTION_TIMEOUT with no final answer or citations."
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "correct": true,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Returns all 14 HIT applications from physical Gold page 4. The list order differs from the reference layout but the question does not require an order."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "docquery-n5.3-a35-v22-normal-text40-summary-v1",
+  "status": "COMPLETED",
+  "generatedAt": "2026-08-30T13:13:04+08:00",
+  "scope": {
+    "caseCount": 40,
+    "uniqueSourceRowCount": 40,
+    "sourceDocumentCount": 19,
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "documentIdsProvided": false,
+    "answerPolicyVersion": "answer-policy-v22",
+    "batches": [
+      "../n5.3-a32-v22-coverage-normal-text20/report.json",
+      "../n5.3-a36-v22-entity-scoped-text20-d/report.json"
+    ],
+    "excludedDiagnosticBatch": "../n5.3-a33-v22-normal-text20-b/report.json",
+    "controlledDocumentScopedComparisonBatch": "../n5.3-a34-v22-contextualized-text20-c/report.json"
+  },
+  "metrics": {
+    "successes": 40,
+    "attempts": 40,
+    "degradedResponses": 0,
+    "retryCount": 0,
+    "answeredCount": 38,
+    "answeredRate": 0.95,
+    "manualCorrectAnswers": 38,
+    "manualAccuracy": 0.95,
+    "unsupportedCitations": 0,
+    "automaticReferenceMatches": 29,
+    "automaticReferenceMatchRate": 0.725,
+    "relevantDocumentCitations": 38,
+    "relevantDocumentCitationRate": 0.95,
+    "anyGoldPageCitations": 38,
+    "anyGoldPageCitationRate": 0.95,
+    "latency": {
+      "count": 40,
+      "p50Ms": 12119.553,
+      "p95Ms": 22062.067,
+      "p99Ms": 24660.48,
+      "minMs": 6732.098,
+      "maxMs": 24660.48,
+      "meanMs": 12436.585
+    }
+  },
+  "knownFailures": [
+    {
+      "caseId": "mmlongbench-text-0364",
+      "kind": "ANSWERABLE_REFUSAL",
+      "description": "Godfrey Phillips India Limited's single-page banker list is complete, but the agent returned INSUFFICIENT_EVIDENCE."
+    },
+    {
+      "caseId": "mmlongbench-text-0700",
+      "kind": "ANSWERABLE_REFUSAL",
+      "description": "The Delaware Superior Court matter involving Diane Hanson contains EFiled Filing ID 48897809 and Case Number 5152012 on page 1, but the agent returned INSUFFICIENT_EVIDENCE."
+    }
+  ],
+  "usageBoundary": {
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  }
+}

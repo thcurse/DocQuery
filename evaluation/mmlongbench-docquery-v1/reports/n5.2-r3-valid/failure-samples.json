@@ -1,0 +1,915 @@
+[
+  {
+    "caseId": "mmlongbench-r3-0078",
+    "sourceRowIndex": 78,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        6,
+        17
+      ],
+      "physicalGoldPages": [
+        6,
+        17
+      ],
+      "hitPhysicalGoldPages": [
+        17
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0136",
+    "sourceRowIndex": 136,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.2857142857142857,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13
+      ],
+      "physicalGoldPages": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13
+      ],
+      "hitPhysicalGoldPages": [
+        6,
+        13
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0190",
+    "sourceRowIndex": 190,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        8,
+        29
+      ],
+      "physicalGoldPages": [
+        8,
+        29
+      ],
+      "hitPhysicalGoldPages": [
+        8
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0221",
+    "sourceRowIndex": 221,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        7,
+        8
+      ],
+      "physicalGoldPages": [
+        7,
+        8
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0223",
+    "sourceRowIndex": 223,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        8,
+        9,
+        10
+      ],
+      "physicalGoldPages": [
+        8,
+        9,
+        10
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0225",
+    "sourceRowIndex": 225,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        4,
+        16
+      ],
+      "physicalGoldPages": [
+        4,
+        16
+      ],
+      "hitPhysicalGoldPages": [
+        4
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0229",
+    "sourceRowIndex": 229,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        16,
+        17
+      ],
+      "physicalGoldPages": [
+        16,
+        17
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0251",
+    "sourceRowIndex": 251,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 0.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.0,
+      "printedGoldPages": [
+        3
+      ],
+      "physicalGoldPages": [
+        3
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0253",
+    "sourceRowIndex": 253,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.14285714285714285,
+      "printedGoldPages": [
+        3
+      ],
+      "physicalGoldPages": [
+        3
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0265",
+    "sourceRowIndex": 265,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.14285714285714285,
+      "printedGoldPages": [
+        15
+      ],
+      "physicalGoldPages": [
+        15
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0324",
+    "sourceRowIndex": 324,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.14285714285714285,
+      "printedGoldPages": [
+        12
+      ],
+      "physicalGoldPages": [
+        16
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0326",
+    "sourceRowIndex": 326,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        22
+      ],
+      "physicalGoldPages": [
+        26
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0507",
+    "sourceRowIndex": 507,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        8
+      ],
+      "physicalGoldPages": [
+        8
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0582",
+    "sourceRowIndex": 582,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        2,
+        5
+      ],
+      "physicalGoldPages": [
+        2,
+        5
+      ],
+      "hitPhysicalGoldPages": [
+        5
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0592",
+    "sourceRowIndex": 592,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 0.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.0,
+      "printedGoldPages": [
+        1,
+        2,
+        3,
+        10
+      ],
+      "physicalGoldPages": [
+        1,
+        2,
+        3,
+        10
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0601",
+    "sourceRowIndex": 601,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        11,
+        14
+      ],
+      "physicalGoldPages": [
+        11,
+        14
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0607",
+    "sourceRowIndex": 607,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        37,
+        38
+      ],
+      "physicalGoldPages": [
+        37,
+        38
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0657",
+    "sourceRowIndex": 657,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.14285714285714285,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "physicalGoldPages": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "hitPhysicalGoldPages": [
+        11,
+        20,
+        28
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0677",
+    "sourceRowIndex": 677,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        3
+      ],
+      "physicalGoldPages": [
+        3
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0681",
+    "sourceRowIndex": 681,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        9,
+        10
+      ],
+      "physicalGoldPages": [
+        9,
+        10
+      ],
+      "hitPhysicalGoldPages": [
+        9
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0702",
+    "sourceRowIndex": 702,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        13,
+        14
+      ],
+      "physicalGoldPages": [
+        13,
+        14
+      ],
+      "hitPhysicalGoldPages": [
+        13
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0811",
+    "sourceRowIndex": 811,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        3,
+        12
+      ],
+      "physicalGoldPages": [
+        3,
+        12
+      ],
+      "hitPhysicalGoldPages": [
+        12
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0813",
+    "sourceRowIndex": 813,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        3,
+        42
+      ],
+      "physicalGoldPages": [
+        3,
+        42
+      ],
+      "hitPhysicalGoldPages": [
+        42
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0825",
+    "sourceRowIndex": 825,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        7,
+        17
+      ],
+      "physicalGoldPages": [
+        7,
+        17
+      ],
+      "hitPhysicalGoldPages": [
+        7
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0832",
+    "sourceRowIndex": 832,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        1,
+        2
+      ],
+      "physicalGoldPages": [
+        1,
+        2
+      ],
+      "hitPhysicalGoldPages": [
+        2
+      ]
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0878",
+    "sourceRowIndex": 878,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.5,
+      "printedGoldPages": [
+        50
+      ],
+      "physicalGoldPages": [
+        50
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0921",
+    "sourceRowIndex": 921,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        17
+      ],
+      "physicalGoldPages": [
+        17
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-0960",
+    "sourceRowIndex": 960,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 0.0,
+      "documentHitAt10": 0.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.0,
+      "printedGoldPages": [
+        18,
+        20
+      ],
+      "physicalGoldPages": [
+        18,
+        20
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-1025",
+    "sourceRowIndex": 1025,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        29
+      ],
+      "physicalGoldPages": [
+        29
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-1033",
+    "sourceRowIndex": 1033,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.25,
+      "printedGoldPages": [
+        47
+      ],
+      "physicalGoldPages": [
+        47
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-1034",
+    "sourceRowIndex": 1034,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 0.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.25,
+      "printedGoldPages": [
+        40,
+        47
+      ],
+      "physicalGoldPages": [
+        40,
+        47
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-1059",
+    "sourceRowIndex": 1059,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 0.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.5,
+      "printedGoldPages": [
+        43
+      ],
+      "physicalGoldPages": [
+        43
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  },
+  {
+    "caseId": "mmlongbench-r3-1060",
+    "sourceRowIndex": 1060,
+    "httpOk": true,
+    "httpStatus": 200,
+    "degraded": false,
+    "metrics": {
+      "documentHitAt1": 1.0,
+      "documentHitAt3": 1.0,
+      "documentHitAt5": 1.0,
+      "documentHitAt10": 1.0,
+      "anyGoldPageHitAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allGoldPagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        44
+      ],
+      "physicalGoldPages": [
+        44
+      ],
+      "hitPhysicalGoldPages": []
+    }
+  }
+]

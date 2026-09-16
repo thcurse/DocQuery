@@ -1,5 +1,5 @@
 import { CopyOutlined, ExperimentOutlined, ReloadOutlined, SendOutlined } from '@ant-design/icons'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   Alert,
   Button,
@@ -25,6 +25,7 @@ import { ApiError, api, collectAllPages } from '../../api/client'
 import { PageHeader } from '../../components/PageHeader'
 import { ErrorState, PageLoading } from '../../components/PageState'
 import type { AnswerResponse, RetrievalMode, RetrieveResponse, ServiceCallResult } from '../../domain/types'
+import { usePageRequest } from '../../hooks/usePageRequest'
 import { useTenantId } from '../../hooks/useTenantId'
 
 type Operation = 'retrieve' | 'answer'
@@ -43,7 +44,6 @@ interface PlaygroundForm {
 interface ExecutionResult {
   operation: Operation
   result: ServiceCallResult<RetrieveResponse | AnswerResponse>
-  idempotencyKey: string
 }
 
 const newKey = () => crypto.randomUUID()
@@ -54,6 +54,7 @@ export function ApiPlaygroundPage() {
   const [idempotencyKey, setIdempotencyKey] = useState(newKey)
   const [execution, setExecution] = useState<ExecutionResult>()
   const [failure, setFailure] = useState<ApiError>()
+  const execute = usePageRequest()
   const applicationId = Form.useWatch('applicationId', form)
   const applications = useQuery({
     queryKey: ['applications', tenantId, 'all'],
@@ -69,8 +70,8 @@ export function ApiPlaygroundPage() {
     enabled: Number.isSafeInteger(applicationId) && applicationId > 0,
   })
 
-  const execute = useMutation({
-    mutationFn: async (values: PlaygroundForm) => {
+  const submit = (values: PlaygroundForm) => execute.run(
+    async (signal) => {
       const request = {
         query: values.query.trim(),
         mode: values.mode,
@@ -81,19 +82,21 @@ export function ApiPlaygroundPage() {
         actorRef: values.actorRef?.trim() || undefined,
       }
       const result = values.operation === 'retrieve'
-        ? await api.retrieve(values.knowledgeBaseId, values.credential.trim(), idempotencyKey, request, context)
-        : await api.answer(values.knowledgeBaseId, values.credential.trim(), idempotencyKey, request, context)
-      return { operation: values.operation, result, idempotencyKey } satisfies ExecutionResult
+        ? await api.retrieve(values.knowledgeBaseId, values.credential.trim(), idempotencyKey, request, context, signal)
+        : await api.answer(values.knowledgeBaseId, values.credential.trim(), idempotencyKey, request, context, signal)
+      return { operation: values.operation, result } satisfies ExecutionResult
     },
-    onMutate: () => { setFailure(undefined); setExecution(undefined) },
-    onSuccess: (result) => {
-      setExecution(result)
-      setIdempotencyKey(newKey())
+    {
+      onStart: () => { setFailure(undefined); setExecution(undefined) },
+      onSuccess: (result) => {
+        setExecution(result)
+        setIdempotencyKey(newKey())
+      },
+      onError: (error) => setFailure(error instanceof ApiError
+        ? error
+        : new ApiError(0, 'NETWORK_ERROR', '无法连接 DocQuery 服务')),
     },
-    onError: (error) => setFailure(error instanceof ApiError
-      ? error
-      : new ApiError(0, 'NETWORK_ERROR', '无法连接 DocQuery 服务')),
-  })
+  )
 
   if (knowledgeBases.isLoading || applications.isLoading) return <PageLoading />
   if (knowledgeBases.isError || applications.isError) {
@@ -127,12 +130,13 @@ export function ApiPlaygroundPage() {
           <Card title={<Space><ExperimentOutlined />请求配置</Space>}>
             <Form
               form={form}
+              clearOnDestroy
               layout="vertical"
               initialValues={{ operation: 'retrieve', mode: 'HYBRID', topK: 5 }}
               onValuesChange={(changed) => {
                 if ('applicationId' in changed) form.setFieldValue('knowledgeBaseId', undefined)
               }}
-              onFinish={(values) => execute.mutate(values)}
+              onFinish={submit}
             >
               <Form.Item name="operation" label="接口">
                 <Segmented block options={[{ value: 'retrieve', label: '/retrieve' }, { value: 'answer', label: '/answer' }]} />
@@ -291,8 +295,11 @@ function AnswerView({ data }: { data: AnswerResponse }) {
       <Typography.Paragraph className="answer-text">{data.answer ?? '当前证据不足，未生成回答。'}</Typography.Paragraph>
       <Typography.Title level={5}>引用证据（{data.citations.length}）</Typography.Title>
       {data.citations.map((citation) => (
-        <Card key={citation.evidenceId} size="small" title={`[${citation.evidenceId}] ${citation.documentName}`}>
-          <Typography.Paragraph type="secondary">{citation.headingPath.length > 0 ? citation.headingPath.join(' / ') : '文档正文'}</Typography.Paragraph>
+        <Card key={citation.citationIndex} size="small" title={`[${citation.citationIndex}] ${citation.documentName}`}>
+          <Typography.Paragraph type="secondary">
+            {citation.headingPath.length > 0 ? citation.headingPath.join(' / ') : '文档正文'}
+            {citation.pageNumber ? ` · 第 ${citation.pageNumber} 页` : ''}
+          </Typography.Paragraph>
           <blockquote className="evidence-block">{citation.text}{citation.truncated ? '…' : ''}</blockquote>
         </Card>
       ))}

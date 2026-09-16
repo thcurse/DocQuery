@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a27-audit-summary-v1",
+  "source": "application_query_audit",
+  "actorRef": "n5.3-a27-v20-narrow-search-frozen20",
+  "logicalRequests": 20,
+  "httpAttempts": 20,
+  "succeededAttempts": 20,
+  "failedAttempts": 0,
+  "toolRounds": 40,
+  "toolCalls": 50,
+  "modelCalls": 60,
+  "canonicalCharacters": 334041,
+  "failedAttemptCodes": {},
+  "boundary": "Counts are audit facts for the 20 valid a27 requests. The interrupted a26 transport-only run is excluded. No question, answer, citation text, credential, provider token usage, or cost is stored here."
+}

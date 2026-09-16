@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a38-v22-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge semantic correctness against the frozen answer and inspected single-page PDF evidence.",
+    "Accept concise paraphrases, equivalent units, and supporting detail that does not change the requested fact.",
+    "Require every material answer component to be supported by cited evidence from the authorized corpus.",
+    "Do not treat automatic exact-match or automatic Gold-page misses as manual answer failures."
+  ],
+  "decisions": [
+    {"caseId":"docquery-curated-f-001","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The 7B-to-70B range is correct."},
+    {"caseId":"docquery-curated-f-002","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Dialogue use cases is correct."},
+    {"caseId":"docquery-curated-f-003","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both high-level concepts and first principles are returned."},
+    {"caseId":"docquery-curated-f-004","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The reported 27% TimeQA improvement is correct; the additional result detail is supported."},
+    {"caseId":"docquery-curated-f-005","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both anchor roles are correctly explained."},
+    {"caseId":"docquery-curated-f-006","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All three applications are correctly paraphrased."},
+    {"caseId":"docquery-curated-f-007","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"2.8 million pairs is correct."},
+    {"caseId":"docquery-curated-f-008","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Otter is correct."},
+    {"caseId":"docquery-curated-f-009","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"5°C to 35°C is correct."},
+    {"caseId":"docquery-curated-f-010","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The 10°C minimum is correct."},
+    {"caseId":"docquery-curated-f-011","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"At least two internships is correct."},
+    {"caseId":"docquery-curated-f-012","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Graduation requirement is correct."},
+    {"caseId":"docquery-curated-f-013","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both same-LAN and same-Huawei-ID conditions are returned."},
+    {"caseId":"docquery-curated-f-014","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"MeeTime calls, streamed video, and music/audio playback are all correctly returned."},
+    {"caseId":"docquery-curated-f-015","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"59% is correct."},
+    {"caseId":"docquery-curated-f-016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"76% is correct."},
+    {"caseId":"docquery-curated-f-017","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"75% is correct."},
+    {"caseId":"docquery-curated-f-018","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"46% is correct."},
+    {"caseId":"docquery-curated-f-019","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"83% is correct."},
+    {"caseId":"docquery-curated-f-020","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Naive, Advanced, and Modular RAG are all returned."}
+  ]
+}

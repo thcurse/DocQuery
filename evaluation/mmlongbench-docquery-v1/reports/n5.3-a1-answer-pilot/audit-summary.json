@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "docquery-n5.3-a1-audit-summary-v1",
+  "source": "application_query_audit",
+  "actorRef": "n5.3-a1-answer-pilot",
+  "logicalRequests": 20,
+  "httpAttempts": 31,
+  "succeededAttempts": 10,
+  "failedAttempts": 21,
+  "toolRounds": 63,
+  "toolCalls": 108,
+  "modelCalls": 92,
+  "canonicalCharacters": 79814,
+  "failedAttemptCodes": {
+    "ANSWER_EXECUTION_LIMIT_EXCEEDED": 15,
+    "ANSWER_OUTPUT_INVALID": 6
+  },
+  "boundary": "Counts are audit facts for all initial and retry attempts. No question, answer, citation text, credential, provider token usage, or cost is stored here."
+}

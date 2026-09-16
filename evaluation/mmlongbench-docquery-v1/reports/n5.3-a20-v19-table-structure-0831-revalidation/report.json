@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "docquery-n5.3-a20-v19-table-structure-0831-v1",
+  "status": "COMPLETED_PENDING_REVIEW",
+  "generatedAt": "2026-08-25T11:54:18.996108+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0831"
+    ],
+    "caseCount": 1,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v19"
+  },
+  "metrics": {
+    "successes": 1,
+    "attempts": 1,
+    "answered": 1,
+    "controlledRefusals": 0,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 1,
+    "anyGoldPageCitations": 1,
+    "goldPageCitationCoverage": 1.0,
+    "allGoldPagesCited": 1,
+    "latency": {
+      "count": 1,
+      "p50Ms": 21370.57,
+      "p95Ms": 21370.57,
+      "p99Ms": 21370.57,
+      "minMs": 21370.57,
+      "maxMs": 21370.57,
+      "meanMs": 21370.57
+    },
+    "errorCounts": {},
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 1,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a20-v19-table-structure-0831-v1",
+    "actorRef": "n5.3-a20-v19-table-structure-0831"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": null,
+    "auditSummary": null
+  }
+}

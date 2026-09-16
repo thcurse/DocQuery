@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a28-audit-summary-v1",
+  "source": "application_query_audit",
+  "actorRef": "n5.3-a28-v21-evidence-packages-text20",
+  "logicalRequests": 20,
+  "httpAttempts": 20,
+  "succeededAttempts": 20,
+  "failedAttempts": 0,
+  "toolRounds": 47,
+  "toolCalls": 63,
+  "modelCalls": 67,
+  "canonicalCharacters": 342607,
+  "failedAttemptCodes": {},
+  "boundary": "Counts are audit facts for the 20 A28 requests. No question, answer, citation text, credential, provider token usage, or cost is stored here."
+}

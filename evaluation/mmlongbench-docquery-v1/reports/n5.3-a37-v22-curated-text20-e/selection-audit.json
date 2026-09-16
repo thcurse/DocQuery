@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "docquery-n5.3-a1-selection-audit-v1",
+  "status": "VALIDATED",
+  "caseCount": 20,
+  "documentCount": 14,
+  "answerFormatCounts": {
+    "Float": 2,
+    "Int": 3,
+    "Str": 15
+  },
+  "domainCounts": {
+    "Academic paper": 1,
+    "Administration/Industry file": 6,
+    "Brochure": 4,
+    "Financial report": 4,
+    "Guidebook": 2,
+    "Tutorial/Workshop": 3
+  },
+  "selectionSha256": "a9d78def5d3bd3f112e9deafe60bc55d809dcb8d43d6a3ce775f114cd922c901",
+  "caseIds": [
+    "mmlongbench-text-0232",
+    "mmlongbench-text-0383",
+    "mmlongbench-text-0387",
+    "mmlongbench-text-0434",
+    "mmlongbench-text-0477",
+    "mmlongbench-text-0483",
+    "mmlongbench-text-0933",
+    "mmlongbench-text-1012",
+    "mmlongbench-text-1080",
+    "mmlongbench-text-1077",
+    "mmlongbench-text-0907",
+    "mmlongbench-text-0908",
+    "mmlongbench-text-0914",
+    "mmlongbench-text-0948",
+    "mmlongbench-text-0949",
+    "mmlongbench-text-0950",
+    "mmlongbench-text-0961",
+    "mmlongbench-text-0977",
+    "mmlongbench-text-0987",
+    "mmlongbench-text-1069"
+  ]
+}

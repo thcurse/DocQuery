@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "docquery-n5.3-a16-v16-sonnet-4stage-v1",
+  "status": "COMPLETED_PENDING_REVIEW",
+  "generatedAt": "2026-08-25T09:34:21.897035+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0562",
+      "mmlongbench-r3-0607",
+      "mmlongbench-r3-0831",
+      "mmlongbench-r3-0937",
+      "mmlongbench-r3-1032"
+    ],
+    "caseCount": 5,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v16"
+  },
+  "metrics": {
+    "successes": 5,
+    "attempts": 5,
+    "answered": 4,
+    "controlledRefusals": 1,
+    "automaticReferenceMatches": 3,
+    "relevantDocumentCitations": 4,
+    "anyGoldPageCitations": 4,
+    "goldPageCitationCoverage": 0.8,
+    "allGoldPagesCited": 4,
+    "latency": {
+      "count": 5,
+      "p50Ms": 16036.995,
+      "p95Ms": 25646.967,
+      "p99Ms": 25646.967,
+      "minMs": 11356.86,
+      "maxMs": 25646.967,
+      "meanMs": 17460.923
+    },
+    "errorCounts": {},
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 5,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "a16s5-1733",
+    "actorRef": "a16-sonnet-4stage"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": null,
+    "auditSummary": null
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "docquery-n5.3-a28-text20-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "sourceEvaluation": "n5.3-a27-v20-narrow-search-frozen20-pilot",
+  "purpose": "Revalidate the v21 evidence-package handoff on 20 non-visual public-dataset questions",
+  "selectionPolicy": [
+    "Retain the 19 non-visual cases from the A27 frozen 20-case pilot.",
+    "Exclude visual case mmlongbench-r3-0265 because visual understanding is outside the current Answer scope.",
+    "Replace it with non-visual Int case mmlongbench-r3-0136 from the frozen N5.2-R3 valid set.",
+    "Keep exactly five Str, five Int, five Float, and five List cases across 20 distinct source documents and all seven source domains.",
+    "Do not replace failures after execution."
+  ],
+  "caseIds": [
+    "mmlongbench-r3-0016",
+    "mmlongbench-r3-0078",
+    "mmlongbench-r3-0136",
+    "mmlongbench-r3-0221",
+    "mmlongbench-r3-0239",
+    "mmlongbench-r3-0243",
+    "mmlongbench-r3-0305",
+    "mmlongbench-r3-0364",
+    "mmlongbench-r3-0562",
+    "mmlongbench-r3-0607",
+    "mmlongbench-r3-0653",
+    "mmlongbench-r3-0677",
+    "mmlongbench-r3-0741",
+    "mmlongbench-r3-0831",
+    "mmlongbench-r3-0903",
+    "mmlongbench-r3-0937",
+    "mmlongbench-r3-0960",
+    "mmlongbench-r3-0982",
+    "mmlongbench-r3-1032",
+    "mmlongbench-r3-1062"
+  ]
+}

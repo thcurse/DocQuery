@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge correctness against the frozen question, answer format, reference answer, and cited canonical evidence.",
+    "A failed HTTP request is incorrect.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0562","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned [46,27,64] in the requested order with supporting Pew evidence."},
+    {"caseId":"mmlongbench-r3-0607","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Cited both 61% values on Gold pages 37 and 38 and computed 122."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Both HTTP attempts failed with ANSWER_OUTPUT_INVALID after real Agent exploration, so no final answer or citations were available for adjudication."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned all 14 HIT applications and cited Gold page 4; the additional related HIMSS sentence does not contradict them."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"SUPPORTED_INCOMPLETE","datasetIssue":null,"note":"Returned and cited only the 133.2 million technology-and-development component; it omitted the 120.1 million general-and-administrative component and the frozen requested total of 253.3 million."}
+  ]
+}

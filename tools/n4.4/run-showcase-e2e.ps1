@@ -182,8 +182,9 @@ try {
         'DOCQUERY_SEARCH_ENABLED' = 'true'
         'DOCQUERY_ELASTICSEARCH_ENDPOINT' = "http://127.0.0.1:$elasticsearchPort"
         'DOCQUERY_RETRIEVAL_PROVIDER_ENABLED' = 'true'
-        'DOCQUERY_DEEPSEEK_BASE_URL' = "http://127.0.0.1:$fakePort/v1"
-        'DEEPSEEK_API_KEY' = 'n44-fake-chat-key'
+        'DOCQUERY_PACKY_BASE_URL' = "http://127.0.0.1:$fakePort/v1"
+        'PACKY_API_KEY' = 'n44-fake-chat-key'
+        'DOCQUERY_PACKY_CHAT_MODEL' = 'grok-4.6'
         'DOCQUERY_ALIBABA_EMBEDDING_BASE_URL' = "http://127.0.0.1:$fakePort/v1"
         'DASHSCOPE_API_KEY' = 'n44-fake-embedding-key'
         'DOCQUERY_REDIS_HOST' = '127.0.0.1'

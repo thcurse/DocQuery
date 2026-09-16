@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "docquery-n5.3-a12-v12-opus-auto-finalization-0607-v1",
+  "status": "COMPLETED_PENDING_REVIEW",
+  "generatedAt": "2026-08-25T07:56:02.862389+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0607"
+    ],
+    "caseCount": 1,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v12"
+  },
+  "metrics": {
+    "successes": 1,
+    "attempts": 1,
+    "answered": 0,
+    "controlledRefusals": 1,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 0,
+    "anyGoldPageCitations": 0,
+    "goldPageCitationCoverage": 0.0,
+    "allGoldPagesCited": 0,
+    "latency": {
+      "count": 1,
+      "p50Ms": 95891.569,
+      "p95Ms": 95891.569,
+      "p99Ms": 95891.569,
+      "minMs": 95891.569,
+      "maxMs": 95891.569,
+      "meanMs": 95891.569
+    },
+    "errorCounts": {},
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 1,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a12-v12-opus-auto-finalization-0607-20260825-1554",
+    "actorRef": "n5.3-a12-v12-opus-auto-finalization-0607-revalidation"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": null,
+    "auditSummary": null
+  }
+}

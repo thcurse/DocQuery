@@ -1,9 +1,9 @@
 # DocQuery 新服务交接说明
 
-> 最后更新：2026-08-20  
-> 当前检查点：N0—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已实现或执行、验证并经用户确认完成并关闭  
-> 当前验证：最终回归为 160 项 Java 测试中 158 项通过、2 项真实供应商冒烟按设计跳过，0 failure、0 error，前端 Vitest 13/13，DeepDoc 10/10；测试科技评测知识库 100/100 READY；N5.2-R1 固定 10 题、3 模式的 30/30 个真实 `/retrieve` 请求成功，0 重试、0 降级  
-> 下一步：只讨论是否使用唯一一次有证据的检索参数调整以及 N5.2-R2 的最终冻结范围；不得自动开始 R2、Answer 正式评测或多轮 Agent
+> 最后更新：2026-08-24
+> 当前检查点：N0—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 已经用户确认关闭；N5.2-R3 已执行并待用户验收；N5.3-A7 固定 5 题复验失败并回滚到 A6 运行基线
+> 当前验证：Java 180 项中 178 项通过、2 项真实供应商冒烟按设计跳过，0 failure、0 error，前端 Vitest 14/14，DeepDoc 10/10；评测知识库 100/100 READY；N5.2-R3 的 80/80 个真实 `/retrieve` 请求成功；A7-v2 人工正确 0/5
+> 下一步：只讨论 Answer Agent 的最小任务完成约束；不得自动扩大到 20/80 题、继续付费评测或开始多轮 Conversation
 
 ## 1. 新会话必须遵守的协作方式
 
@@ -292,11 +292,35 @@ D:\IdeaProjects\DocQuery        当前全新服务，唯一开发目标
 
 - 管理后台租户概览大屏和管理操作审计；N4.4 已补齐文档生命周期、服务 API 调试、查询审计和使用说明页面。
 - 管理操作审计；N3.4 只有服务面查询审计。
-- MMLongBench-Doc 的 100 份真实 PDF/80 问题输入已完成适配和 P2 真实租户完整入库：100/100 READY、80/80 case 保留。该结果证明当前 300 页边界内真实 PDF 的完整入库可行性，但不外推到扫描件 OCR、图片理解、复杂表格语义或四格式总体质量。Retrieve 仅完成固定 10 题的 R1 PILOT；剩余 54 道正式保留集、Answer 质量、查询成本和正式性能证据仍未执行。
+- MMLongBench-Doc 的 100 份真实 PDF/80 问题输入已完成适配和 P2 真实租户完整入库：100/100 READY、80/80 case 保留。该结果证明当前 300 页边界内真实 PDF 的完整入库可行性，但不外推到扫描件 OCR、图片理解、复杂表格语义或四格式总体质量。N5.2-R3 已完成 80 题 Retrieve 有效集评测并待用户验收；Answer 只完成固定 5 题失败样本诊断，尚无合格的正式质量结论。
 - N5 路线图中的系统化故障注入、正式并发压测和可复现工程报告尚未执行；现有证据是默认回归、真实依赖集成测试、真实浏览器链路和 N3.4 Fake Gateway 确定性基线，不能替代正式 N5 报告。
 - 多轮 Conversation 数据模型、会话历史/摘要、流式回答和面向多轮记忆的 Agent 尚未设计或实现；现有 `/answer` 是受控单轮 Answer。
 
-N3.1—N3.4、N4.1—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已实现或执行、验证并经用户验收。N5.1 已把 MMLongBench-Doc 锁定并真实入库为 100 份 READY PDF 和 80 个冻结问题；R1 已完成固定 10 题的真实 Retrieve PILOT。剩余 54 道正式保留集、Answer 效果、查询成本和正式性能证据仍未执行。
+N3.1—N3.4、N4.1—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已实现或执行、验证并经用户验收。N5.1 已把 MMLongBench-Doc 锁定并真实入库为 100 份 READY PDF 和 80 个冻结问题；N5.2-R3 的 80 题 Retrieve 有效集已执行并待验收。N5.3 Answer 仍停留在 5 题定向诊断，没有形成可扩大执行的合格结论。
+
+2026-08-24 全部 DeepSeek Chat 调用已替换为 PackyAPI Responses：实际生效 Base URL 为
+`https://slb-v1.api.fan/v1`，实际模型 ID 为 `grok-4.6`。用户口述的 `grok-5.6` 不在当前
+模型列表中，因此不得把本阶段证据外推到该名称。检索卡与 Answer 源码、配置和新产物元数据
+已切换，百炼 Embedding 不变，旧 `DEEPSEEK / DISABLED` 检索产物保持只读兼容。真实最小
+Answer 冒烟已完成一次 Tool Calling 和 Tool Result 续接，并返回严格最终 JSON；Java 70 项
+单测（68 通过、2 个真实供应商冒烟按设计跳过）、检索产物 IT 4/4 和前端 Vitest 14/14
+通过。新版后端已在 8080 启动；没有自动重建现有 100 份文档。本证据只说明协议链路可用，
+不代表缓存、成本、正式延迟或 Answer 质量达标。详见
+[`N5.3-A5 PackyAPI 模型供应商替换`](../development/N5.3-A5-PackyAPI-模型供应商替换.md)。
+
+2026-08-24 已使用 PackyAPI Responses `grok-4.6` 完成 N5.3-A6 固定 5 题 Answer 定向复验：
+HTTP 成功 5/5、供应商异常 0，但仅 2/5 返回回答，自动与人工正确均为 1/5，正确文档引用
+2/5、任意 Gold 页引用 1/5、平均 Gold 页覆盖率 0.20。失败主因已收敛为 Agent 提前拒答及
+同名章节消歧/完整性判断不足，不是 PackyAPI 协议或 DeepDoc 整体不可用。A6 状态为
+`COMPLETED_FAILED_REVALIDATION / PENDING_USER_ACCEPTANCE`，不得自动执行 20 题 Answer
+PILOT。详见 [`N5.3-A6 Answer 定向复验`](../development/N5.3-A6-Answer定向复验.md)。
+
+同日完成 N5.3-A7 Grok Agent 提示词与 Responses 状态续接实验。协议冒烟证明 PackyAPI
+支持 Function Calling、加密 reasoning 无状态续接和 Prompt Cache；修正完整上下文续接后，固定
+5 题仍只有 4/5 逻辑请求成功、1/5 返回回答、人工正确 0/5，且 `0937` 从 A6 正确回退为拒答。
+因此 A7 状态为 `COMPLETED_FAILED_REVALIDATION / PENDING_USER_ACCEPTANCE`，实验运行代码已
+回滚到 A6 `answer-agent-v4 / answer-policy-v4`，不得自动扩大评测。详见
+[`N5.3-A7 Grok Agent 提示词与 Responses 状态续接`](../development/N5.3-A7-Grok-Agent提示词与Responses状态续接.md)。
 
 ## 8. N2 分阶段顺序
 
@@ -312,7 +336,7 @@ N3 承担服务面鉴权、Redis 幂等、双路检索、RRF、原文证据、�
 
 ## 9. 新会话的第一项工作
 
-新会话完成规定文档阅读后，先核对 N3、N4.1—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已关闭，100 份租户完整入库和固定 10 题 Retrieve PILOT 已经完成；剩余 54 题、Answer 质量、查询成本和正式性能评测尚未执行，多轮 Agent 尚未开始。当前：
+新会话完成规定文档阅读后，先核对 N3、N4.1—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已关闭，100 份租户完整入库已完成，N5.2-R3 的 80 题 Retrieve 有效集已执行并待验收；N5.3-A7 固定 5 题 Answer 复验失败并已回滚，多轮 Conversation 尚未开始。当前：
 
 - N3.1 已实现、验证并经用户确认完成。
 - N3.2 已实现、验证并经用户确认完成。
@@ -330,9 +354,9 @@ N3 承担服务面鉴权、Redis 幂等、双路检索、RRF、原文证据、�
 - DeepDoc P0 CPU/GPU 技术验证任务仍作为默认关闭的独立 profiles 保留在根 `compose.yaml`；生产 `deepdoc` GPU HTTP 服务已改为默认 Compose 服务，方便从 Docker Desktop 启动整个 `docquery-greenfield` 分组。runner 与固定 GPU Dockerfile 位于 `tools/document-parser-p0/`，报告位于 `evaluation/mmlongbench-docquery-v1/reports/`。
 - 用户已明确授权 N5.1-P1，并补充要求四格式全部替换且默认开启。生产 Java 配置默认启用统一 DeepDoc Adapter，PDF、DOCX、TXT、Markdown 全部走同一 HTTP 服务，显式设置 `DOCQUERY_DEEPDOC_ENABLED=false` 才回退四个本地 Adapter。P1 验收时生产 DeepDoc 使用显式 Compose profile；用户于 2026-08-17 又要求将其改为默认服务，并删除已创建的 P0 GPU 技术验证容器，方便 Docker Desktop 一键启动整个分组。DeepDoc 内部解析并发固定为 1；继续使用既有文档处理主队列和整链路 Consumer，不新增解析队列或后处理队列。多个 Listener 可以并行持有不同文档，只有进入 DeepDoc 的解析段串行等待，之后仍各自继续检索卡、Embedding、索引和激活。
 - P1 最终默认回归为 Java 155 项中 153 项通过、2 项跳过，前端 13/13；HTTP 服务并发测试证明两个同时请求均正常完成且最大解析并发为 1。最终容器健康并实际使用 CUDA；真实 GPU PDF 冒烟只执行既有 49 页样本一份，得到 548 个带页位置的中立块，约耗时 73—75 秒，另各用 1 份既有 DOCX、TXT、Markdown 冒烟夹具验证格式分发和位置。
-- P2 已调用真实 DeepSeek 与百炼完成入库，但入库 token 未统一持久化、费用未计算。N5.2-R1 已使用专用应用凭证完成固定 10 题、3 模式、30 个真实 `/retrieve` 请求并由用户验收；未调用 `/answer` 或 DeepSeek，剩余 54 题、Answer 质量、查询成本和正式性能仍为 `NOT_EXECUTED`。
+- P2 已调用真实 DeepSeek 与百炼完成入库，但入库 token 未统一持久化、费用未计算。N5.2-R1 已使用专用应用凭证完成固定 10 题、3 模式、30 个真实 `/retrieve` 请求并由用户验收；N5.2-R3 已完成 80/80 个 HYBRID 请求，Doc Hit@5=`0.9250`、Page Coverage@10=`0.6554`、MRR@10=`0.8585`，当前待用户验收。
 - R1 三模式结果分别为：KEYWORD Doc R@5=`0.9000`、Page Coverage@10=`0.7833`、MRR@10=`0.7458`；SEMANTIC 为 `0.9000`、`0.6833`、`0.8667`；HYBRID 为 `1.0000`、`0.8333`、`0.9333`。PILOT 每种模式只有 10 个延迟样本，nearest-rank P95 等于最大值，不能作为正式性能结论。
-- 用户于 2026-08-20 明确确认 N5.2-R1 完成。当前未授权唯一一次参数调整或 N5.2-R2；不得自动执行剩余 54 题。
+- 用户于 2026-08-20 明确确认 N5.2-R1 完成；此后已授权并执行 N5.2-R2/R3，其中 R3 结果待验收。N5.3-A7 失败后不得自动继续 20/80 题 Answer 评测。
 - `mmlongbench-docquery-v1` 不是官方完整榜单结果；当前只能作为真实复杂 PDF 可靠性压力集候选。P0 两份成功、P1 单份真实 PDF HTTP 冒烟和三种非 PDF 夹具冒烟不代表生产 DocQuery 已验证扫描件 OCR、100 份总体准入或四格式总体质量。
 - 用户希望项目保持适合秋招展示的规模；N5 后续仍坚持最小必要证据，不扩大为大规模自制 Gold Set。
 - 多轮 Agent 排在外部 API 和正式效果评测之后；N4.4 已完成外部 API 交付，但多轮范围仍需在 N5 之后单独讨论和授权。
@@ -349,9 +373,9 @@ N3 承担服务面鉴权、Redis 幂等、双路检索、RRF、原文证据、�
 
 请先完整阅读 docs/product/00-DocQuery-新服务交接说明.md，再严格按照其中顺序完整阅读产品文档和独立技术选型。不要从旧对话印象或旧工程代码直接推断。
 
-当前 N0—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已实现或执行、验证并经用户验收并关闭。生产默认由统一 DeepDoc Adapter 接管 PDF、DOCX、TXT、Markdown；PDF 最大 300 页、页批次 1、内部解析并发 1。最终回归为 160 项 Java 测试中 158 项通过、2 项真实供应商冒烟按设计跳过，0 failure、0 error；前端 Vitest 13/13，DeepDoc 10/10。外部 `/retrieve`、`/answer`、OpenAPI、Postman 和后台使用说明已经交付。
+当前 N0—N4.4、N5.1-P0/P1/P2 与 N5.2-R1 均已实现或执行、验证并经用户验收并关闭；N5.2-R3 已执行并待验收。生产默认由统一 DeepDoc Adapter 接管 PDF、DOCX、TXT、Markdown；PDF 最大 300 页、页批次 1、内部解析并发 1。当前免费回归为 Java 180 项中 178 项通过、2 项真实供应商冒烟按设计跳过，0 failure、0 error；前端 Vitest 14/14，DeepDoc 10/10。外部 `/retrieve`、`/answer`、OpenAPI、Postman 和后台使用说明已经交付。
 
 `n3-eval-v1` 只作为格式、链路和指标冒烟夹具，不是正式 Gold Set。N5.1 已将 MMLongBench-Doc 锁定为 `mmlongbench-docquery-v1`：100 份上游真实 PDF、64 个纯文本证据可回答问题和 16 个不可回答问题。P2 已在“测试科技”租户完成 100/100 READY，Evidence 78,062/78,062、Navigation 2,422/2,422，80/80 case 已冻结；扫描件 OCR 和四格式总体质量仍未验证。
 
-P2 已调用真实 DeepSeek 与百炼完成检索卡和导航 Embedding，但入库 token 未统一采集、费用未计算。N5.2-R1 已对固定 10 道题执行 KEYWORD、SEMANTIC、HYBRID 共 30 个真实 `/retrieve` 请求并由用户验收；HYBRID 的 Doc R@5=`1.0000`、Page Coverage@10=`0.8333`、MRR@10=`0.9333`。未调用 `/answer` 或 DeepSeek，剩余 54 道正式保留集、Answer 质量、查询成本和正式性能仍为 `NOT_EXECUTED`。多轮 Conversation、会话记忆和流式 Answer 尚未设计或实现。下一步只讨论是否进行唯一一次有证据的参数调整以及 N5.2-R2 的冻结范围；在独立明确开始授权前，不执行 R2、Answer 正式评测或多轮 Agent。
+P2 已调用真实 DeepSeek 与百炼完成检索卡和导航 Embedding，但入库 token 未统一采集、费用未计算。N5.2-R3 已对 80 道有效题执行 HYBRID 评测：80/80 成功、Doc Hit@5=`0.9250`、Page Coverage@10=`0.6554`、MRR@10=`0.8585`，结果待用户验收。N5.3-A7 对 5 道失败题验证 PackyAPI `grok-4.6` 的提示词和 Responses 状态续接，人工正确仍为 0/5，实验代码已回滚到 A6 基线。多轮 Conversation、会话记忆和流式 Answer 尚未设计或实现。下一步只讨论单轮 Answer Agent 的最小任务完成约束；在独立明确授权前，不扩大付费评测或开始多轮 Agent。
 ```

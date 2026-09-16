@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-audit-summary-v1",
+  "source": "application_query_audit",
+  "rows": [
+    {"caseId":"mmlongbench-r3-0562","requestId":"15963b3d-3c88-4329-9c35-cbc2148b03e7","queryExecutionId":"966ee1ab-84f7-47db-8d98-7b2056a54f9a","httpStatus":200,"answerStatus":"ANSWERED","toolRounds":2,"toolCalls":4,"modelCalls":8,"canonicalCharacters":57781,"durationMs":82695},
+    {"caseId":"mmlongbench-r3-0607","requestId":"b3d607aa-9f56-483d-b35c-e89efe4e7580","queryExecutionId":"a2b7cfc6-2b13-4b82-bde5-f128be915e32","httpStatus":200,"answerStatus":"ANSWERED","toolRounds":3,"toolCalls":5,"modelCalls":7,"canonicalCharacters":19713,"durationMs":60679},
+    {"caseId":"mmlongbench-r3-0831","requestId":"65a452bf-1834-4012-b37f-37037e2b3504","queryExecutionId":"7a459c72-7409-4220-944e-e9ae2299351b","httpStatus":200,"answerStatus":"ANSWERED","toolRounds":0,"toolCalls":0,"modelCalls":7,"canonicalCharacters":2243,"durationMs":288159},
+    {"caseId":"mmlongbench-r3-0937","requestId":"d36a233e-e4eb-4df7-a964-53809b96a41c","queryExecutionId":"95f5d415-9353-43ba-b37b-8e8d20f06ef0","httpStatus":200,"answerStatus":"ANSWERED","toolRounds":2,"toolCalls":2,"modelCalls":4,"canonicalCharacters":10901,"durationMs":24601},
+    {"caseId":"mmlongbench-r3-1032","requestId":"33ca7e09-39e8-4d46-912b-682f144ca4f7","queryExecutionId":"205e1954-a684-41b0-9e03-9db18bd2c299","httpStatus":200,"answerStatus":"ANSWERED","toolRounds":0,"toolCalls":0,"modelCalls":3,"canonicalCharacters":13749,"durationMs":174525}
+  ],
+  "diagnosis": [
+    "The framework loop and generous fuses removed all HTTP and execution-limit failures.",
+    "All three correct cases used Agent tools; both incorrect cases used zero Agent tools.",
+    "The completion evaluator cannot discover evidence that the Agent never searched for, so a locally supported partial answer can be incorrectly passed.",
+    "answer-policy-v7 therefore requires one successful distinct verification search before accepting ANSWERED."
+  ]
+}

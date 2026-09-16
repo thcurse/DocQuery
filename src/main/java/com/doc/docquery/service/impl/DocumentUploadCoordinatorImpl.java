@@ -4,6 +4,7 @@ import com.doc.docquery.config.ObjectStorageProperties;
 import com.doc.docquery.dto.CreateDocumentUploadDTO;
 import com.doc.docquery.dto.CreateDocumentUploadMetadataDTO;
 import com.doc.docquery.dto.CreateDocumentVersionDTO;
+import com.doc.docquery.dto.DocumentRebuildSourceDTO;
 import com.doc.docquery.dto.StoredSourceObjectDTO;
 import com.doc.docquery.enums.DocumentSourceFormat;
 import com.doc.docquery.exception.BusinessException;
@@ -30,8 +31,8 @@ import java.util.UUID;
 /**
  * 先持久保存原文件，再调用 N2.1 原子受理事务。
  *
- * <p>对象存储与 MySQL 无分布式事务，因此所有异常路径都只清理本次随机 Key；
- * 幂等重放返回旧版本时也会删除本次未被数据库引用的多余对象。</p>
+ * <p>对象存储与 MySQL 无分布式事务，因此仅在受理前失败或确认无引用时清理本次
+ * 随机 Key；提交结果不确定时保留对象，交由延迟回收处理。</p>
  */
 @Service
 @ConditionalOnProperty(
@@ -123,6 +124,85 @@ public class DocumentUploadCoordinatorImpl implements DocumentUploadCoordinator 
         );
     }
 
+    @Override
+    public DocumentUploadAcceptedVO rebuildDocument(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            String idempotencyKey
+    ) {
+        String key = validateIdempotencyKey(idempotencyKey);
+        DocumentUploadAcceptedVO replay = acceptanceService.findRebuildReplay(
+                principal, tenantId, knowledgeBaseId, documentId, key
+        );
+        if (replay != null) {
+            return replay;
+        }
+        DocumentRebuildSourceDTO source = acceptanceService.loadRebuildSource(
+                principal, tenantId, knowledgeBaseId, documentId
+        );
+        if (!objectStore.bucketName().equals(source.sourceBucket())) {
+            throw rebuildSourceUnavailable();
+        }
+
+        String objectKey = newObjectKey(tenantId);
+        boolean objectWriteAttempted = false;
+        StoredSourceObjectDTO copied;
+        try (InputStream input = objectStore.open(source.sourceObjectKey())) {
+            objectWriteAttempted = true;
+            SourceObjectStore.WriteResult result = objectStore.put(
+                    objectKey,
+                    input,
+                    source.sourceSizeBytes(),
+                    properties.getUploadMaxBytes(),
+                    source.sourceContentType()
+            );
+            if (result.sizeBytes() != source.sourceSizeBytes()
+                    || !result.sha256().equals(source.sourceSha256())) {
+                throw rebuildSourceUnavailable();
+            }
+            copied = new StoredSourceObjectDTO();
+            copied.setOriginalFilename(source.originalFilename());
+            copied.setSourceFormat(source.sourceFormat());
+            copied.setSourceBucket(objectStore.bucketName());
+            copied.setSourceObjectKey(objectKey);
+            copied.setSourceSizeBytes(result.sizeBytes());
+            copied.setSourceSha256(result.sha256());
+            copied.setSourceContentType(source.sourceContentType());
+        } catch (BusinessException exception) {
+            if (objectWriteAttempted) {
+                safeDelete(objectKey, "rejected rebuild object");
+            }
+            throw exception;
+        } catch (ObjectStorageException exception) {
+            if (objectWriteAttempted) {
+                safeDelete(objectKey, "failed rebuild object");
+            }
+            throw mapStorageFailure(exception);
+        } catch (IOException exception) {
+            if (objectWriteAttempted) {
+                safeDelete(objectKey, "unreadable rebuild object");
+            }
+            throw unavailable();
+        } catch (RuntimeException exception) {
+            if (objectWriteAttempted) {
+                safeDelete(objectKey, "unexpected failed rebuild object");
+            }
+            throw exception;
+        }
+        // 先完成输入流关闭，再开始受理，避免关闭失败补偿已提交的原文件。
+        return acceptStoredSource(copied, stored -> acceptanceService.acceptRebuild(
+                principal,
+                tenantId,
+                knowledgeBaseId,
+                documentId,
+                source.sourceVersionId(),
+                key,
+                stored
+        ));
+    }
+
     private DocumentUploadAcceptedVO storeAndAccept(
             long tenantId,
             MultipartFile file,
@@ -131,6 +211,7 @@ public class DocumentUploadCoordinatorImpl implements DocumentUploadCoordinator 
         ValidatedFile validated = validateFile(file);
         String objectKey = newObjectKey(tenantId);
         boolean objectWriteAttempted = false;
+        StoredSourceObjectDTO source;
         try (InputStream input = file.getInputStream()) {
             // Key 是本次调用独占的随机值，因此即使 PUT 中途失败也可安全精确删除。
             objectWriteAttempted = true;
@@ -141,21 +222,11 @@ public class DocumentUploadCoordinatorImpl implements DocumentUploadCoordinator 
                     properties.getUploadMaxBytes(),
                     validated.contentType()
             );
-            StoredSourceObjectDTO source = toStoredSource(
+            source = toStoredSource(
                     validated,
                     objectKey,
                     result
             );
-            DocumentUploadAcceptedVO accepted = operation.accept(source);
-
-            // 合法幂等重放会返回旧版本；当前随机对象没有引用时必须主动清理。
-            if (documentVersionMapper.countBySourceObject(
-                    objectStore.bucketName(),
-                    objectKey
-            ) == 0) {
-                safeDelete(objectKey, "unreferenced replay object");
-            }
-            return accepted;
         } catch (BusinessException exception) {
             if (objectWriteAttempted) {
                 safeDelete(objectKey, "rejected upload object");
@@ -176,6 +247,38 @@ public class DocumentUploadCoordinatorImpl implements DocumentUploadCoordinator 
                 safeDelete(objectKey, "unexpected failed upload object");
             }
             throw exception;
+        }
+        return acceptStoredSource(source, operation);
+    }
+
+    private DocumentUploadAcceptedVO acceptStoredSource(
+            StoredSourceObjectDTO source,
+            AcceptanceOperation operation
+    ) {
+        DocumentUploadAcceptedVO accepted;
+        try {
+            accepted = operation.accept(source);
+        } catch (BusinessException exception) {
+            // 业务拒绝已回滚；仍检查引用，保护对象 Key 冲突等已存在引用的情况。
+            deleteIfUnreferenced(source, "rejected source object");
+            throw exception;
+        }
+        // 其他受理异常可能发生在提交时，不能凭异常或即时查询判断事务未提交。
+        // 合法幂等重放会返回旧版本；仅清理确认未被数据库引用的本次随机对象。
+        deleteIfUnreferenced(source, "unreferenced replay object");
+        return accepted;
+    }
+
+    private void deleteIfUnreferenced(StoredSourceObjectDTO source, String reason) {
+        try {
+            if (documentVersionMapper.countBySourceObject(
+                    source.getSourceBucket(), source.getSourceObjectKey()
+            ) == 0) {
+                safeDelete(source.getSourceObjectKey(), reason);
+            }
+        } catch (RuntimeException lookupFailure) {
+            // 查询失败不改变已完成的受理结果，也不能据此删除可能被引用的原文件。
+            LOG.warn("Source object cleanup deferred: reference lookup failed ({})", reason);
         }
     }
 
@@ -318,6 +421,14 @@ public class DocumentUploadCoordinatorImpl implements DocumentUploadCoordinator 
                 BusinessException.Failure.UNAVAILABLE,
                 "OBJECT_STORAGE_UNAVAILABLE",
                 "Source object storage is unavailable"
+        );
+    }
+
+    private BusinessException rebuildSourceUnavailable() {
+        return new BusinessException(
+                BusinessException.Failure.UNAVAILABLE,
+                "DOCUMENT_REBUILD_SOURCE_UNAVAILABLE",
+                "The active version source could not be copied safely"
         );
     }
 

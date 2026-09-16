@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-grok-two-case-v1",
+  "model": "grok-4.6",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+      "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "d735c9bf-5f23-4bd3-a4c6-c54529131857",
+        "latencyMs": 351128.086,
+        "finalAttemptLatencyMs": 228647.431,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "3e72f8f5-e42d-4d3e-8261-3a788afc6f2f",
+            "latencyMs": 122480.655
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "d735c9bf-5f23-4bd3-a4c6-c54529131857",
+            "latencyMs": 228647.431
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_OUTPUT_INVALID"
+      }
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "question": "What amount did  personnel-related costs increase for Netfilx in 2015? Answer in millions.",
+      "referenceAnswer": "253.3",
+      "http": {
+        "ok": true,
+        "httpStatus": 200,
+        "requestId": "baf417c3-4aa8-4015-b484-15502f39fcd7",
+        "latencyMs": 113118.471,
+        "finalAttemptLatencyMs": 113118.471,
+        "attemptCount": 1,
+        "attempts": [
+          {
+            "ok": true,
+            "httpStatus": 200,
+            "requestId": "baf417c3-4aa8-4015-b484-15502f39fcd7",
+            "latencyMs": 113118.471
+          }
+        ]
+      },
+      "response": {
+        "queryExecutionId": "c711ae3d-aff5-4faa-b817-b847c58c1d0a",
+        "status": "ANSWERED",
+        "answer": "Technology and development personnel-related costs increased by $133.2 million in 2015 versus 2014. [E60][E88]\n\nGeneral and administrative personnel-related costs increased by $120.1 million in 2015 versus 2014. [E87][E88]",
+        "requestedMode": "HYBRID",
+        "executedMode": "HYBRID",
+        "degraded": false,
+        "degradationReason": null,
+        "citations": [
+          {
+            "evidenceId": "E60",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000327",
+            "text": "The increase in technology and development expenses was primarily due to a $133.2 million increase in personnel-related costs resulting from an increase in compensation for existing employees and a 20% growth in average headcount supporting continued improvements in our streaming service and our international expansion. In addition, third party expenses, including costs associated with cloud computing, increased $23.8 million.",
+            "truncated": false,
+            "pageNumber": 24
+          },
+          {
+            "evidenceId": "E88",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000315",
+            "text": "Table of Contents\n\nOur Domestic DVD segment had a contribution margin of 50% for the year ended December 31, 2015, up from 48% for the year ended December 31, 2014 due to the decrease in DVD usage by paying members.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nThe decrease in our domestic DVD revenues was due to a 16% decrease in the average number of paid memberships.\n\nThe decrease in domestic DVD cost of revenues was primarily due to a $16.0 million decrease in content expenses and a $43.0 million decrease in delivery expenses resulting from a 22% decrease in the number of DVDs mailed to members. The decrease in shipments was driven by a decline in the number of DVD memberships coupled with a decrease in usage by these members. Other costs, primarily those associated with processing and customer service expenses, decreased $15.6 million primarily due to a decrease in hub operation expenses resulting from the decline in DVD shipments.\n\nOur Domestic DVD segment had a contribution margin of 48% for the year ended December 31, 2014, and was relatively flat as compared to the year ended December 31, 2013.\n\nConsolidated Operating Expenses\n\nTechnologyandDevelopment\n\nTechnology and development expenses consist of payroll and related costs incurred in making improvements to our service offerings, including testing, maintaining and modifying our user interface, our recommendation, merchandising and streaming delivery technology and infrastructure. Technology and development expenses also include costs associated with computer hardware and software.\n\n<table><caption> Year Ended December 31,</caption>\n<tr><td  >2015</td><td  >2014</td><td  >2013</td><td  >2015 vs.2014</td><td  >2014 vs.2013</td></tr>\n</table>\n\n<table>\n<tr><th></th><th></th><th></th><th></th><th  >(in thousands, except percentages)</th><th></th><th></th><th  >Change</th><th></th><th></th></tr>\n<tr><td  >Technology and development</td><td  >650,788</td><td  >$</td><td  >472,321</td><td  >378,769 $</td><td  >$</td><td  >178,467</td><td  >38% $</td><td  >93,552</td><td  >25%</td></tr>\n<tr><td  >As a percentage of revenues</td><td  >10%</td><td></td><td  >9%</td><td  >9%</td><td></td><td></td><td></td><td></td><td></td></tr>\n</table>\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nThe increase in technology and development expenses was primarily due to a $133.2 million increase in personnel-related costs resulting from an increase in compensation for existing employees and a 20% growth in average headcount supporting continued improvements in our streaming service and our international expansion. In addition, third party expenses, including costs associated with cloud computing, increased $23.8 million.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nThe increase in technology and development expenses was primarily due to an $87.4 million increase in personnel-related costs, including stock-based compensation expense, resulting from an increase in compensation for existing employees and a 12% growth in average headcount supporting continued improvements in our streaming service and our international expansion.\n\nGeneralandAdministrative\n\n<table><caption> General and administrative expenses consist of payroll and related expenses for corporate personnel, as well as professional fees and other general corporate expenses.</caption>\n<tr><th></th><th></th><th  >2015</th><th  >Year Ended December 31, 2014</th><th  >2013</th><th></th><th  >2015 vs.2014</th><th  >Change</th><th  >2014 vs.2013</th><th></th></tr>\n<tr><th></th><th></th><th></th><th></th><th  >(in thousands, except percentages)</th><th></th><th></th><th></th><th></th><th></th></tr>\n<tr><th  >General and administrative</th><th  >$</th><th  >407,329</th><th  >$ 269,741</th><th  >$ 180,301</th><th  >$</th><th  >137,588</th><th  >51% $</th><th  >89,440</th><th  >50%</th></tr>\n<tr><td  >As a percentage of revenues</td><td></td><td  >6%</td><td  > 5%</td><td  >4%</td><td></td><td></td><td></td><td></td><td></td></tr>\n</table>\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nGeneral and administrative expenses increased primarily due to a $120.1 million increase in personnel-related costs, including stock-based compensation expense, resulting from a 51% increase in average headcount primarily to support our international expansion and increased production of original content, and an increase in compensation for existing employees.",
+            "truncated": false,
+            "pageNumber": 24
+          },
+          {
+            "evidenceId": "E87",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000333",
+            "text": "General and administrative expenses increased primarily due to a $120.1 million increase in personnel-related costs, including stock-based compensation expense, resulting from a 51% increase in average headcount primarily to support our international expansion and increased production of original content, and an increase in compensation for existing employees.",
+            "truncated": false,
+            "pageNumber": 24
+          }
+        ]
+      }
+    }
+  ]
+}

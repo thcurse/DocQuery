@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-claude-anthropic-two-case-v1",
+  "model": "claude-sonnet-5",
+  "protocol": "ANTHROPIC_MESSAGES",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+      "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+      "http": {
+        "ok": true,
+        "httpStatus": 200,
+        "requestId": "8658364a-c0ad-4476-b641-2d553c1541ac",
+        "latencyMs": 55578.95,
+        "finalAttemptLatencyMs": 55578.95,
+        "attemptCount": 1,
+        "attempts": [
+          {
+            "ok": true,
+            "httpStatus": 200,
+            "requestId": "8658364a-c0ad-4476-b641-2d553c1541ac",
+            "latencyMs": 55578.95
+          }
+        ]
+      },
+      "response": {
+        "queryExecutionId": "a04d2608-0ca4-426a-ab16-4e7b7583f990",
+        "status": "ANSWERED",
+        "answer": "For Quarter 3, \"Preparing for Tomorrow's Workplace Skills\" activities appear under Unit 9 (Motivating Employees) and Unit 10 (Achieving World-Class Operations Management), which fall within SEMESTER 2: QUARTER 3 [E70]. For Unit 9, the activity asks: are you motivated more by intrinsic rewards (satisfaction, sense of accomplishment, etc.) or extrinsic rewards (money, bonuses, etc.)? Explain your answer [E81], then interview some friends and classmates to find out what motivates them and discuss the differences in perspective (Interpersonal, Information skills), submitting the response to Google Classroom through the provided Graphic Organizer [E82]. For Unit 10, the activity is to use the Google search engine to search for \"supplier information\" and visit the websites of several firms (for example, Walmart, Northrop Grumman, Verizon, etc.) [E87], compare the requirements companies set for their suppliers, noting how they differ or are similar [E88], and create a comparison chart with sources cited [E89].",
+        "requestedMode": "HYBRID",
+        "executedMode": "HYBRID",
+        "degraded": false,
+        "degradationReason": null,
+        "citations": [
+          {
+            "evidenceId": "E70",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "SEMESTER2:QUARTER3"
+            ],
+            "blockId": "5:b:000200",
+            "text": "SEMESTER2:QUARTER3",
+            "truncated": false,
+            "pageNumber": 7
+          },
+          {
+            "evidenceId": "E81",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "UNIT 9: Motivating Employees"
+            ],
+            "blockId": "5:b:000213",
+            "text": "Are you motivated more by intrinsic rewards (satisfaction, sense of accomplishment, etc.) or by extrinsic rewards (money, bonuses, etc.)? Explain.",
+            "truncated": false,
+            "pageNumber": 7
+          },
+          {
+            "evidenceId": "E82",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "UNIT 9: Motivating Employees"
+            ],
+            "blockId": "5:b:000214",
+            "text": "Interview some friends and classmates to find out what motivates them. Discuss your differences in perspective. (lnterpersonal, Information) (Submit to Google Classroom through the provided Graphic Organizer.",
+            "truncated": false,
+            "pageNumber": 7
+          },
+          {
+            "evidenceId": "E87",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "UNIT 10: Achieving World-Class Operations Management"
+            ],
+            "blockId": "5:b:000232",
+            "text": "· Preparing for Tomorrow's Workplace Skills Use the Google search engine, http://www.google.com, to conduct a search for \"supplier information,\" and visit the websites of several firms (for example, Walmart, Northrop Grumman, Verizon, etc.).",
+            "truncated": false,
+            "pageNumber": 8
+          },
+          {
+            "evidenceId": "E88",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "UNIT 10: Achieving World-Class Operations Management"
+            ],
+            "blockId": "5:b:000233",
+            "text": "Compare the requirements companies set for their suppliers. How do they differ? How are they similar?",
+            "truncated": false,
+            "pageNumber": 8
+          },
+          {
+            "evidenceId": "E89",
+            "documentKey": "mmlongbench-0dde9a7b7b6b9f700311",
+            "documentName": "f8d3a162ab9507e021d83dd109118b60.pdf",
+            "headingPath": [
+              "f8d3a162ab9507e021d83dd109118b60.pdf",
+              "UNIT 10: Achieving World-Class Operations Management"
+            ],
+            "blockId": "5:b:000234",
+            "text": "0  Create a comparison chart with sources cited.",
+            "truncated": false,
+            "pageNumber": 8
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "question": "What amount did  personnel-related costs increase for Netfilx in 2015? Answer in millions.",
+      "referenceAnswer": "253.3",
+      "http": {
+        "ok": true,
+        "httpStatus": 200,
+        "requestId": "7915542d-b90f-4c71-9948-7f6a50bfe1c2",
+        "latencyMs": 34964.825,
+        "finalAttemptLatencyMs": 34964.825,
+        "attemptCount": 1,
+        "attempts": [
+          {
+            "ok": true,
+            "httpStatus": 200,
+            "requestId": "7915542d-b90f-4c71-9948-7f6a50bfe1c2",
+            "latencyMs": 34964.825
+          }
+        ]
+      },
+      "response": {
+        "queryExecutionId": "f7847e97-04f0-4177-868d-1743702a592c",
+        "status": "ANSWERED",
+        "answer": "Netflix disclosed two separate personnel-related cost increases for fiscal year 2015: technology and development expenses increased by $87.4 million due to personnel-related costs, including stock-based compensation, driven by increased compensation and a 12% growth in average headcount [E59]. General and administrative expenses increased by $120.1 million due to personnel-related costs, including stock-based compensation, driven by a 51% increase in average headcount and increased compensation for existing employees [E83].",
+        "requestedMode": "HYBRID",
+        "executedMode": "HYBRID",
+        "degraded": false,
+        "degradationReason": null,
+        "citations": [
+          {
+            "evidenceId": "E59",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000329",
+            "text": "The increase in technology and development expenses was primarily due to an $87.4 million increase in personnel-related costs, including stock-based compensation expense, resulting from an increase in compensation for existing employees and a 12% growth in average headcount supporting continued improvements in our streaming service and our international expansion.",
+            "truncated": false,
+            "pageNumber": 24
+          },
+          {
+            "evidenceId": "E83",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000333",
+            "text": "General and administrative expenses increased primarily due to a $120.1 million increase in personnel-related costs, including stock-based compensation expense, resulting from a 51% increase in average headcount primarily to support our international expansion and increased production of original content, and an increase in compensation for existing employees.",
+            "truncated": false,
+            "pageNumber": 24
+          }
+        ]
+      }
+    }
+  ]
+}

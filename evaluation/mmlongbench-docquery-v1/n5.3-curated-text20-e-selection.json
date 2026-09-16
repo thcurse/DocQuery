@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "docquery-n5.3-curated-text20-e-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Knowledge-base-wide evaluation over carefully curated, natural, single-page text questions without document identity hints",
+  "selectionPolicy": [
+    "Use answerable facts whose complete supporting evidence is on one physical page and is classified as Pure-text (Plain-text).",
+    "Ask natural questions using only the entity, product, organization, case, method, or topic that a real user is likely to know.",
+    "Do not provide a file name, document title as a retrieval instruction, documentId, page number, answer text, or hidden retrieval hint.",
+    "Exclude tables, charts, figures, visual attributes, cross-page aggregation, multi-step arithmetic, ambiguous deixis, and near-duplicate facts.",
+    "Cover varied domains and answer shapes; answer-format quotas and one-question-per-document quotas must not force low-quality questions into the set."
+  ],
+  "sourceRowIndexes": [
+    232,
+    383,
+    387,
+    434,
+    477,
+    483,
+    933,
+    1012,
+    1080,
+    1077,
+    907,
+    908,
+    914,
+    948,
+    949,
+    950,
+    961,
+    977,
+    987,
+    1069
+  ],
+  "questionOverrides": {
+    "232": "Who visited the U.S. Naval Medical Research Center on November 29, 2012?",
+    "383": "Which organization produced the Division of Medical Quality Assurance Strategic Plan 2016-2018 that was revised in May 2016?",
+    "387": "Who is listed as Florida's governor in the Division of Medical Quality Assurance Strategic Plan 2016-2018?",
+    "434": "In the Cat vs Dog deep-learning tutorial's coding section, which dataset is used for training?",
+    "477": "How many coffee-quality levels can the 1500S Classic coffee machine be set to?",
+    "483": "What network technology does the Toyota Camry's Wi-Fi Connect use?",
+    "933": "Who presented the Medical Informatics and HIT Systems presentation?",
+    "1012": "How much common stock had Activision Blizzard repurchased under the stock-repurchase program authorized on January 31, 2019? Answer in USD billions.",
+    "1080": "What proportion of Best Buy's new salaried field positions in fiscal 2023 were filled by female employees?",
+    "1077": "At what value does Best Buy record merchandise inventories?",
+    "907": "How many steps are listed for NYU graduate students to apply for housing and themed engagement communities?",
+    "908": "Where is NYU's Office of Residential Life & Housing Services located?",
+    "914": "How large is the student community center available to NYU graduate residents, in square feet?",
+    "948": "In Eleventh Circuit case 21-13199, which organization is one of the plaintiffs?",
+    "949": "What is the Eleventh Circuit case number for the dispute involving Martin Cowen and the Libertarian Party of Georgia?",
+    "950": "On what date was the Eleventh Circuit opinion in case 21-13199 issued? Format it as YYYY-MM-DD.",
+    "961": "In the explanation of CFC reactions, cold acts as the catalyst for what reaction?",
+    "977": "In the CLADDER paper's Ladder of Causation, what does the second rung refer to?",
+    "987": "Excluding public holidays, what time does NTU's One Stop @SAC counter close on Tuesday?",
+    "1069": "In FY2015, through what model were most Adobe products sold?"
+  },
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "documentIds": "OMITTED",
+    "paidModelRun": "NOT_STARTED"
+  }
+}

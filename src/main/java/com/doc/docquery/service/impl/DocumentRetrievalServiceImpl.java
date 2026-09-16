@@ -350,10 +350,10 @@ public class DocumentRetrievalServiceImpl implements DocumentRetrievalService {
         entity.setDocumentVersionId(version.getId());
         entity.setCanonicalArtifactId(canonical.getId());
         entity.setSchemaVersion(artifact.schemaVersion());
-        entity.setChatProvider("DEEPSEEK");
+        entity.setChatProvider(artifact.chatProvider());
         entity.setChatModel(artifact.chatModel());
         entity.setChatPromptVersion(artifact.chatPromptVersion());
-        entity.setThinkingMode("DISABLED");
+        entity.setThinkingMode(artifact.thinkingMode());
         entity.setEmbeddingProvider("ALIBABA_MODEL_STUDIO");
         entity.setEmbeddingModel(artifact.embeddingModel());
         entity.setEmbeddingDimension(artifact.embeddingDimension());

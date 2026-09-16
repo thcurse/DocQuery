@@ -2,6 +2,7 @@ package com.doc.docquery.service.impl;
 
 import com.doc.docquery.dto.CreateDocumentUploadDTO;
 import com.doc.docquery.dto.CreateDocumentVersionDTO;
+import com.doc.docquery.dto.DocumentRebuildSourceDTO;
 import com.doc.docquery.dto.StoredSourceObjectDTO;
 import com.doc.docquery.dto.TenantResourceQueryDTO;
 import com.doc.docquery.entity.DocumentEntity;
@@ -248,6 +249,122 @@ public class DocumentUploadAcceptanceServiceImpl
         }
     }
 
+    @Override
+    public DocumentUploadAcceptedVO findRebuildReplay(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            String idempotencyKey
+    ) {
+        requirePositiveId(tenantId, "Tenant ID must be positive");
+        requirePositiveId(knowledgeBaseId, "KnowledgeBase ID must be positive");
+        requirePositiveId(documentId, "Document ID must be positive");
+        requireActiveTenantAndKnowledgeBase(principal, tenantId, knowledgeBaseId);
+        String keyHash = sha256(validateIdempotencyKey(idempotencyKey));
+        return findReplay(
+                tenantId,
+                keyHash,
+                rebuildFingerprint(tenantId, knowledgeBaseId, documentId)
+        );
+    }
+
+    @Override
+    public DocumentRebuildSourceDTO loadRebuildSource(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId
+    ) {
+        requirePositiveId(tenantId, "Tenant ID must be positive");
+        requirePositiveId(knowledgeBaseId, "KnowledgeBase ID must be positive");
+        requirePositiveId(documentId, "Document ID must be positive");
+        requireActiveTenantAndKnowledgeBase(principal, tenantId, knowledgeBaseId);
+        DocumentEntity document = documentMapper.findByTenantKnowledgeBaseAndId(
+                tenantId, knowledgeBaseId, documentId
+        );
+        if (document == null || !DOCUMENT_ACTIVE.equals(document.getStatus())) {
+            throw documentNotFound();
+        }
+        if (document.getActiveVersionId() == null) {
+            throw conflict(
+                    "DOCUMENT_REBUILD_NOT_AVAILABLE",
+                    "Document does not have an available ready version to rebuild"
+            );
+        }
+        DocumentVersionEntity active = loadVersion(
+                tenantId, documentId, document.getActiveVersionId()
+        );
+        if (!VERSION_READY.equals(active.getStatus())
+                || active.getContentDeletedAt() != null) {
+            throw conflict(
+                    "DOCUMENT_REBUILD_NOT_AVAILABLE",
+                    "Document does not have an available ready version to rebuild"
+            );
+        }
+        DocumentVersionEntity latest = loadVersion(
+                tenantId, documentId, document.getLatestVersionId()
+        );
+        if (VERSION_PROCESSING.equals(latest.getStatus())) {
+            throw conflict(
+                    "DOCUMENT_VERSION_IN_PROGRESS",
+                    "Document already has a version in progress"
+            );
+        }
+        return new DocumentRebuildSourceDTO(
+                active.getId(),
+                active.getOriginalFilename(),
+                active.getSourceFormat(),
+                active.getSourceBucket(),
+                active.getSourceObjectKey(),
+                active.getSourceSizeBytes(),
+                active.getSourceSha256(),
+                active.getSourceContentType()
+        );
+    }
+
+    @Override
+    public DocumentUploadAcceptedVO acceptRebuild(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            long sourceVersionId,
+            String idempotencyKey,
+            StoredSourceObjectDTO copiedSource
+    ) {
+        requirePositiveId(tenantId, "Tenant ID must be positive");
+        requirePositiveId(knowledgeBaseId, "KnowledgeBase ID must be positive");
+        requirePositiveId(documentId, "Document ID must be positive");
+        requirePositiveId(sourceVersionId, "Source version ID must be positive");
+        String keyHash = sha256(validateIdempotencyKey(idempotencyKey));
+        String commandFingerprint = rebuildFingerprint(
+                tenantId, knowledgeBaseId, documentId
+        );
+        StoredSourceObjectDTO normalizedSource = normalizeSource(copiedSource);
+        try {
+            return executeWrite(() -> acceptRebuildTransaction(
+                    principal,
+                    tenantId,
+                    knowledgeBaseId,
+                    documentId,
+                    sourceVersionId,
+                    keyHash,
+                    commandFingerprint,
+                    normalizedSource
+            ));
+        } catch (DuplicateKeyException exception) {
+            return resolveDuplicateWrite(
+                    tenantId,
+                    knowledgeBaseId,
+                    null,
+                    keyHash,
+                    commandFingerprint,
+                    normalizedSource
+            );
+        }
+    }
+
     private DocumentUploadAcceptedVO acceptNewDocumentTransaction(
             AdminPrincipal principal,
             long tenantId,
@@ -456,6 +573,132 @@ public class DocumentUploadAcceptanceServiceImpl
         document.setLatestVersionId(version.getId());
         document.setUpdatedAt(now);
         return toVO(document, version, job);
+    }
+
+    private DocumentUploadAcceptedVO acceptRebuildTransaction(
+            AdminPrincipal principal,
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId,
+            long sourceVersionId,
+            String idempotencyHash,
+            String commandFingerprint,
+            StoredSourceObjectDTO copiedSource
+    ) {
+        requireActiveTenantAndKnowledgeBase(principal, tenantId, knowledgeBaseId);
+        DocumentUploadAcceptedVO replay = findReplay(
+                tenantId, idempotencyHash, commandFingerprint
+        );
+        if (replay != null) {
+            return replay;
+        }
+        DocumentEntity document = documentMapper.findByTenantKnowledgeBaseAndIdForUpdate(
+                tenantId, knowledgeBaseId, documentId
+        );
+        if (document == null || !DOCUMENT_ACTIVE.equals(document.getStatus())) {
+            throw documentNotFound();
+        }
+        replay = findReplay(tenantId, idempotencyHash, commandFingerprint);
+        if (replay != null) {
+            return replay;
+        }
+        if (!Objects.equals(document.getActiveVersionId(), sourceVersionId)) {
+            throw conflict(
+                    "DOCUMENT_REBUILD_SOURCE_CHANGED",
+                    "Document active version changed before rebuild acceptance"
+            );
+        }
+        DocumentVersionEntity active = loadVersion(
+                tenantId, documentId, sourceVersionId
+        );
+        if (!VERSION_READY.equals(active.getStatus())
+                || active.getContentDeletedAt() != null) {
+            throw conflict(
+                    "DOCUMENT_REBUILD_NOT_AVAILABLE",
+                    "Document does not have an available ready version to rebuild"
+            );
+        }
+        requireExactRebuildCopy(active, copiedSource);
+        requireUnusedSourceObject(copiedSource);
+
+        DocumentVersionEntity latest = loadVersion(
+                tenantId, documentId, document.getLatestVersionId()
+        );
+        if (VERSION_PROCESSING.equals(latest.getStatus())) {
+            throw conflict(
+                    "DOCUMENT_VERSION_IN_PROGRESS",
+                    "Document already has a version in progress"
+            );
+        }
+        if (!VERSION_READY.equals(latest.getStatus())
+                && !VERSION_FAILED.equals(latest.getStatus())) {
+            throw new IllegalStateException("Document latest version status is invalid");
+        }
+        int versionNo;
+        try {
+            versionNo = Math.addExact(latest.getVersionNo(), 1);
+        } catch (ArithmeticException exception) {
+            throw conflict("DOCUMENT_VERSION_LIMIT_REACHED", "Version number limit reached");
+        }
+        LocalDateTime now = nowUtc();
+        DocumentVersionEntity version = createVersion(
+                tenantId,
+                documentId,
+                versionNo,
+                principal.id(),
+                idempotencyHash,
+                commandFingerprint,
+                copiedSource,
+                now
+        );
+        ProcessingJobEntity job = createInitialJob(tenantId, version.getId(), now);
+        createOutbox(
+                tenantId,
+                knowledgeBaseId,
+                documentId,
+                version.getId(),
+                job.getId(),
+                now
+        );
+        if (documentMapper.updateLatestVersion(
+                tenantId, documentId, version.getId(), now
+        ) != 1) {
+            throw new IllegalStateException("Document latest version was not updated");
+        }
+        document.setLatestVersionId(version.getId());
+        document.setUpdatedAt(now);
+        return toVO(document, version, job);
+    }
+
+    private void requireExactRebuildCopy(
+            DocumentVersionEntity active,
+            StoredSourceObjectDTO copiedSource
+    ) {
+        if (!Objects.equals(active.getOriginalFilename(), copiedSource.getOriginalFilename())
+                || !Objects.equals(active.getSourceFormat(), copiedSource.getSourceFormat())
+                || !Objects.equals(active.getSourceBucket(), copiedSource.getSourceBucket())
+                || !Objects.equals(active.getSourceSizeBytes(), copiedSource.getSourceSizeBytes())
+                || !Objects.equals(active.getSourceSha256(), copiedSource.getSourceSha256())
+                || !Objects.equals(active.getSourceContentType(),
+                        copiedSource.getSourceContentType())) {
+            throw conflict(
+                    "DOCUMENT_REBUILD_SOURCE_MISMATCH",
+                    "Rebuild source does not match the active version"
+            );
+        }
+    }
+
+    private String rebuildFingerprint(
+            long tenantId,
+            long knowledgeBaseId,
+            long documentId
+    ) {
+        return fingerprint(
+                "REBUILD_VERSION",
+                Long.toString(tenantId),
+                Long.toString(knowledgeBaseId),
+                Long.toString(documentId)
+        );
     }
 
     private DocumentVersionEntity createVersion(

@@ -1,0 +1,324 @@
+{
+  "mmlongbench-0013": {
+    "documentKey": "mmlongbench-220685f26bdeb0798cef",
+    "displayName": "0e94b4197b10096b1f4c699701570fbf.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 15,
+    "printedToPhysical": {
+      "2": 2
+    },
+    "physicalGoldPages": [
+      2
+    ]
+  },
+  "mmlongbench-0023": {
+    "documentKey": "mmlongbench-ab1ea4c0f69742d48495",
+    "displayName": "fdac8d1e9ef56519371df7e6532df27d.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 20,
+    "printedToPhysical": {
+      "19": 19
+    },
+    "physicalGoldPages": [
+      19
+    ]
+  },
+  "mmlongbench-0045": {
+    "documentKey": "mmlongbench-f7b00346d5f338fc4f03",
+    "displayName": "ddoseattle-150627210357-lva1-app6891_95.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 63,
+    "printedToPhysical": {
+      "7": 7,
+      "8": 8,
+      "9": 9,
+      "16": 16
+    },
+    "physicalGoldPages": [
+      7,
+      8,
+      9,
+      16
+    ]
+  },
+  "mmlongbench-0081": {
+    "documentKey": "mmlongbench-94c8c165f78c97901510",
+    "displayName": "2312.10997v5.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 21,
+    "printedToPhysical": {
+      "10": 10,
+      "11": 11
+    },
+    "physicalGoldPages": [
+      10,
+      11
+    ]
+  },
+  "mmlongbench-0093": {
+    "documentKey": "mmlongbench-5c5e05a08df23db30f30",
+    "displayName": "nova_y70.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 45,
+    "printedToPhysical": {
+      "11": 13,
+      "12": 14
+    },
+    "physicalGoldPages": [
+      13,
+      14
+    ]
+  },
+  "mmlongbench-0132": {
+    "documentKey": "mmlongbench-4edd06e44b4c846ca752",
+    "displayName": "379f44022bb27aa53efd5d322c7b57bf.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 17,
+    "printedToPhysical": {
+      "1": 1
+    },
+    "physicalGoldPages": [
+      1
+    ]
+  },
+  "mmlongbench-0232": {
+    "documentKey": "mmlongbench-287799644738055ee912",
+    "displayName": "0b85477387a9d0cc33fca0f4becaa0e5.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 16,
+    "printedToPhysical": {
+      "1": 1
+    },
+    "physicalGoldPages": [
+      1
+    ]
+  },
+  "mmlongbench-0342": {
+    "documentKey": "mmlongbench-1c7738fd3252c74bda62",
+    "displayName": "welcome-to-nus.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 24,
+    "printedToPhysical": {
+      "19": 19,
+      "20": 20
+    },
+    "physicalGoldPages": [
+      19,
+      20
+    ]
+  },
+  "mmlongbench-0368": {
+    "documentKey": "mmlongbench-05a9da7deb9961571b48",
+    "displayName": "afe620b9beac86c1027b96d31d396407.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 20,
+    "printedToPhysical": {
+      "15": 15
+    },
+    "physicalGoldPages": [
+      15
+    ]
+  },
+  "mmlongbench-0576": {
+    "documentKey": "mmlongbench-ef8e34f826f2610feb18",
+    "displayName": "e639029d16094ea71d964e2fb953952b.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 20,
+    "printedToPhysical": {
+      "8": 8
+    },
+    "physicalGoldPages": [
+      8
+    ]
+  },
+  "mmlongbench-0588": {
+    "documentKey": "mmlongbench-7d4568b55fbeae801eea",
+    "displayName": "a5879805d70c854ea4361e43a84e3bb2.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 15,
+    "printedToPhysical": {
+      "14": 14
+    },
+    "physicalGoldPages": [
+      14
+    ]
+  },
+  "mmlongbench-0823": {
+    "documentKey": "mmlongbench-0a2ee3dbce371a4ccd43",
+    "displayName": "698bba535087fa9a7f9009e172a7f763.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 20,
+    "printedToPhysical": {
+      "11": 11
+    },
+    "physicalGoldPages": [
+      11
+    ]
+  },
+  "mmlongbench-0888": {
+    "documentKey": "mmlongbench-0d59352fbdb4307e4f87",
+    "displayName": "2312.09390v1.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 49,
+    "printedToPhysical": {
+      "1": 1,
+      "2": 2,
+      "5": 5,
+      "7": 7,
+      "32": 32,
+      "47": 47
+    },
+    "physicalGoldPages": [
+      1,
+      2,
+      5,
+      7,
+      32,
+      47
+    ]
+  },
+  "mmlongbench-0902": {
+    "documentKey": "mmlongbench-0bb32a15878e399769f6",
+    "displayName": "stereo_headset.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 151,
+    "printedToPhysical": {
+      "19": 19
+    },
+    "physicalGoldPages": [
+      19
+    ]
+  },
+  "mmlongbench-0908": {
+    "documentKey": "mmlongbench-bb8732521388155093ef",
+    "displayName": "NYU_graduate.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 30,
+    "printedToPhysical": {
+      "28": 30
+    },
+    "physicalGoldPages": [
+      30
+    ]
+  },
+  "mmlongbench-0915": {
+    "documentKey": "mmlongbench-ffef8000901af3921a64",
+    "displayName": "PWC_opportunity_of_lifetime.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 18,
+    "printedToPhysical": {
+      "8": 8
+    },
+    "physicalGoldPages": [
+      8
+    ]
+  },
+  "mmlongbench-0935": {
+    "documentKey": "mmlongbench-4eec0b4da79e0e62bed9",
+    "displayName": "c31e6580d0175ab3f9d99d1ff0bfa000.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 20,
+    "printedToPhysical": {
+      "12": 12
+    },
+    "physicalGoldPages": [
+      12
+    ]
+  },
+  "mmlongbench-0977": {
+    "documentKey": "mmlongbench-68eff267e0805699fe4f",
+    "displayName": "2312.04350v3.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 28,
+    "printedToPhysical": {
+      "3": 3
+    },
+    "physicalGoldPages": [
+      3
+    ]
+  },
+  "mmlongbench-1012": {
+    "documentKey": "mmlongbench-b819aa58714010ea5628",
+    "displayName": "ACTIVISIONBLIZZARD_2019_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 198,
+    "printedToPhysical": {
+      "29": 29
+    },
+    "physicalGoldPages": [
+      29
+    ]
+  },
+  "mmlongbench-1026": {
+    "documentKey": "mmlongbench-24eff1e8259955066f43",
+    "displayName": "COSTCO_2021_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 76,
+    "printedToPhysical": {
+      "29": 29
+    },
+    "physicalGoldPages": [
+      29
+    ]
+  },
+  "mmlongbench-1037": {
+    "documentKey": "mmlongbench-af042068d3845d87e107",
+    "displayName": "NETFLIX_2015_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 72,
+    "printedToPhysical": {
+      "55": 55
+    },
+    "physicalGoldPages": [
+      55
+    ]
+  },
+  "mmlongbench-1061": {
+    "documentKey": "mmlongbench-e525fdbb1913202fa249",
+    "displayName": "AMAZON_2017_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 85,
+    "printedToPhysical": {
+      "47": 47
+    },
+    "physicalGoldPages": [
+      47
+    ]
+  },
+  "mmlongbench-1069": {
+    "documentKey": "mmlongbench-2fddd697af1c7727fcd3",
+    "displayName": "ADOBE_2015_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 116,
+    "printedToPhysical": {
+      "13": 13
+    },
+    "physicalGoldPages": [
+      13
+    ]
+  },
+  "mmlongbench-1078": {
+    "documentKey": "mmlongbench-024c2a4c161d74c0d805",
+    "displayName": "BESTBUY_2023_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 75,
+    "printedToPhysical": {
+      "39": 39
+    },
+    "physicalGoldPages": [
+      39
+    ]
+  },
+  "mmlongbench-1090": {
+    "documentKey": "mmlongbench-7d43ba14d352ae048140",
+    "displayName": "3M_2018_10K.pdf",
+    "source": "PDF_PAGE_LABELS",
+    "pdfPageCount": 160,
+    "printedToPhysical": {
+      "64": 64
+    },
+    "physicalGoldPages": [
+      64
+    ]
+  }
+}

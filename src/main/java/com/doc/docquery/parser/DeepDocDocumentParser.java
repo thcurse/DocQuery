@@ -3,6 +3,8 @@ package com.doc.docquery.parser;
 import com.doc.docquery.config.DocumentParsingProperties;
 import com.doc.docquery.enums.DocumentSourceFormat;
 import com.doc.docquery.service.DocumentParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 将四种显式输入交给项目内 DeepDoc HTTP 服务，再映射为中立 ParsedDocument。
@@ -39,6 +42,9 @@ import java.util.UUID;
 public class DeepDocDocumentParser implements DocumentFormatParser {
 
     static final String SCHEMA_VERSION = "docquery-deepdoc-http-v1";
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+            DeepDocDocumentParser.class
+    );
 
     private final DocumentParsingProperties properties;
     private final ObjectMapper objectMapper;
@@ -63,6 +69,7 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
 
     @Override
     public ParsedDocument parse(ParseSource source) {
+        long started = System.nanoTime();
         validateSource(source);
         String boundary = "docquery-" + UUID.randomUUID();
         HttpRequest request;
@@ -100,8 +107,36 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw remoteError(root, response.statusCode());
             }
-            return mapSuccess(root, source.sourceSha256(), source.format());
+            ParsedDocument parsed = mapSuccess(
+                    root,
+                    source.sourceSha256(),
+                    source.format()
+            );
+            LOGGER.info(
+                    "docquery_parser_usage provider=DEEPDOC operation=PARSE "
+                            + "documentVersionId={} status=SUCCESS elapsedMillis={} "
+                            + "serviceElapsedMillis={} sourceFormat={} pageCount={} "
+                            + "blockCount={} warningCount={}",
+                    source.documentVersionId(),
+                    elapsedMillis(started),
+                    nullableLong(root.get("elapsedMillis")),
+                    source.format(),
+                    parsed.pageCount(),
+                    parsed.blocks().size(),
+                    parsed.warnings().size()
+            );
+            return parsed;
         } catch (DocumentParseException exception) {
+            LOGGER.warn(
+                    "docquery_parser_usage provider=DEEPDOC operation=PARSE "
+                            + "documentVersionId={} status=FAILED elapsedMillis={} "
+                            + "sourceFormat={} failureCode={} retryable={}",
+                    source.documentVersionId(),
+                    elapsedMillis(started),
+                    source.format(),
+                    exception.code(),
+                    exception.retryable()
+            );
             throw exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -117,6 +152,14 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
                     exception
             );
         }
+    }
+
+    private Long nullableLong(JsonNode node) {
+        return node != null && node.isIntegralNumber() ? node.longValue() : null;
+    }
+
+    private long elapsedMillis(long started) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
     }
 
     private ParsedDocument mapSuccess(
@@ -213,7 +256,8 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
                 node,
                 expectedFormat,
                 pageCount,
-                text
+                text,
+                kind
         );
 
         Integer headingLevel = nullableInteger(node.get("headingLevel"));
@@ -283,7 +327,8 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
             JsonNode node,
             DocumentSourceFormat expectedFormat,
             Integer pageCount,
-            String blockText
+            String blockText,
+            BlockKind kind
     ) {
         if (!expectedFormat.name().equals(text(node, "sourceType"))) {
             throw invalidResponse("DeepDoc block source type is invalid", false);
@@ -303,7 +348,58 @@ public class DeepDocDocumentParser implements DocumentFormatParser {
                         || end - start != blockText.length()) {
                     throw invalidResponse("DeepDoc PDF block position is invalid", false);
                 }
-                yield SourcePosition.pdf(pageNumber, pageOrdinal, start, end);
+                Integer tableRow = nullableInteger(node.get("tableRow"));
+                Integer tableColumn = nullableInteger(node.get("tableColumn"));
+                Integer tableRowSpan = nullableInteger(node.get("tableRowSpan"));
+                Integer tableColumnSpan = nullableInteger(node.get("tableColumnSpan"));
+                String tableId = nullableText(node.get("tableId"));
+                String tableColumnHeader = nullableText(node.get("tableColumnHeader"));
+                String tableCaption = nullableText(node.get("tableCaption"));
+                String tableRowHeader = nullableText(node.get("tableRowHeader"));
+                String tableCellHeading = nullableText(node.get("tableCellHeading"));
+                String tableGroupId = nullableText(node.get("tableGroupId"));
+                String tableContinuationOf = nullableText(
+                        node.get("tableContinuationOf")
+                );
+                if ((tableRow == null) != (tableColumn == null)
+                        || tableRow != null && (kind != BlockKind.TABLE_CELL
+                        || tableRow < 0 || tableColumn < 0
+                        || tableRowSpan != null && tableRowSpan < 1
+                        || tableColumnSpan != null && tableColumnSpan < 1
+                        || tableId != null && tableId.isBlank()
+                        || tableColumnHeader != null && tableColumnHeader.isBlank()
+                        || tableCaption != null && tableCaption.isBlank()
+                        || tableRowHeader != null && tableRowHeader.isBlank()
+                        || tableCellHeading != null && tableCellHeading.isBlank()
+                        || tableGroupId != null && tableGroupId.isBlank()
+                        || tableContinuationOf != null
+                        && tableContinuationOf.isBlank())
+                        || tableRow == null && (tableRowSpan != null
+                        || tableColumnSpan != null || tableId != null
+                        || tableColumnHeader != null || tableCaption != null
+                        || tableRowHeader != null || tableCellHeading != null
+                        || tableGroupId != null || tableContinuationOf != null)) {
+                    throw invalidResponse("DeepDoc PDF table position is invalid", false);
+                }
+                yield tableRow == null
+                        ? SourcePosition.pdf(pageNumber, pageOrdinal, start, end)
+                        : SourcePosition.pdfTable(
+                                pageNumber,
+                                pageOrdinal,
+                                start,
+                                end,
+                                tableRow,
+                                tableColumn,
+                                tableRowSpan == null ? 1 : tableRowSpan,
+                                tableColumnSpan == null ? 1 : tableColumnSpan,
+                                tableId,
+                                tableColumnHeader,
+                                tableCaption,
+                                tableRowHeader,
+                                tableCellHeading,
+                                tableGroupId,
+                                tableContinuationOf
+                        );
             }
             case DOCX -> {
                 int bodyElementIndex = integer(node, "bodyElementIndex");

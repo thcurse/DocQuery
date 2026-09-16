@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "docquery-n5.3-a8-manual-adjudication-v1",
+  "reviewPolicy": [
+    "An answerable public question returned as INSUFFICIENT_EVIDENCE is incorrect.",
+    "A failed HTTP request is incorrect.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE without any Agent tool call; the frozen R3 retrieval had the correct document at rank 1 and covered both Gold pages."
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE without any Agent tool call; the required 61 plus 61 calculation is answerable from physical pages 37 and 38."
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Both the initial request and its one retry failed with ANSWER_EXECUTION_LIMIT_EXCEEDED after the model requested too many tools in a round."
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE after two search calls; A6 had already answered this case correctly."
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE without any Agent tool call; the initial canonical evidence included 13,749 characters, but the two values were not completed into 253.3."
+    }
+  ]
+}

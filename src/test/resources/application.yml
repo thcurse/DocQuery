@@ -19,6 +19,23 @@ server:
         secure: false
 
 docquery:
+  chat:
+    profiles:
+      claude-sonnet-5:
+        model: claude-sonnet-5
+        provider: PACKY_API
+        protocol: ANTHROPIC_MESSAGES
+        thinking-mode: PROVIDER_DEFAULT
+      glm-5.3-flash:
+        model: glm-5.3-flash
+        provider: PACKY_API
+        protocol: RESPONSES
+        thinking-mode: PROVIDER_DEFAULT
+  retrieval:
+    chat-profile: glm-5.3-flash
+  query:
+    answer:
+      chat-profile: claude-sonnet-5
   parsing:
     # 默认回归不依赖本机 GPU 容器；DeepDoc 由独立 Adapter/HTTP 测试覆盖。
     deepdoc:

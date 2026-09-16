@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "phase": "N5.2-O1-P0",
+  "thresholdEstimatedTokens": 64000,
+  "tokenEstimator": "UTF16_CHARS_DIV_4_CEILING",
+  "samples": [
+    {
+      "sampleId": "3m-overview",
+      "documentVersionId": 28,
+      "documentName": "3M_2018_10K.pdf",
+      "headingNodeId": "28:h:000001",
+      "headingTitle": "OVERVIEW",
+      "sectionStartBlockOrdinal": 262,
+      "sectionEndBlockOrdinalExclusive": 1606,
+      "canonicalBucket": "docquery-source",
+      "canonicalObjectKey": "canonical/1/28/v1/4784a680-4c4e-4876-b74d-383c650269e5.jsonl"
+    },
+    {
+      "sampleId": "activision-overview",
+      "documentVersionId": 36,
+      "documentName": "ACTIVISIONBLIZZARD_2019_10K.pdf",
+      "headingNodeId": "36:h:000001",
+      "headingTitle": "Overview",
+      "sectionStartBlockOrdinal": 126,
+      "sectionEndBlockOrdinalExclusive": 926,
+      "canonicalBucket": "docquery-source",
+      "canonicalObjectKey": "canonical/1/36/v1/36af253c-0a6c-46f1-9891-49f9527a32d4.jsonl"
+    }
+  ]
+}

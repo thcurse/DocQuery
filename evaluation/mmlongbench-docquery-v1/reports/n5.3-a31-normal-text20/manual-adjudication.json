@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a31-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count a refusal on an answerable question as incorrect.",
+    "Judge semantic correctness rather than exact wording or formatting.",
+    "Require the cited text to support the requested entity, relation, period, and answer.",
+    "Record a dataset issue when the reference answer or Gold page omits source-grounded evidence."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-text-0013","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Berlin School of Experimental Psychology exactly answers the question and is supported on page 2."},
+    {"caseId":"mmlongbench-text-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The definition and additional explanation are fully supported by the cited page-11 text."},
+    {"caseId":"mmlongbench-text-0022","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_MALFORMED","note":"The answer reproduces the complete source list. The public reference misspells Drought and separates Inventory from Agricultural Crops Inventory."},
+    {"caseId":"mmlongbench-text-0023","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly expands NARL as National Atmospheric Research Laboratory."},
+    {"caseId":"mmlongbench-text-0132","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The telephone number exactly matches the cited source."},
+    {"caseId":"mmlongbench-text-0239","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"538 square miles matches the reference and cited page."},
+    {"caseId":"mmlongbench-text-0368","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both plant locations and their addresses are correctly returned from page 15."},
+    {"caseId":"mmlongbench-text-0576","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"1954 and the teacher context are directly supported."},
+    {"caseId":"mmlongbench-text-0585","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The fax number exactly matches the page-14 source."},
+    {"caseId":"mmlongbench-text-0588","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The email address is correct and page 14 independently supports it; extra duplicate page-15 citations are unnecessary but not contradictory."},
+    {"caseId":"mmlongbench-text-0902","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly states both consequences of using an adaptor below 1.5 A."},
+    {"caseId":"mmlongbench-text-0915","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns all four requested PWC IA support areas with supported descriptions."},
+    {"caseId":"mmlongbench-text-1025","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"1,358,000 repurchased shares matches the reference and cited page."},
+    {"caseId":"mmlongbench-text-1027","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly identifies Costco's dependence on U.S. and Canadian operations; the added California qualification is supported."},
+    {"caseId":"mmlongbench-text-1033","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable single-page Netflix advertising-expense question."},
+    {"caseId":"mmlongbench-text-1037","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Answered about cash dividends instead of the 2015 stock dividend. Page 55 states it was paid through a seven-for-one stock split; the citation to page 57 does not support the requested relation."},
+    {"caseId":"mmlongbench-text-1050","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All six Nike product categories are returned correctly and supported on page 3."},
+    {"caseId":"mmlongbench-text-1060","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"All five Amazon cost-of-sales components are correctly supported by the cited page-27 paragraph. The same definition also appears on frozen Gold page 44."},
+    {"caseId":"mmlongbench-text-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The FY2017 unredeemed gift-card liability is correctly reported as $3.0 billion."},
+    {"caseId":"mmlongbench-text-1063","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The 2017 depreciation expense is correctly reported as $8.8 billion."}
+  ]
+}

@@ -97,6 +97,7 @@ class DeepDocDocumentParserTest {
                   "schemaVersion":"docquery-deepdoc-http-v1",
                   "sourceSha256":"%s",
                   "sourceFormat":"PDF",
+                  "elapsedMillis":123,
                   "pageCount":2,
                   "blocks":[
                     {
@@ -113,20 +114,52 @@ class DeepDocDocumentParserTest {
                     },
                     {
                       "kind":"TABLE_CELL",
-                      "text":"A | B",
+                      "text":"A",
                       "sourceType":"PDF",
                       "pageNumber":2,
                       "pageBlockOrdinal":0,
                       "pageCharacterStart":0,
-                      "pageCharacterEnd":5,
+                      "pageCharacterEnd":1,
+                      "tableRow":0,
+                      "tableColumn":0,
+                      "tableRowSpan":1,
+                      "tableColumnSpan":1,
+                      "tableId":"pdf:p2:t0",
+                      "tableGroupId":"pdf:p2:t0",
+                      "tableCaption":"Rates by group",
+                      "tableRowHeader":"Male",
+                      "tableColumnHeader":"Left",
+                      "tableCellHeading":"Primary measure",
+                      "headingLevel":null,
+                      "detectionSource":null,
+                      "documentTitle":false
+                    },
+                    {
+                      "kind":"TABLE_CELL",
+                      "text":"B",
+                      "sourceType":"PDF",
+                      "pageNumber":2,
+                      "pageBlockOrdinal":1,
+                      "pageCharacterStart":3,
+                      "pageCharacterEnd":4,
+                      "tableRow":0,
+                      "tableColumn":1,
+                      "tableRowSpan":1,
+                      "tableColumnSpan":1,
+                      "tableId":"pdf:p2:t0",
+                      "tableGroupId":"pdf:p2:t0",
+                      "tableCaption":"Rates by group",
+                      "tableRowHeader":"Male",
+                      "tableColumnHeader":"Right",
+                      "tableCellHeading":null,
                       "headingLevel":null,
                       "detectionSource":null,
                       "documentTitle":false
                     }
                   ],
                   "warnings":[{
-                    "code":"DEEPDOC_TABLE_STRUCTURE_FLATTENED",
-                    "message":"Table text is flat",
+                    "code":"DEEPDOC_TABLE_CELLS_STRUCTURED",
+                    "message":"Table cells retain row and column coordinates",
                     "pageNumber":2
                   }]
                 }
@@ -135,13 +168,29 @@ class DeepDocDocumentParserTest {
         ParsedDocument parsed = parser().parse(parseSource(source, digest));
 
         assertThat(parsed.pageCount()).isEqualTo(2);
-        assertThat(parsed.blocks()).hasSize(2);
+        assertThat(parsed.blocks()).hasSize(3);
         assertThat(parsed.blocks().get(0).kind()).isEqualTo(BlockKind.TITLE);
         assertThat(parsed.blocks().get(0).documentTitle()).isTrue();
         assertThat(parsed.blocks().get(1).kind()).isEqualTo(BlockKind.TABLE_CELL);
         assertThat(parsed.blocks().get(1).sourcePosition().pageNumber()).isEqualTo(2);
+        assertThat(parsed.blocks().get(1).sourcePosition().tableRow()).isZero();
+        assertThat(parsed.blocks().get(1).sourcePosition().tableColumn()).isZero();
+        assertThat(parsed.blocks().get(1).sourcePosition().tableId())
+                .isEqualTo("pdf:p2:t0");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableColumnHeader())
+                .isEqualTo("Left");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableCaption())
+                .isEqualTo("Rates by group");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableRowHeader())
+                .isEqualTo("Male");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableCellHeading())
+                .isEqualTo("Primary measure");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableGroupId())
+                .isEqualTo("pdf:p2:t0");
+        assertThat(parsed.blocks().get(1).sourcePosition().tableRowSpan()).isOne();
+        assertThat(parsed.blocks().get(2).sourcePosition().tableColumn()).isOne();
         assertThat(parsed.warnings()).extracting(ParseWarning::code)
-                .containsExactly("DEEPDOC_TABLE_STRUCTURE_FLATTENED");
+                .containsExactly("DEEPDOC_TABLE_CELLS_STRUCTURED");
         assertThat(receivedDigest.get()).isEqualTo(digest);
         assertThat(receivedFormat.get()).isEqualTo("PDF");
         assertThat(new String(receivedBody.get(), StandardCharsets.ISO_8859_1))

@@ -1,0 +1,594 @@
+[
+  {
+    "caseId": "mmlongbench-0013",
+    "question": "Where was Gestalt psychology concieved?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        2
+      ],
+      "physicalGoldPages": [
+        2
+      ],
+      "hitPhysicalGoldPages": [
+        2
+      ],
+      "goldContentSha256": "13ff22623b747d1facbb405369001c6d3793322b24a56365bb8cef89db2f903e"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0023",
+    "question": "What is NARL stand for in this document?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        19
+      ],
+      "physicalGoldPages": [
+        19
+      ],
+      "hitPhysicalGoldPages": [
+        19
+      ],
+      "goldContentSha256": "df65695cae4e30afe465edf187d334d55fa9a2c0ac7d72269cef09b38d2d39f1"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0045",
+    "question": "What are the examples the slides show \"what does not make you data-driven\"",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 0.5,
+      "allEvidencePagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        7,
+        8,
+        9,
+        16
+      ],
+      "physicalGoldPages": [
+        7,
+        8,
+        9,
+        16
+      ],
+      "hitPhysicalGoldPages": [
+        9,
+        16
+      ],
+      "goldContentSha256": "2495123a46df51c4c552350d7bdaefc5a3f0dfb5f16d5b741b65b9bd7126f547"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0081",
+    "question": "Which subsection does the section \"AUGMENTATION PROCESS IN RAG\" include?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        10,
+        11
+      ],
+      "physicalGoldPages": [
+        10,
+        11
+      ],
+      "hitPhysicalGoldPages": [
+        10,
+        11
+      ],
+      "goldContentSha256": "396a0fadeb4cd40f5c8ccc36b73a0815f6cb4d7f6bfa53b6c48c1f9aba7c7e02"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0093",
+    "question": "What devices other than phone are introduced for setting device+?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allEvidencePagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        11,
+        12
+      ],
+      "physicalGoldPages": [
+        13,
+        14
+      ],
+      "hitPhysicalGoldPages": [],
+      "goldContentSha256": "1d645b8b4b035ca54e197309d3d0db23e89cfc406066f030db44ee2cd0e536a5"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0132",
+    "question": "What is the telephone no for The Limes Residential Home?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        1
+      ],
+      "physicalGoldPages": [
+        1
+      ],
+      "hitPhysicalGoldPages": [
+        1
+      ],
+      "goldContentSha256": "08408fea6869f71b8bb85b86143ded39b28fc8b32a9090ceb64211febd446a67"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0232",
+    "question": "Who Visited the U.S. Naval Medical Research centre on November 29, 2012 in the document?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        1
+      ],
+      "physicalGoldPages": [
+        1
+      ],
+      "hitPhysicalGoldPages": [
+        1
+      ],
+      "goldContentSha256": "004b6c63f504f3868b678e04339be94361434e405ff2cf54fbf84e894a71183c"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0342",
+    "question": "For the learning resources, which facilities are opened on Saturday in NUS Kent Ridge Campus? Give me a list.",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        19,
+        20
+      ],
+      "physicalGoldPages": [
+        19,
+        20
+      ],
+      "hitPhysicalGoldPages": [
+        19,
+        20
+      ],
+      "goldContentSha256": "7dea5266e6c8eaa3e3549c6796dfab684cc7fa808e14386d6cf1e413479a61b3"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0368",
+    "question": "Where are the two plants of GODFREY PHILLIPS INDIA LIMITED located?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        15
+      ],
+      "physicalGoldPages": [
+        15
+      ],
+      "hitPhysicalGoldPages": [
+        15
+      ],
+      "goldContentSha256": "a7b0ae685a743a0acedd57477fd20e3ad0a09e15ec73203b83ea531facb4e5d9"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0576",
+    "question": "Since what year has Mr. Kildee been involved with child nutrition?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        8
+      ],
+      "physicalGoldPages": [
+        8
+      ],
+      "hitPhysicalGoldPages": [
+        8
+      ],
+      "goldContentSha256": "773e1fc44166300d1473853e48b2b0c3f16164e3e125b52db8c616a34fdf8ea7"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0588",
+    "question": "what is the email id of the mtre laurent nahmiash ?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        14
+      ],
+      "physicalGoldPages": [
+        14
+      ],
+      "hitPhysicalGoldPages": [
+        14
+      ],
+      "goldContentSha256": "b49aac986f8b13cdca3c429013ab668304e64eca8c72e85f9961acf3616d793e"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0823",
+    "question": "How many square miles does the Hamilton country covers according to the document? Give me an appropriate integer.",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        11
+      ],
+      "physicalGoldPages": [
+        11
+      ],
+      "hitPhysicalGoldPages": [
+        11
+      ],
+      "goldContentSha256": "be8b8e31e4804cd3a8dc5e67f4cf877b0295ded30f9db250a5694c3264acbbe0"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0888",
+    "question": "For the paper by Long Ouyang published in 2022, how many times has it been cited? \n",
+    "metrics": {
+      "documentRecallAt1": 0.0,
+      "documentRecallAt5": 0.0,
+      "documentRecallAt10": 0.0,
+      "evidencePageRecallAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allEvidencePagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.0,
+      "printedGoldPages": [
+        1,
+        2,
+        5,
+        7,
+        32,
+        47
+      ],
+      "physicalGoldPages": [
+        1,
+        2,
+        5,
+        7,
+        32,
+        47
+      ],
+      "hitPhysicalGoldPages": [],
+      "goldContentSha256": "720656b49d4c00dac26d6ebe10dad0d8482d3bcc87640a66b73867730b89515f"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0902",
+    "question": "What if the USB AC adaptor supplies an output less than 1.5 A for the headset?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        19
+      ],
+      "physicalGoldPages": [
+        19
+      ],
+      "hitPhysicalGoldPages": [
+        19
+      ],
+      "goldContentSha256": "d17cde8229847cb53926e578d70410cf46f9dbfb8a0d62cf675e18c3625507e3"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0908",
+    "question": "Where is Office of Residential Life & Housing Services?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        28
+      ],
+      "physicalGoldPages": [
+        30
+      ],
+      "hitPhysicalGoldPages": [
+        30
+      ],
+      "goldContentSha256": "16ee1cfbd58f9c6a3793c66ff5f4ec38dd864ac9fd7a9b7186f8af7db53f870b"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0915",
+    "question": "List the areas that PWC performs IA support across.",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        8
+      ],
+      "physicalGoldPages": [
+        8
+      ],
+      "hitPhysicalGoldPages": [
+        8
+      ],
+      "goldContentSha256": "ba92752271eac6db634d84d9ae29840f08e252b71a7e2ab0dc068e9e91a4ba4b"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0935",
+    "question": "TOP security concerns of computerized medical information DIAGRAM DISCUSSED ABOUT WHICH YEAR? List all of them like ['2014', '2018', '2020'].",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        12
+      ],
+      "physicalGoldPages": [
+        12
+      ],
+      "hitPhysicalGoldPages": [
+        12
+      ],
+      "goldContentSha256": "972056ce39de67fc3eef402099a8f58fa3388a5142b4314a286968e7999bbc74"
+    }
+  },
+  {
+    "caseId": "mmlongbench-0977",
+    "question": "What rung is the second ladder of causation refer to?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        3
+      ],
+      "physicalGoldPages": [
+        3
+      ],
+      "hitPhysicalGoldPages": [
+        3
+      ],
+      "goldContentSha256": "6020ba90c4f16fb632cae4f698e565b25f713a58f13ebbdbd330ca5943b2fc24"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1012",
+    "question": "what value stock does Activsion Blizzard repurchase in FY2019?Answer in USD billion\n",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        29
+      ],
+      "physicalGoldPages": [
+        29
+      ],
+      "hitPhysicalGoldPages": [
+        29
+      ],
+      "goldContentSha256": "017f1bbc1e37f2945a41fa2b5cf39d822e1e9d435a2c2b9c6b1cc76cd114a2df"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1026",
+    "question": "How much did COSTCO spend on repurchasing of common stock in FY2021?Answer in millions.\n",
+    "metrics": {
+      "documentRecallAt1": 0.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 0.5,
+      "printedGoldPages": [
+        29
+      ],
+      "physicalGoldPages": [
+        29
+      ],
+      "hitPhysicalGoldPages": [
+        29
+      ],
+      "goldContentSha256": "29e05b3862cf6ffa6cfda34ac82a9fa0fe76b67338c5924da3325c2ee3b08748"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1037",
+    "question": "what method did netflix use to pay the dividend to shareholders in FY2015.",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        55
+      ],
+      "physicalGoldPages": [
+        55
+      ],
+      "hitPhysicalGoldPages": [
+        55
+      ],
+      "goldContentSha256": "b22ca874ef08f383bd0b1071677d44f4a242af668f855f00dc9c6d4ac94148e2"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1061",
+    "question": "How do Amazon recognize least cost?",
+    "metrics": {
+      "documentRecallAt1": 0.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allEvidencePagesHitAt10": 0.0,
+      "reciprocalRankAt10": 0.5,
+      "printedGoldPages": [
+        47
+      ],
+      "physicalGoldPages": [
+        47
+      ],
+      "hitPhysicalGoldPages": [],
+      "goldContentSha256": "f8af08ff6c4147351ec3a6e5e2c74e104678ce68fb0d6d476b1e43f685c09a3f"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1069",
+    "question": "what channel  is the majority of ADBE product sold by in FY2015?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        13
+      ],
+      "physicalGoldPages": [
+        13
+      ],
+      "hitPhysicalGoldPages": [
+        13
+      ],
+      "goldContentSha256": "f9ddba652f19e20752d98b1b4cedcebcb1a9a6d11dd23ab2e2f00f009a164c24"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1078",
+    "question": "what goodwill does Best Buy have for for the fiscal year ending January 28, 2023?",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 0.0,
+      "evidencePageCoverageAt10": 0.0,
+      "allEvidencePagesHitAt10": 0.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        39
+      ],
+      "physicalGoldPages": [
+        39
+      ],
+      "hitPhysicalGoldPages": [],
+      "goldContentSha256": "7ca465d31a08be29e8c08d756644d33d818c7254a1215720f265227005cda696"
+    }
+  },
+  {
+    "caseId": "mmlongbench-1090",
+    "question": "What is the growth rate of advertising and merchandising cost for 3M in FY2018? Answer in percentage term, round to two decimal places.",
+    "metrics": {
+      "documentRecallAt1": 1.0,
+      "documentRecallAt5": 1.0,
+      "documentRecallAt10": 1.0,
+      "evidencePageRecallAt10": 1.0,
+      "evidencePageCoverageAt10": 1.0,
+      "allEvidencePagesHitAt10": 1.0,
+      "reciprocalRankAt10": 1.0,
+      "printedGoldPages": [
+        64
+      ],
+      "physicalGoldPages": [
+        64
+      ],
+      "hitPhysicalGoldPages": [
+        64
+      ],
+      "goldContentSha256": "faf10c53fc6f1a8aa346ec3db79145e3ae6fbb3753c8064924e174d0a973934d"
+    }
+  }
+]

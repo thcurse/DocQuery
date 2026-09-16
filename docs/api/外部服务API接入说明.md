@@ -19,6 +19,8 @@
 - `POST /api/v1/service/knowledge-bases/{knowledgeBaseId}/retrieve`：返回排序后的 canonical 原文证据。
 - `POST /api/v1/service/knowledge-bases/{knowledgeBaseId}/answer`：基于证据生成受控单轮回答并返回引用。
 
+Answer 引用以 `documentName`、`headingPath` 和 PDF 物理 `pageNumber` 作为用户可理解的位置；`blockId` 与 canonical range 仅为兼容和审计保留，业务界面不应直接展示。
+
 必需请求头：
 
 - `Authorization: Bearer dq_app_<keyId>.<secret>`

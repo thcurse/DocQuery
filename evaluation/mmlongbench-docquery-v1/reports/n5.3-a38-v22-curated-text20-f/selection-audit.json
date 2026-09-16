@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "docquery-n5.3-a1-selection-audit-v1",
+  "status": "VALIDATED",
+  "caseCount": 20,
+  "documentCount": 11,
+  "answerFormatCounts": {
+    "Float": 7,
+    "List": 6,
+    "Str": 7
+  },
+  "domainCounts": {
+    "Academic paper": 9,
+    "Brochure": 2,
+    "Guidebook": 4,
+    "Research report / Introduction": 5
+  },
+  "selectionSha256": "ec974b158debe6f9229db3d4aee45e969f29f570c633965cfc653404206c6d0c",
+  "caseIds": [
+    "docquery-curated-f-001",
+    "docquery-curated-f-002",
+    "docquery-curated-f-003",
+    "docquery-curated-f-004",
+    "docquery-curated-f-005",
+    "docquery-curated-f-006",
+    "docquery-curated-f-007",
+    "docquery-curated-f-008",
+    "docquery-curated-f-009",
+    "docquery-curated-f-010",
+    "docquery-curated-f-011",
+    "docquery-curated-f-012",
+    "docquery-curated-f-013",
+    "docquery-curated-f-014",
+    "docquery-curated-f-015",
+    "docquery-curated-f-016",
+    "docquery-curated-f-017",
+    "docquery-curated-f-018",
+    "docquery-curated-f-019",
+    "docquery-curated-f-020"
+  ]
+}

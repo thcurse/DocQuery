@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a33-v22-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count a refusal on an answerable question as incorrect.",
+    "Judge semantic correctness rather than exact wording or formatting.",
+    "Require cited text to support the requested entity, relation, period, and answer.",
+    "Record an evaluation-scope issue when a question uses an unresolved document/page/case reference while documentIds are omitted."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-text-0134","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Returned all five questions correctly, but 'this report' is unresolved in a 100-document knowledge base."},
+    {"caseId":"mmlongbench-text-0238","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Refused an answerable page, but 'this document' has no referent without a document scope."},
+    {"caseId":"mmlongbench-text-0364","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Incorrect refusal despite the named company and complete single-page banker list."},
+    {"caseId":"mmlongbench-text-0366","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly calculated a 2.4 percentage-point shortfall from the cited prose."},
+    {"caseId":"mmlongbench-text-0578","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Returned a date from another page/document; page 1 is not uniquely scoped by the question."},
+    {"caseId":"mmlongbench-text-0583","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Returned the wrong date; page 14 is not uniquely scoped by the question."},
+    {"caseId":"mmlongbench-text-0587","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"The court type is correct, but 'the cover page' is not uniquely scoped."},
+    {"caseId":"mmlongbench-text-0594","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both Mont Blanc check amounts are correct and directly supported."},
+    {"caseId":"mmlongbench-text-0595","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Refused; 'the report' is not uniquely identified."},
+    {"caseId":"mmlongbench-text-0656","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"The count and Sojin Shin identification are correct, but the guidebook is unnamed."},
+    {"caseId":"mmlongbench-text-0668","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly returned 3.0 replacement steps from the manual."},
+    {"caseId":"mmlongbench-text-0700","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Answered with identifiers from a different legal document; 'this document' is unresolved."},
+    {"caseId":"mmlongbench-text-0704","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Refused; 'this case' is unresolved without the case name or document scope."},
+    {"caseId":"mmlongbench-text-0833","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"The case-study title is correct, but Unit 8 is not tied to a named course document."},
+    {"caseId":"mmlongbench-text-0836","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"The Unit 14 topic is correct, but the course document is unnamed."},
+    {"caseId":"mmlongbench-text-0932","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"AMBIGUOUS_UNSCOPED_QUESTION","note":"Returned another slide title because 'the slide' is not uniquely identified."},
+    {"caseId":"mmlongbench-text-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All fourteen HIT applications are returned and supported."},
+    {"caseId":"mmlongbench-text-1026","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly returned Costco's $495 million FY2021 repurchase amount."},
+    {"caseId":"mmlongbench-text-1038","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly returned Netflix's $34.7 million operating-lease rent expense."},
+    {"caseId":"mmlongbench-text-1061","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"MALFORMED_QUESTION","note":"The source asks about lease cost, but the public question says least cost and induces an inventory-cost answer."}
+  ]
+}

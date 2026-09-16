@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "docquery-n5.3-a8-audit-summary-v1",
+  "source": "application_query_audit",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "requestId": "39ba5c41-2636-4797-9c61-174521edd950",
+      "queryExecutionId": "167af4bd-c08d-467b-9151-3f6aa49398ff",
+      "httpStatus": 200,
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "failureCode": null,
+      "toolRounds": 0,
+      "toolCalls": 0,
+      "modelCalls": 2,
+      "canonicalCharacters": 4640,
+      "durationMs": 28549
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "requestId": "7ce7a86d-dcab-4a7d-9df4-7367c3d0e560",
+      "queryExecutionId": "fc948068-41cf-41db-a98e-2a918e859687",
+      "httpStatus": 200,
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "failureCode": null,
+      "toolRounds": 0,
+      "toolCalls": 0,
+      "modelCalls": 2,
+      "canonicalCharacters": 3399,
+      "durationMs": 23699
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "attempts": [
+        {
+          "requestId": "08d49699-4c46-43b1-a0da-3e5631916303",
+          "httpStatus": 503,
+          "failureCode": "ANSWER_EXECUTION_LIMIT_EXCEEDED",
+          "toolRounds": 2,
+          "toolCalls": 3,
+          "modelCalls": 3,
+          "canonicalCharacters": 0,
+          "durationMs": 14062
+        },
+        {
+          "requestId": "d59d6c80-f1e8-4cf5-9456-b7649b7d2f8a",
+          "httpStatus": 503,
+          "failureCode": "ANSWER_EXECUTION_LIMIT_EXCEEDED",
+          "toolRounds": 0,
+          "toolCalls": 0,
+          "modelCalls": 1,
+          "canonicalCharacters": 0,
+          "durationMs": 4837
+        }
+      ]
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "requestId": "654b6ab7-2c6f-4559-b9c7-5c393270cf08",
+      "queryExecutionId": "2efbbc6f-7394-47c6-a7ab-24f161146e88",
+      "httpStatus": 200,
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "failureCode": null,
+      "toolRounds": 2,
+      "toolCalls": 2,
+      "modelCalls": 4,
+      "canonicalCharacters": 3416,
+      "durationMs": 22970
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "requestId": "fa69678e-6341-421e-b546-c5b29ad87d43",
+      "queryExecutionId": "26043cf2-b1a6-4b38-8343-28cc774027ac",
+      "httpStatus": 200,
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "failureCode": null,
+      "toolRounds": 0,
+      "toolCalls": 0,
+      "modelCalls": 2,
+      "canonicalCharacters": 13749,
+      "durationMs": 85191
+    }
+  ],
+  "diagnosis": [
+    "The high-level Agent did not mechanically prevent early refusal: three cases made zero Agent tool calls after the Java initial search.",
+    "The 0831 case exceeded the configured parallel tool-call boundary on both attempts.",
+    "The 0937 case regressed from the correct A6 answer to a refusal after two search calls.",
+    "The search/open redesign and framework-managed loop did not improve the fixed five-case quality result."
+  ]
+}

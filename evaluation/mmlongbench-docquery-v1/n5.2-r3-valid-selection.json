@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "docquery-n5.2-r3-valid-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Fresh question-text-valid corpus-level retrieval evaluation without documentIds",
+  "selectionPolicy": [
+    "Select only source questions that have never been executed in R1, R2, P3, or O2-P0.",
+    "Use only the original public-dataset question text; do not rewrite or generate questions.",
+    "Require the question text to contain enough named or distinctive context for corpus-level source localization.",
+    "Require Pure-text (Plain-text) evidence, a unique source-content SHA-256 in the 100-document corpus, and a unique PDF PageLabel to physical-page mapping for every Gold page.",
+    "Do not use any retrieval result when deciding inclusion or reserve status.",
+    "Take the first 80 eligible source rows in ascending sourceRowIndex order as the formal set; retain the final 3 as unused reserves."
+  ],
+  "formalSourceRowIndexes": [
+    16, 22, 65, 78, 82, 104, 136, 190, 203, 219,
+    221, 223, 225, 229, 239, 242, 243, 251, 253, 265,
+    305, 307, 318, 324, 326, 338, 341, 364, 507, 513,
+    562, 564, 567, 582, 585, 592, 594, 601, 607, 613,
+    651, 653, 657, 666, 667, 677, 681, 682, 689, 702,
+    726, 741, 810, 811, 813, 825, 831, 832, 834, 878,
+    903, 921, 937, 960, 967, 981, 982, 983, 986, 1025,
+    1027, 1032, 1033, 1034, 1038, 1050, 1059, 1060, 1062, 1063
+  ],
+  "reserveSourceRowIndexes": [1077, 1080, 1088],
+  "knownRejectedSourceRowIndexes": {
+    "SOURCE_CONTENT_DUPLICATE_OR_MISMATCH": [274, 278, 848, 852, 853, 907],
+    "GOLD_PAGE_LABEL_NOT_UNIQUELY_MAPPABLE": [637, 639, 641, 642, 647, 648]
+  },
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "documentIds": "OMITTED",
+    "answer": "NOT_EXECUTED"
+  }
+}

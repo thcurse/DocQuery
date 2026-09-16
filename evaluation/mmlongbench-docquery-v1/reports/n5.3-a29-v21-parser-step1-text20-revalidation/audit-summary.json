@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a29-audit-summary-v1",
+  "source": "application_query_audit",
+  "actorRef": "n5.3-a29-v21-parser-step1-text20",
+  "logicalRequests": 20,
+  "httpAttempts": 20,
+  "succeededAttempts": 20,
+  "failedAttempts": 0,
+  "toolRounds": 50,
+  "toolCalls": 71,
+  "modelCalls": 70,
+  "canonicalCharacters": 369636,
+  "failedAttemptCodes": {},
+  "boundary": "Counts are audit facts for the 20 A29 requests. No question, answer, citation text, credential, provider token usage, or cost is stored here."
+}

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "docquery-n5.3-a36-v22-entity-scoped-text20-d-v1",
+  "status": "COMPLETED",
+  "generatedAt": "2026-08-30T05:13:42.369543+00:00",
+  "dataset": {
+    "version": "mmlongbench-docquery-v1",
+    "caseCount": 20,
+    "sourceDocumentCount": 14,
+    "manifestSha256": "0423bcaf95044b5399f5f5df5e73ef45e2752e0a961a117be3fa141cb247a579",
+    "r3CasesSha256": "94e562fab70d10baaadfc67e8f1616fd963fd3a8e381ad5f39e7fe32e0f230e0",
+    "selectionSha256": "cf010ac817b947e961bed81a8cdc343a2a7a08ac2b2858335e7ff0b2b287fea6",
+    "selectionPolicy": [
+      "Reuse the independently selected facts and Gold pages from n5.3-normal-text20-b-selection.json.",
+      "Questions may identify a company, person, case, institution, event, topic, product concept, or time period as a normal user would.",
+      "Do not provide a document title, file name, documentId, page number, answer text, or hidden retrieval hint.",
+      "Remove unresolved deictic wording such as this document, this report, this case, or this slide.",
+      "Correct the public dataset's lease/least typo because it changes the requested accounting concept.",
+      "Keep the existing corpus and single-page plain-text Gold evidence."
+    ]
+  },
+  "configuration": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "documentIdsProvided": false,
+    "answerPolicyVersion": "answer-policy-v22",
+    "runId": "n5.3-a36-v22-entity-scoped-text20-d-v1",
+    "actorRef": "n5.3-a36-v22-entity-scoped-text20-d",
+    "credentialEnvironmentVariable": "DOCQUERY_N5_APPLICATION_CREDENTIAL",
+    "python": "3.12.13",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "usageBoundary": {
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE",
+    "answerLogicalRequestUpperBound": 20
+  },
+  "metrics": {
+    "attempts": 20,
+    "successes": 20,
+    "normalModeResponses": 20,
+    "degradedResponses": 0,
+    "retryCount": 0,
+    "latency": {
+      "count": 20,
+      "p50Ms": 12449.138,
+      "p95Ms": 22398.821,
+      "p99Ms": 24660.48,
+      "minMs": 6732.098,
+      "maxMs": 24660.48,
+      "meanMs": 13558.791
+    },
+    "metricPopulation": "ALL_20_LOGICAL_REQUESTS; request failures score zero",
+    "answeredRate": 0.9,
+    "controlledRefusalRate": 0.1,
+    "automaticReferenceMatchRate": 0.7,
+    "relevantDocumentCitationRate": 0.9,
+    "anyGoldPageCitationRate": 0.9,
+    "goldPageCitationCoverage": 0.9,
+    "allGoldPagesCitedRate": 0.9,
+    "relevantDocumentCitationCount": 18,
+    "anyGoldPageCitationCount": 18,
+    "successfulResponseDiagnostics": {
+      "population": 20,
+      "answeredRate": 0.9,
+      "automaticReferenceMatchRate": 0.7,
+      "relevantDocumentCitationRate": 0.9,
+      "anyGoldPageCitationRate": 0.9,
+      "goldPageCitationCoverage": 0.9
+    },
+    "manualAdjudication": {
+      "status": "COMPLETED",
+      "correctAnswers": 18,
+      "accuracy": 0.9,
+      "unsupportedCitations": 0,
+      "datasetIssueCounts": {},
+      "artifact": "manual-adjudication.json"
+    }
+  },
+  "acceptanceThresholds": {
+    "manualCorrectAnswers": 14,
+    "relevantDocumentCitations": 17,
+    "anyGoldPageCitations": 13,
+    "unsupportedCitations": 0
+  },
+  "acceptance": {
+    "manualCorrectAnswers": 18,
+    "relevantDocumentCitations": 18,
+    "anyGoldPageCitations": 18,
+    "unsupportedCitations": 0,
+    "passed": true
+  },
+  "artifacts": {
+    "rawResults": "raw-results.jsonl",
+    "cases": "cases.jsonl",
+    "selectionAudit": "selection-audit.json",
+    "manualAdjudication": "manual-adjudication.json",
+    "auditSummary": "audit-summary.json"
+  }
+}

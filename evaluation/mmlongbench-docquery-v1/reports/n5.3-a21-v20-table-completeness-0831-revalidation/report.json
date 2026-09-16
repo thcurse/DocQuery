@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "docquery-n5.3-a21-v20-table-completeness-0831-v1",
+  "status": "COMPLETED_PENDING_REVIEW",
+  "generatedAt": "2026-08-25T12:03:03.945925+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0831"
+    ],
+    "caseCount": 1,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v20"
+  },
+  "metrics": {
+    "successes": 1,
+    "attempts": 1,
+    "answered": 1,
+    "controlledRefusals": 0,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 1,
+    "anyGoldPageCitations": 1,
+    "goldPageCitationCoverage": 1.0,
+    "allGoldPagesCited": 1,
+    "latency": {
+      "count": 1,
+      "p50Ms": 17677.663,
+      "p95Ms": 17677.663,
+      "p99Ms": 17677.663,
+      "minMs": 17677.663,
+      "maxMs": 17677.663,
+      "meanMs": 17677.663
+    },
+    "errorCounts": {},
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 1,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a21-v20-table-completeness-0831-v1",
+    "actorRef": "n5.3-a21-v20-table-completeness-0831"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": null,
+    "auditSummary": null
+  }
+}

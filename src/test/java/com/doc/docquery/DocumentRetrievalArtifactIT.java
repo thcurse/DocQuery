@@ -12,6 +12,7 @@ import com.doc.docquery.retrieval.RetrievalJsonlReader;
 import com.doc.docquery.retrieval.RetrievalJsonlWriter;
 import com.doc.docquery.retrieval.EmbeddingCodec;
 import com.doc.docquery.retrieval.NavigationTextBuilder;
+import com.doc.docquery.retrieval.NavigationPartitionPlanner;
 import com.doc.docquery.retrieval.RetrievalSemanticValidator;
 import com.doc.docquery.retrieval.RetrievalNodeSemantic;
 import com.doc.docquery.security.AdminPrincipal;
@@ -26,6 +27,7 @@ import com.doc.docquery.service.RetrievalGenerationException;
 import com.doc.docquery.service.SourceObjectStore;
 import com.doc.docquery.service.impl.DocumentRetrievalServiceImpl;
 import com.doc.docquery.config.DocumentRetrievalProperties;
+import com.doc.docquery.config.ChatProfilesProperties;
 import com.doc.docquery.mapper.DocumentCanonicalArtifactMapper;
 import com.doc.docquery.mapper.DocumentMapper;
 import com.doc.docquery.mapper.DocumentRetrievalArtifactMapper;
@@ -182,13 +184,16 @@ class DocumentRetrievalArtifactIT {
         assertThat(artifact.getNodeCount()).isEqualTo(2);
         assertThat(artifact.getVectorCount()).isEqualTo(3);
         assertThat(artifact.getEmbeddingDimension()).isEqualTo(2560);
-        assertThat(artifact.getChatModel()).isEqualTo("deepseek-v4-flash");
+        assertThat(artifact.getChatModel()).isEqualTo("glm-5.3-flash");
         assertThat(artifact.getRetrievalSha256()).hasSize(64);
         assertThat(retrievalStore.list("retrieval/", 100)).hasSize(1);
 
         List<JsonNode> records = readRecords(artifact.getRetrievalObjectKey());
         assertThat(records.get(0).get("recordType").asText()).isEqualTo("header");
-        assertThat(records.get(0).get("thinkingMode").asText()).isEqualTo("DISABLED");
+        assertThat(records.get(0).get("chatProvider").asText()).isEqualTo("PACKY_API");
+        assertThat(records.get(0).get("chatProtocol").asText()).isEqualTo("RESPONSES");
+        assertThat(records.get(0).get("thinkingMode").asText())
+                .isEqualTo("PROVIDER_DEFAULT");
         assertThat(records.stream().filter(record -> "profile".equals(
                 record.get("recordType").asText()))).hasSize(1);
         assertThat(records.stream().filter(record -> "node".equals(
@@ -402,11 +407,13 @@ class DocumentRetrievalArtifactIT {
                 NavigationTextBuilder textBuilder,
                 EmbeddingCodec codec,
                 RetrievalGenerationFingerprint fingerprint,
-                DocumentRetrievalProperties properties
+                DocumentRetrievalProperties properties,
+                ChatProfilesProperties chatProfiles
         ) {
             return new RetrievalArtifactGenerator(
-                    chat, embedding, semanticValidator, textBuilder, codec,
-                    fingerprint, properties
+                    chat, embedding, semanticValidator,
+                    new NavigationPartitionPlanner(properties), textBuilder, codec,
+                    fingerprint, properties, chatProfiles, Runnable::run
             );
         }
 

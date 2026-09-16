@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "phase": "N5.2-O1-P0",
+  "generatedAt": "2026-08-21T11:15:27.890772+00:00",
+  "selectionSha256": "b4b19e84f09925bf8738bbb6961f12b12c1da157bace377e7ddf018788b6ad15",
+  "thresholdEstimatedTokens": 64000,
+  "tokenEstimator": "UTF16_CHARS_DIV_4_CEILING",
+  "model": "deepseek-v4-flash",
+  "paidRequestsAttempted": 2,
+  "samples": [
+    {
+      "sampleId": "3m-overview",
+      "documentVersionId": 28,
+      "documentName": "3M_2018_10K.pdf",
+      "headingNodeId": "28:h:000001",
+      "headingTitle": "OVERVIEW",
+      "sectionStartBlockOrdinal": 262,
+      "sectionEndBlockOrdinalExclusive": 1606,
+      "sourceChars": 529780,
+      "estimatedTokens": 132445,
+      "minimumPartitions": 3,
+      "maximumPartitions": 4,
+      "sectionInputSha256": "06eb476660560ea4f7803cea8f23063fca91a06ef2656148655c125c5dd402ac",
+      "providerRequestId": "5a9e07e4-bee3-49ba-87b5-3a9833c3c425",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 159489,
+        "completion_tokens": 784,
+        "total_tokens": 160273,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 159489
+      },
+      "partitions": [
+        {
+          "partitionOrdinal": 0,
+          "title": "Overview and 2018 Financial Performance",
+          "startBlockOrdinal": 262,
+          "summary": "This section provides an overview of 3M's business and financial performance for the fourth quarter and full year 2018. It discusses diluted earnings per share, key drivers of year-on-year changes (including divestitures, organic growth, acquisitions, foreign exchange, legal charges, and income tax impacts), and non-GAAP measures adjusted for the Minnesota NRD resolution and the Tax Cuts and Jobs Act. It also highlights sales and operating income by business segment and geographic area for 2018 and 2017.",
+          "topics": [
+            "2018 financial results",
+            "Earnings per share",
+            "Non-GAAP measures",
+            "Business segment performance",
+            "Geographic sales analysis"
+          ],
+          "aliases": [
+            "EPS Analysis"
+          ],
+          "answerableQuestions": [
+            "What was 3M's diluted earnings per share for 2018?",
+            "What factors impacted the change in EPS year-on-year?",
+            "How did the Minnesota NRD resolution and TCJA affect reported results?",
+            "What were the sales and operating income by business segment for 2018?"
+          ],
+          "endBlockOrdinalExclusive": 361,
+          "startPage": 15,
+          "endPage": 26,
+          "sourceChars": 42454,
+          "estimatedTokens": 10614
+        },
+        {
+          "partitionOrdinal": 1,
+          "title": "Liquidity, Financial Condition, and Capital Resources",
+          "startBlockOrdinal": 361,
+          "summary": "This section covers 3M's financial condition, including cash flow generation, capital allocation priorities (dividends, share repurchases, acquisitions), debt management, and liquidity. It discusses working capital, net debt, return on invested capital, free cash flow, contractual obligations, and off-balance sheet arrangements. It also provides details on 2018, 2017, and 2016 debt activity, including issuances, maturities, and the early extinguishment of debt.",
+          "topics": [
+            "Cash flows",
+            "Capital allocation",
+            "Debt management",
+            "Financial condition",
+            "Liquidity"
+          ],
+          "aliases": [
+            "Capital Resources",
+            "Funding and Liquidity"
+          ],
+          "answerableQuestions": [
+            "What were 3M's operating cash flows in 2018?",
+            "How much debt does 3M have and what are its liquidity sources?",
+            "What is 3M's dividend policy and share repurchase program?",
+            "What are 3M's contractual obligations and off-balance sheet arrangements?"
+          ],
+          "endBlockOrdinalExclusive": 702,
+          "startPage": 26,
+          "endPage": 50,
+          "sourceChars": 100144,
+          "estimatedTokens": 25036
+        },
+        {
+          "partitionOrdinal": 2,
+          "title": "Market Risk, Financial Statements, and Controls",
+          "startBlockOrdinal": 702,
+          "summary": "This section provides information on market risk management, including foreign exchange, interest rate, and commodity price risks. It also includes the consolidated financial statements and related notes, covering significant accounting policies, revenue recognition, acquisitions, divestitures, income taxes, derivative instruments, and commitments and contingencies. Additionally, it discusses management's assessment of internal controls over financial reporting and the independent auditor's report.",
+          "topics": [
+            "Market risk",
+            "Financial statements",
+            "Accounting policies",
+            "Derivatives",
+            "Internal controls"
+          ],
+          "aliases": [
+            "Financial Data and Controls",
+            "MD&A and Financial Statements"
+          ],
+          "answerableQuestions": [
+            "What are 3M's market risk exposures and how are they managed?",
+            "What were 3M's net sales and net income for 2018?",
+            "What significant accounting policies are used in preparing the financial statements?",
+            "What is management's assessment of internal controls over financial reporting?"
+          ],
+          "endBlockOrdinalExclusive": 1606,
+          "startPage": 50,
+          "endPage": 142,
+          "sourceChars": 387182,
+          "estimatedTokens": 96796
+        }
+      ],
+      "validation": {
+        "partitionCount": 3,
+        "coverageRatio": 1.0,
+        "gapCount": 0,
+        "overlapCount": 0,
+        "oversizedPartitionCount": 1,
+        "maximumPartitionEstimatedTokens": 96796,
+        "canonicalHeadingTreeChanged": false
+      },
+      "status": "VALID_WITH_OVERSIZED_PARTITION",
+      "latencyMs": 14132
+    },
+    {
+      "sampleId": "activision-overview",
+      "documentVersionId": 36,
+      "documentName": "ACTIVISIONBLIZZARD_2019_10K.pdf",
+      "headingNodeId": "36:h:000001",
+      "headingTitle": "Overview",
+      "sectionStartBlockOrdinal": 126,
+      "sectionEndBlockOrdinalExclusive": 926,
+      "sourceChars": 274178,
+      "estimatedTokens": 68545,
+      "minimumPartitions": 2,
+      "maximumPartitions": 3,
+      "sectionInputSha256": "10c5ef2c4a3b80bd4d6c9e5923bbdddcf74553b6f98c99d2e8d9d49174bb4fed",
+      "status": "FAILED",
+      "failureCode": "O1_P0_VALIDATION_FAILED",
+      "failureMessage": "Model returned a partition count outside the requested bounds",
+      "latencyMs": 11430
+    }
+  ]
+}

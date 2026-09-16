@@ -92,7 +92,10 @@ public class RetrievalJsonlReader {
                 requiredInt(header, "schemaVersion"),
                 requiredLong(header, "documentVersionId"),
                 requiredText(header, "canonicalArtifactSha256"),
+                requiredText(header, "chatProvider"),
+                requiredText(header, "chatProtocol"),
                 requiredText(header, "chatModel"),
+                requiredText(header, "thinkingMode"),
                 requiredText(header, "promptVersion"),
                 requiredText(header, "embeddingModel"),
                 requiredInt(header, "embeddingDimension"),
@@ -102,8 +105,7 @@ public class RetrievalJsonlReader {
                 profile,
                 nodes
         );
-        if (!"DEEPSEEK".equals(requiredText(header, "chatProvider"))
-                || !"DISABLED".equals(requiredText(header, "thinkingMode"))
+        if (!supportedChatMetadata(artifact.chatProvider(), artifact.thinkingMode())
                 || !"ALIBABA_MODEL_STUDIO".equals(
                 requiredText(header, "embeddingProvider"))) {
             throw invalid("Retrieval provider metadata is invalid", null);
@@ -116,6 +118,12 @@ public class RetrievalJsonlReader {
             throw invalid("Retrieval footer digest does not match records", null);
         }
         return new ReadArtifact(artifact, validation);
+    }
+
+    private boolean supportedChatMetadata(String provider, String thinkingMode) {
+        return ("DEEPSEEK".equals(provider) && "DISABLED".equals(thinkingMode))
+                || ("PACKY_API".equals(provider)
+                && "PROVIDER_DEFAULT".equals(thinkingMode));
     }
 
     private <T> T convertRecord(JsonNode record, Class<T> type) {

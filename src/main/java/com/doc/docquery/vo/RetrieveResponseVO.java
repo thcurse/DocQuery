@@ -1,5 +1,6 @@
 package com.doc.docquery.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,17 @@ public class RetrieveResponseVO {
         private Integer keywordRank;
         private Integer semanticRank;
         private List<Evidence> evidence;
+        /** 仅供同一 Answer 执行上下文注册最小读取范围，不进入外部 /retrieve。 */
+        @JsonIgnore
+        private InternalReadTarget internalReadTarget;
+    }
+
+    public record InternalReadTarget(
+            String cardId,
+            String cardType,
+            int sectionStartBlockOrdinal,
+            int sectionEndBlockOrdinalExclusive
+    ) {
     }
 
     @Getter
@@ -73,6 +85,34 @@ public class RetrieveResponseVO {
         private Integer startColumn;
         private Integer endLine;
         private Integer endColumn;
+        private String tableId;
+        private Integer tableRowSpan;
+        private Integer tableColumnSpan;
+        private String tableColumnHeader;
+
+        public SourcePosition(
+                String sourceType,
+                Integer pageNumber,
+                Integer pageBlockOrdinal,
+                Integer pageCharacterStart,
+                Integer pageCharacterEnd,
+                Integer bodyElementIndex,
+                Integer tableRow,
+                Integer tableColumn,
+                Integer cellParagraphIndex,
+                Integer startLine,
+                Integer startColumn,
+                Integer endLine,
+                Integer endColumn
+        ) {
+            this(
+                    sourceType, pageNumber, pageBlockOrdinal,
+                    pageCharacterStart, pageCharacterEnd, bodyElementIndex,
+                    tableRow, tableColumn, cellParagraphIndex,
+                    startLine, startColumn, endLine, endColumn,
+                    null, null, null, null
+            );
+        }
     }
 
     /** 高亮片段由纯文本段组成，避免把 ES 生成的标签直接交给业务页面。 */

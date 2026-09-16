@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "docquery-n5.3-a3-targeted-revalidation-v1",
+  "status": "BLOCKED_PROVIDER",
+  "providerDiagnosis": {
+    "status": "HTTP_402",
+    "code": "invalid_request_error",
+    "reason": "INSUFFICIENT_BALANCE",
+    "probe": "Authenticated model listing succeeded; minimal chat completion was rejected before generation"
+  },
+  "generatedAt": "2026-08-24T03:20:03.952692+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0562",
+      "mmlongbench-r3-0607",
+      "mmlongbench-r3-0831",
+      "mmlongbench-r3-0937",
+      "mmlongbench-r3-1032"
+    ],
+    "caseCount": 5,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v3"
+  },
+  "metrics": {
+    "successes": 0,
+    "attempts": 5,
+    "answered": 0,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 0,
+    "anyGoldPageCitations": 0,
+    "latency": {
+      "count": 0,
+      "p50Ms": null,
+      "p95Ms": null,
+      "p99Ms": null,
+      "minMs": null,
+      "maxMs": null,
+      "meanMs": null
+    },
+    "errorCounts": {
+      "ANSWER_MODEL_UNAVAILABLE": 5
+    },
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 5,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a3-targeted-v1",
+    "actorRef": "n5.3-a3-targeted-revalidation"
+  }
+}

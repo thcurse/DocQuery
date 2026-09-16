@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a27-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count every controlled refusal on an answerable public question as incorrect.",
+    "Judge semantic correctness against the cited source text and rendered-source findings when the frozen public reference conflicts with the source.",
+    "Treat an answer as incorrect when its requested result happens to match but its supporting factual decomposition is materially false.",
+    "Mark citation support false when cited text names the returned value but does not support the relation, period, entity, row, or referenced work asked by the question."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The definition matches the source on page 11; the additional explanation is supported by adjacent canonical text."},
+    {"caseId":"mmlongbench-r3-0078","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Returned Dense X Retrieval, which is the containing paper/reference entry, instead of resolving the phrase-granularity method to the cited paper title Copy is all you need."},
+    {"caseId":"mmlongbench-r3-0221","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"GOLD_PAGE_INCORRECT","note":"The requested gap is 12, but the answer falsely attributes the total 65+ values 59% and 47% to men; the male values are 65% and 53%. The exact gender tables are on physical pages 16-17 rather than frozen Gold pages 7-8."},
+    {"caseId":"mmlongbench-r3-0239","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable plain-text question whose reference is 538 square miles."},
+    {"caseId":"mmlongbench-r3-0243","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"435000000 matches the cited source table and public reference."},
+    {"caseId":"mmlongbench-r3-0265","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable slide question; the required station line count is six and depends on figure plus text evidence."},
+    {"caseId":"mmlongbench-r3-0305","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"For 500 MHz and 10 W the cited source table uses d=1.2*sqrt(P), giving 3.79 metres and the displayed 3.8-metre row value. The frozen 2.92 reference conflicts with the source."},
+    {"caseId":"mmlongbench-r3-0364","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All eight bankers match the cited table; Union corrects the public reference's Unioon spelling typo without changing the entity."},
+    {"caseId":"mmlongbench-r3-0562","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Returned 44, 27, and 64 instead of 46, 27, and 64. The cited 44% fragment is not the all-surveyed-adults value requested."},
+    {"caseId":"mmlongbench-r3-0607","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly retrieves both 61% components and returns their 122% sum."},
+    {"caseId":"mmlongbench-r3-0653","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"The rendered History page explicitly says that the Department offers degrees by research and dissertation at both the MA and PhD levels. Economics and English Language and Literature also list Doctor of Philosophy/PhD programmes, so the model's source-grounded answer that none of the three lacks a PhD programme is correct and the frozen reference is wrong."},
+    {"caseId":"mmlongbench-r3-0677","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"Returns all four compulsory ISEP module codes in ascending code order. The complete source table is on physical page 22, while the frozen Gold page is incomplete."},
+    {"caseId":"mmlongbench-r3-0741","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Ten English tweets out of 24 gives 41.666..., reasonably reported as about 41.7%."},
+    {"caseId":"mmlongbench-r3-0831","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns exactly the three Quarter 3 Preparing for Tomorrow's Workplace Skills activities with the three corresponding page-16 child blocks."},
+    {"caseId":"mmlongbench-r3-0903","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns four main pairing and connection steps and supports them with the relevant manual pages."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns all fourteen HIT applications supported by the cited page-4 evidence."},
+    {"caseId":"mmlongbench-r3-0960","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"GOLD_PAGE_INCORRECT","note":"Returned INSUFFICIENT_EVIDENCE for an answerable yes/no question. The rendered source supports the chain across physical pages 20-21: UV radiation causes skin burning, CFCs thin the ozone layer, and the ozone filters radiation. Frozen page 18 is unrelated receiving-signals content."},
+    {"caseId":"mmlongbench-r3-0982","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"No is supported by the cited shallow-layer versus deep-layer information-flow analysis."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Uses the 87.4 million value from 2014 versus 2013 as if it belonged to 2015, omits the correct 133.2 million component, and does not return the requested 253.3 million total."},
+    {"caseId":"mmlongbench-r3-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"3.0 billion matches the cited FY2017 gift-card liability and public reference."}
+  ]
+}

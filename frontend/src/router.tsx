@@ -66,6 +66,13 @@ export const router = createHashRouter([
             },
           },
           {
+            path: 'knowledge-chat',
+            lazy: async () => {
+              const { KnowledgeChatPage } = await import('./pages/query/KnowledgeChatPage')
+              return { Component: () => <RoleGate role="2"><KnowledgeChatPage /></RoleGate> }
+            },
+          },
+          {
             path: 'api-playground',
             lazy: async () => {
               const { ApiPlaygroundPage } = await import('./pages/query/ApiPlaygroundPage')

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "docquery-n5.2-o2-p0-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Question-text-only selection for corpus-level retrieval diagnosis without documentIds",
+  "reviewPolicy": [
+    "Include only questions containing a named entity, organization, product, acronym, named section, or distinctive phrase that can identify the source from the question itself.",
+    "Do not use any R1, R2, or P3 retrieval result when deciding inclusion.",
+    "Do not rewrite questions or generate new questions.",
+    "Exclude visual-count questions, source-mismatched duplicates, and cases whose Gold page label cannot be mapped uniquely through PDF Page Labels."
+  ],
+  "caseIds": [
+    "mmlongbench-0013",
+    "mmlongbench-0023",
+    "mmlongbench-0045",
+    "mmlongbench-0081",
+    "mmlongbench-0093",
+    "mmlongbench-0132",
+    "mmlongbench-0232",
+    "mmlongbench-0342",
+    "mmlongbench-0368",
+    "mmlongbench-0576",
+    "mmlongbench-0588",
+    "mmlongbench-0823",
+    "mmlongbench-0888",
+    "mmlongbench-0902",
+    "mmlongbench-0908",
+    "mmlongbench-0915",
+    "mmlongbench-0935",
+    "mmlongbench-0977",
+    "mmlongbench-1012",
+    "mmlongbench-1026",
+    "mmlongbench-1037",
+    "mmlongbench-1061",
+    "mmlongbench-1069",
+    "mmlongbench-1078",
+    "mmlongbench-1090"
+  ],
+  "excluded": {
+    "CONTEXT_REQUIRED": [
+      "mmlongbench-0003",
+      "mmlongbench-0007",
+      "mmlongbench-0067",
+      "mmlongbench-0074",
+      "mmlongbench-0096",
+      "mmlongbench-0134",
+      "mmlongbench-0137",
+      "mmlongbench-0141",
+      "mmlongbench-0146",
+      "mmlongbench-0202",
+      "mmlongbench-0382",
+      "mmlongbench-0399",
+      "mmlongbench-0434",
+      "mmlongbench-0477",
+      "mmlongbench-0483",
+      "mmlongbench-0509",
+      "mmlongbench-0595",
+      "mmlongbench-0656",
+      "mmlongbench-0668",
+      "mmlongbench-0675",
+      "mmlongbench-0676",
+      "mmlongbench-0700",
+      "mmlongbench-0704",
+      "mmlongbench-0719",
+      "mmlongbench-0740",
+      "mmlongbench-0912",
+      "mmlongbench-0932",
+      "mmlongbench-0949",
+      "mmlongbench-0955",
+      "mmlongbench-0961",
+      "mmlongbench-0969",
+      "mmlongbench-0987"
+    ],
+    "VISUAL_REASONING": [
+      "mmlongbench-0142",
+      "mmlongbench-0618",
+      "mmlongbench-0829",
+      "mmlongbench-0938"
+    ],
+    "UNMAPPED_GOLD_PAGE": [
+      "mmlongbench-0189",
+      "mmlongbench-0650"
+    ],
+    "SOURCE_CONTENT_MISMATCH": [
+      "mmlongbench-0897"
+    ]
+  }
+}

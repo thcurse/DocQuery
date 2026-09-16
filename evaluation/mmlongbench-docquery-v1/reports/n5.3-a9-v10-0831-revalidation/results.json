@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v10-0831-v1",
+  "runId": "n5.3-a9-v10-0831-20260825-132638",
+  "model": "claude-opus-5",
+  "protocol": "ANTHROPIC_MESSAGES",
+  "caseId": "mmlongbench-r3-0831",
+  "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+  "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+  "http": {
+    "ok": false,
+    "httpStatus": 503,
+    "requestId": "bc9760a0-d789-46e6-9436-3864be387c28",
+    "latencyMs": 58777.52,
+    "attemptCount": 1
+  },
+  "response": {
+    "code": "ANSWER_OUTPUT_INVALID",
+    "message": "Answer model output is invalid"
+  }
+}

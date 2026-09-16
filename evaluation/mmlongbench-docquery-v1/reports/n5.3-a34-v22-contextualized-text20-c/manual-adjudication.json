@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a34-v22-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count a refusal on an answerable question as incorrect.",
+    "Judge semantic correctness rather than exact wording or formatting.",
+    "Require the cited text to support the requested entity, relation, period, and answer.",
+    "Treat the contextualized questions as the evaluated prompts; no documentIds or answer hints were supplied."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-text-0134","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All five inspection questions are returned correctly."},
+    {"caseId":"mmlongbench-text-0238","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The H. Jason Combs email address exactly matches the cover page."},
+    {"caseId":"mmlongbench-text-0364","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_MALFORMED","note":"All eight banks are returned; the public reference misspells Union Bank of India."},
+    {"caseId":"mmlongbench-text-0366","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The 2.4 percentage-point shortfall is calculated correctly from 6.7% and 4.3%."},
+    {"caseId":"mmlongbench-text-0578","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The hearing date is correctly formatted as 2003-10-07."},
+    {"caseId":"mmlongbench-text-0583","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The page-14 date is correctly formatted as 2021-02-08."},
+    {"caseId":"mmlongbench-text-0587","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Superior Court (Class Action) is correctly identified."},
+    {"caseId":"mmlongbench-text-0594","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Both Mont Blanc check amounts are correct and supported."},
+    {"caseId":"mmlongbench-text-0595","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"CA Bar No. 239516 exactly matches the filing."},
+    {"caseId":"mmlongbench-text-0656","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"One assistant professor is correctly identified among the two quoted people."},
+    {"caseId":"mmlongbench-text-0668","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer correctly returns 3.0 replacement steps."},
+    {"caseId":"mmlongbench-text-0700","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE although the filing ID and case number are present on the named opinion's first page."},
+    {"caseId":"mmlongbench-text-0704","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The Delaware State Public Integrity Commission is correctly identified as defendant."},
+    {"caseId":"mmlongbench-text-0833","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The Unit 8 case-study title is correct."},
+    {"caseId":"mmlongbench-text-0836","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The Unit 14 topic is correct."},
+    {"caseId":"mmlongbench-text-0932","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE although the named presenter's title slide contains the requested title."},
+    {"caseId":"mmlongbench-text-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All fourteen HIT applications are returned and supported."},
+    {"caseId":"mmlongbench-text-1026","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Costco's $495 million FY2021 repurchase amount is correct."},
+    {"caseId":"mmlongbench-text-1038","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Netflix's $34.7 million operating-lease rent expense is correct."},
+    {"caseId":"mmlongbench-text-1061","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The straight-line lease-cost policy is correctly answered; additional policy details are supported but verbose."}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "docquery-n5.3-a11-v11-opus-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge semantic correctness manually; the answer wording does not need to exactly match the public reference.",
+    "An answer is correct when it covers every requested reference item without contradicting the source.",
+    "Additional source-supported context does not by itself make an otherwise complete answer incorrect.",
+    "Finding arithmetic operands without returning the requested total is incomplete and incorrect."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": true,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Covers all three reference preparations semantically: Google supplier research, choosing a community small business, and choosing a frequently used product. It also cites physical Gold page 16. The answer is overlong and adds other source-supported Quarter 3 context, but does not contradict the requested items."
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "correct": true,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Returns both supported components, 133.2 and 120.1 million, and explicitly provides the requested combined total of 253.3 million from physical Gold page 24."
+    }
+  ]
+}

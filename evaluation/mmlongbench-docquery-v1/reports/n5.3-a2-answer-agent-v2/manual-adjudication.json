@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "docquery-n5.3-a2-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count every controlled refusal on an answerable public question as incorrect.",
+    "Judge semantic correctness against the rendered source PDF when the public reference answer or Gold pages conflict with the source.",
+    "Do not modify frozen public labels; record dataset defects separately.",
+    "A cited statement may be supported while the answer remains incorrect because it is incomplete, irrelevant, or omits the requested calculation.",
+    "Mark citation support unsupported when the citation names the returned item but does not establish the relation asked by the question."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Definition matches the source on physical page 11."},
+    {"caseId":"mmlongbench-r3-0078","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Table I assigns phrase granularity to CoG; reference 29 gives the title Copy is all you need. The returned Dense x retrieval title belongs to reference 30 and does not establish the requested relation."},
+    {"caseId":"mmlongbench-r3-0221","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCORRECT","note":"65% minus 53% equals 12 percentage points. The exact gender tables are on physical pages 16-17, while the frozen Gold pages 7-8 contain different aggregate and age/income tables."},
+    {"caseId":"mmlongbench-r3-0239","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"344000 acres divided by 640 equals 537.5 square miles, rounded to 538."},
+    {"caseId":"mmlongbench-r3-0243","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The requested 2007 residential development capacity is 435000000 square feet; the additional 2003 baseline does not change the answer."},
+    {"caseId":"mmlongbench-r3-0265","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable question."},
+    {"caseId":"mmlongbench-r3-0305","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"Rendered source table uses d=1.2*sqrt(P) for 80-800 MHz; with P=10 W the answer is 3.79 m. Public reference 2.92 conflicts with the source."},
+    {"caseId":"mmlongbench-r3-0364","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All eight bankers match the source; Union corrects the public answer's spelling error Unioon."},
+    {"caseId":"mmlongbench-r3-0562","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer found 46% and 27% but omitted the requested Democrat value 64%, which is present on physical page 11."},
+    {"caseId":"mmlongbench-r3-0607","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The source gives 61% for customer Wi-Fi and 61% for employee Wi-Fi in hospitality; the requested sum is 122, not 61."},
+    {"caseId":"mmlongbench-r3-0653","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"QUESTION_HAS_NO_VALID_OPTION","note":"Rendered pages show Economics, English Language and Literature, and History all provide PhD programmes. The returned English option and the public History reference are both contradicted by the source."},
+    {"caseId":"mmlongbench-r3-0677","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"All four compulsory ISEP modules are present on physical page 22; frozen Gold page 3 omits GS5101."},
+    {"caseId":"mmlongbench-r3-0741","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable question."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer mixes unrelated Quarter 3 activities and does not return the required three preparations shown on physical page 16: Google search, pick a small business, and pick a specific product."},
+    {"caseId":"mmlongbench-r3-0903","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer presents four pairing/connection steps and matches the source."},
+    {"caseId":"mmlongbench-r3-0937","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer returns only part of the 14 HIT applications on physical page 4, then substitutes a different most-important-applications chart."},
+    {"caseId":"mmlongbench-r3-0960","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable yes/no question."},
+    {"caseId":"mmlongbench-r3-0982","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"No is supported by the shallow-layer versus deep-layer analysis."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The answer cites the two components, 133.2 and 120.1 million, but does not provide the requested total increase of 253.3 million."},
+    {"caseId":"mmlongbench-r3-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Answer 3.0 billion matches the source and public reference."}
+  ]
+}

@@ -291,7 +291,7 @@ export interface RetrieveResponse {
 }
 
 export interface AnswerCitation {
-  evidenceId: string
+  citationIndex: number
   documentId: number
   documentVersionId: number
   versionNo: number
@@ -304,6 +304,7 @@ export interface AnswerCitation {
   canonicalStart: number
   canonicalEnd: number
   sourcePosition: SourcePosition | null
+  pageNumber: number | null
 }
 
 export interface AnswerResponse {

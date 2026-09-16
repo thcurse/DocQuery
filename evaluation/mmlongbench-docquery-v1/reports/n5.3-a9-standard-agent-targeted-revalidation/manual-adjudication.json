@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge correctness against the frozen question, reference answer, and cited canonical evidence.",
+    "A supported but incomplete answer is incorrect.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0562","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned [46,27,64] in the requested order; cited the correct Pew document and Gold page 11."},
+    {"caseId":"mmlongbench-r3-0607","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Cited both 61% values on Gold pages 37 and 38 and computed 122."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"SUPPORTED_WRONG_SCOPE","datasetIssue":null,"note":"Answered Unit 9/10 material from pages 7-8 and found only one reference item; it missed the Quarter 3 summary on Gold page 16 and omitted the other two requested preparation items."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned all 14 HIT applications and cited Gold page 4."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"SUPPORTED_INCOMPLETE","datasetIssue":null,"note":"Returned only the 133.2 million technology-and-development component; it missed the 120.1 million general-and-administrative component and did not compute the requested 253.3 million total."}
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "docquery-n5.3-a6-audit-summary-v1",
+  "source": "application_query_audit",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "requestId": "16b2cac3-9b4e-4514-a072-01e00527cc4f",
+      "queryExecutionId": "ae652f75-e7e4-4668-a48b-ea7b65c266cb",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 1,
+      "toolCalls": 1,
+      "modelCalls": 3,
+      "canonicalCharacters": 8260,
+      "durationMs": 13702
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "requestId": "41a70881-2628-4d25-8c87-c7f7b0dbb76b",
+      "queryExecutionId": "cd1c2e8d-b47e-4dfa-ae47-20db55cdc5a1",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 2,
+      "toolCalls": 3,
+      "modelCalls": 4,
+      "canonicalCharacters": 8582,
+      "durationMs": 13301
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "requestId": "56bb2b19-c183-4ec6-a47f-d387075e8716",
+      "queryExecutionId": "d2dbc797-028b-433b-8001-7d3a7954f991",
+      "answerStatus": "ANSWERED",
+      "toolRounds": 2,
+      "toolCalls": 3,
+      "modelCalls": 4,
+      "canonicalCharacters": 5839,
+      "durationMs": 64038
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "requestId": "3135eb4d-a5ba-4053-a7e7-13249c6c95ff",
+      "queryExecutionId": "84efb326-abc4-46bc-940d-4cfefa556dc7",
+      "answerStatus": "ANSWERED",
+      "toolRounds": 3,
+      "toolCalls": 4,
+      "modelCalls": 4,
+      "canonicalCharacters": 16053,
+      "durationMs": 12380
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "requestId": "4225dafb-692a-486c-a24f-a77310ef492d",
+      "queryExecutionId": "57f2b64c-6340-4ea8-a328-a78365aa6180",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 2,
+      "toolCalls": 3,
+      "modelCalls": 5,
+      "canonicalCharacters": 23199,
+      "durationMs": 49585
+    }
+  ],
+  "diagnosis": [
+    "All five HTTP requests completed successfully; provider availability and Responses tool continuation are no longer the blocker.",
+    "Three answerable cases stopped as INSUFFICIENT_EVIDENCE after only one or two tool rounds.",
+    "The Quarter 3 case selected an earlier similarly named section on pages 7 to 8 instead of the frozen Gold page 16.",
+    "Only the HIT applications case produced a complete correct answer with the correct source document and Gold page."
+  ]
+}

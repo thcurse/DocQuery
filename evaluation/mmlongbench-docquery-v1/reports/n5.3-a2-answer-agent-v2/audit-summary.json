@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "docquery-n5.3-a2-answer-agent-audit-v1",
+  "actorRef": "n5.3-a2-answer-agent-v2",
+  "operationType": "ANSWER",
+  "logicalRequests": 20,
+  "successfulAudits": 20,
+  "http200": 20,
+  "degraded": 0,
+  "answerStatusCounts": {
+    "ANSWERED": 17,
+    "INSUFFICIENT_EVIDENCE": 3
+  },
+  "totals": {
+    "toolRounds": 123,
+    "toolCalls": 175,
+    "modelCalls": 156,
+    "canonicalCharacters": 246588
+  },
+  "maximumsPerRequest": {
+    "toolRounds": 10,
+    "toolCalls": 17,
+    "modelCalls": 13,
+    "canonicalCharacters": 30318,
+    "durationMs": 37732
+  },
+  "averageDurationMs": 16542.1,
+  "startedAtUtc": "2026-08-24T02:12:28.150728Z",
+  "completedAtUtc": "2026-08-24T02:17:59.630737Z",
+  "source": "application_query_audit grouped by actor_ref; no credential or query plaintext exported"
+}

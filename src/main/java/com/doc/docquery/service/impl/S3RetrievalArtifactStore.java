@@ -1,6 +1,7 @@
 package com.doc.docquery.service.impl;
 
 import com.doc.docquery.config.ObjectStorageProperties;
+import com.doc.docquery.service.ObjectListingPage;
 import com.doc.docquery.service.ObjectStorageException;
 import com.doc.docquery.service.RetrievalArtifactStore;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -21,7 +22,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.List;
 
 /** 使用标准 S3 操作保存 retrieval JSONL，不泄漏 SeaweedFS 专有 API。 */
 public class S3RetrievalArtifactStore implements RetrievalArtifactStore {
@@ -107,13 +107,26 @@ public class S3RetrievalArtifactStore implements RetrievalArtifactStore {
     }
 
     @Override
-    public List<ObjectSummary> list(String prefix, int limit) {
+    public ObjectListingPage<ObjectSummary> listPage(
+            String prefix, int limit, String continuationToken
+    ) {
         try {
-            return s3Client.listObjectsV2(ListObjectsV2Request.builder()
-                            .bucket(bucket).prefix(prefix).maxKeys(limit).build())
-                    .contents().stream()
+            var response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
+                            .bucket(bucket)
+                            .prefix(prefix)
+                            .maxKeys(Math.max(1, Math.min(limit, 1_000)))
+                            .continuationToken(continuationToken)
+                            .build());
+            String nextToken = Boolean.TRUE.equals(response.isTruncated())
+                    ? response.nextContinuationToken() : null;
+            if (Boolean.TRUE.equals(response.isTruncated())
+                    && (nextToken == null || nextToken.isBlank()
+                    || nextToken.equals(continuationToken))) {
+                throw unavailable("Retrieval object listing did not advance", null);
+            }
+            return new ObjectListingPage<>(response.contents().stream()
                     .map(item -> new ObjectSummary(item.key(), item.lastModified()))
-                    .toList();
+                    .toList(), nextToken);
         } catch (S3Exception | SdkClientException exception) {
             throw unavailable("Retrieval objects could not be listed", exception);
         }

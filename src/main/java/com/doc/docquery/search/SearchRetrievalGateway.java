@@ -29,6 +29,7 @@ public interface SearchRetrievalGateway {
             int ordinal,
             long canonicalStart,
             long canonicalEnd,
+            String headingPath,
             List<HighlightFragment> highlights
     ) {
         public KeywordHit {
@@ -46,7 +47,8 @@ public interface SearchRetrievalGateway {
             Integer sectionStartBlockOrdinal,
             Integer sectionEndBlockOrdinalExclusive,
             Long canonicalStart,
-            Long canonicalEnd
+            Long canonicalEnd,
+            String titlePath
     ) {
     }
 

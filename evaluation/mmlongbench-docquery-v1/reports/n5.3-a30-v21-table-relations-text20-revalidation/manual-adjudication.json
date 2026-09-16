@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "docquery-n5.3-a30-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count every controlled refusal on an answerable public question as incorrect.",
+    "Judge semantic correctness against the cited source text and rendered-source findings when the frozen public reference conflicts with the source.",
+    "Treat an answer as incorrect when its requested result happens to match but its supporting factual decomposition is materially false.",
+    "Treat unrelated items presented as members of the requested category as a material scope error.",
+    "Mark citation support unsupported when cited text does not support the relation, completeness, period, entity, row, or referenced work asserted by the answer."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The definition and explanation are supported by the cited page-11 text."},
+    {"caseId":"mmlongbench-r3-0078","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Returned the method name DenseX and the Dense X Retrieval paper instead of resolving reference [30] to the requested full paper title Copy is all you need."},
+    {"caseId":"mmlongbench-r3-0136","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable question whose source contains seven unique breached regulations."},
+    {"caseId":"mmlongbench-r3-0221","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCORRECT","note":"Correctly uses the male rows from physical pages 16-17: 65% internet/email and 53% broadband, yielding a 12.0-point gap. Duplicate citations do not change support."},
+    {"caseId":"mmlongbench-r3-0239","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Regressed from the prior correct 538-square-mile answer to INSUFFICIENT_EVIDENCE."},
+    {"caseId":"mmlongbench-r3-0243","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"435,000,000 square feet matches the cited Staten Island table row; automatic mismatch is formatting-only."},
+    {"caseId":"mmlongbench-r3-0305","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"For 500 MHz and 10 W the cited table uses d=1.2*sqrt(P) and displays 3.8 metres; 3.80 is source-grounded while the frozen 2.92 reference conflicts with the source."},
+    {"caseId":"mmlongbench-r3-0364","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All eight bankers match the cited table; Union correctly fixes the public reference's Unioon typo."},
+    {"caseId":"mmlongbench-r3-0562","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns the requested 46%, 27%, and 64% values with the requested population mapping."},
+    {"caseId":"mmlongbench-r3-0607","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Regressed from the prior correct 122% aggregation to INSUFFICIENT_EVIDENCE."},
+    {"caseId":"mmlongbench-r3-0653","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"Returned INSUFFICIENT_EVIDENCE. The rendered guidebook shows all three listed departments offer PhD programmes, so none is the source-grounded answer."},
+    {"caseId":"mmlongbench-r3-0677","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"Returns the four general compulsory ISEP module codes and separately qualifies GS6889B as applying only to SCELSE/IDS/MBI students."},
+    {"caseId":"mmlongbench-r3-0741","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly derives about 41.7% English tweets from 10 of 24, equivalent to the 41.67% reference after rounding."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Finds the three expected items but expands the answer with Unit 9 Interview and Team Activity, a material category-scope error. The new first evidence package is clean; the Agent introduced the excess by opening additional unit sections."},
+    {"caseId":"mmlongbench-r3-0903","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Clearly answers that first-time Mac pairing takes four steps and supports those steps."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns all fourteen HIT applications supported by the cited page-4 evidence."},
+    {"caseId":"mmlongbench-r3-0960","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"GOLD_PAGE_INCORRECT","note":"Returned INSUFFICIENT_EVIDENCE for an answerable yes/no question; physical pages 20-21 support the UV radiation, CFC/ozone, and filtering chain while frozen page 18 is unrelated."},
+    {"caseId":"mmlongbench-r3-0982","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"No is supported by the cited shallow-layer versus deep-layer information-flow analysis."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Finds and cites both 133.2 million and 120.1 million increases but again does not perform the requested aggregation or state the required 253.3 million answer."},
+    {"caseId":"mmlongbench-r3-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"3.0 billion matches the cited FY2017 gift-card liability and public reference."}
+  ]
+}

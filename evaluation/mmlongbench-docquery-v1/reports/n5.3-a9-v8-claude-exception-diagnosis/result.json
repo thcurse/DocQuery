@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-claude-exception-diagnosis-v1",
+  "model": "claude-sonnet-5",
+  "protocol": "CHAT_COMPLETIONS",
+  "caseId": "mmlongbench-r3-0831",
+  "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+  "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+  "http": {
+    "ok": false,
+    "httpStatus": 503,
+    "requestId": "5ccbda2b-d1b7-41e4-a1b6-61a6486272d9",
+    "latencyMs": 2928.099
+  },
+  "response": {
+    "status": null,
+    "answer": null,
+    "citations": [],
+    "degraded": false,
+    "errorCode": "ANSWER_MODEL_UNAVAILABLE"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "docquery-n5.3-a1-answer-pilot-v1",
+  "status": "COMPLETED_FAILED_ACCEPTANCE",
+  "generatedAt": "2026-08-26T12:27:10.961078+00:00",
+  "dataset": {
+    "version": "mmlongbench-docquery-v1",
+    "caseCount": 20,
+    "sourceDocumentCount": 13,
+    "manifestSha256": "0423bcaf95044b5399f5f5df5e73ef45e2752e0a961a117be3fa141cb247a579",
+    "r3CasesSha256": "94e562fab70d10baaadfc67e8f1616fd963fd3a8e381ad5f39e7fe32e0f230e0",
+    "selectionSha256": "28d342f3b0d9cd407c58481bf8a1ea187fc79cafce750a70c8118dfb9f00dd2a",
+    "selectionPolicy": [
+      "Keep the existing knowledge-base documents; do not upload, rebuild, or replace documents for this selection.",
+      "Use only original public-dataset questions whose complete evidence is on one physical page.",
+      "Require evidence_sources to be exactly Pure-text (Plain-text).",
+      "Exclude questions involving tables, charts, figures, diagrams, visual styling, cross-page aggregation, or multi-step arithmetic.",
+      "Prefer questions containing a distinctive entity, organization, acronym, product, or phrase that can locate the source without a documentId.",
+      "Do not enforce answer-format quotas or one-question-per-document quotas when those quotas would force unsuitable questions into the set."
+    ]
+  },
+  "configuration": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "documentIdsProvided": false,
+    "answerPolicyVersion": "answer-policy-v21",
+    "runId": "n5.3-a31-normal-text20-v1",
+    "actorRef": "n5.3-a31-normal-text20",
+    "credentialEnvironmentVariable": "DOCQUERY_N5_APPLICATION_CREDENTIAL",
+    "python": "3.12.13",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "usageBoundary": {
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE",
+    "answerLogicalRequestUpperBound": 20
+  },
+  "metrics": {
+    "attempts": 20,
+    "successes": 20,
+    "normalModeResponses": 20,
+    "degradedResponses": 0,
+    "retryCount": 0,
+    "latency": {
+      "count": 20,
+      "p50Ms": 11547.958,
+      "p95Ms": 25840.403,
+      "p99Ms": 65221.516,
+      "minMs": 7727.649,
+      "maxMs": 65221.516,
+      "meanMs": 16946.282
+    },
+    "metricPopulation": "ALL_20_LOGICAL_REQUESTS; request failures score zero",
+    "answeredRate": 0.95,
+    "controlledRefusalRate": 0.05,
+    "automaticReferenceMatchRate": 0.55,
+    "relevantDocumentCitationRate": 0.95,
+    "anyGoldPageCitationRate": 0.85,
+    "goldPageCitationCoverage": 0.85,
+    "allGoldPagesCitedRate": 0.85,
+    "relevantDocumentCitationCount": 19,
+    "anyGoldPageCitationCount": 17,
+    "successfulResponseDiagnostics": {
+      "population": 20,
+      "answeredRate": 0.95,
+      "automaticReferenceMatchRate": 0.55,
+      "relevantDocumentCitationRate": 0.95,
+      "anyGoldPageCitationRate": 0.85,
+      "goldPageCitationCoverage": 0.85
+    },
+    "manualAdjudication": {
+      "status": "COMPLETED",
+      "correctAnswers": 18,
+      "accuracy": 0.9,
+      "unsupportedCitations": 1,
+      "datasetIssueCounts": {
+        "GOLD_PAGE_INCOMPLETE": 1,
+        "REFERENCE_ANSWER_MALFORMED": 1
+      },
+      "artifact": "manual-adjudication.json"
+    }
+  },
+  "acceptanceThresholds": {
+    "manualCorrectAnswers": 14,
+    "relevantDocumentCitations": 17,
+    "anyGoldPageCitations": 13,
+    "unsupportedCitations": 0
+  },
+  "acceptance": {
+    "manualCorrectAnswers": 18,
+    "relevantDocumentCitations": 19,
+    "anyGoldPageCitations": 17,
+    "unsupportedCitations": 1,
+    "passed": false
+  },
+  "artifacts": {
+    "rawResults": "raw-results.jsonl",
+    "cases": "cases.jsonl",
+    "selectionAudit": "selection-audit.json",
+    "manualAdjudication": "manual-adjudication.json",
+    "auditSummary": "audit-summary.json"
+  }
+}

@@ -20,6 +20,7 @@ import com.doc.docquery.search.SearchRetrievalGateway;
 import com.doc.docquery.security.ActiveDocumentVersionSnapshot;
 import com.doc.docquery.security.QueryAccessContext;
 import com.doc.docquery.service.CanonicalArtifactStore;
+import com.doc.docquery.service.ObjectListingPage;
 import com.doc.docquery.service.QueryAccessService;
 import com.doc.docquery.service.QueryEmbeddingGateway;
 import com.doc.docquery.service.QueryIdempotencyService;
@@ -83,6 +84,7 @@ class RetrieveServiceImplTest {
                         1, 31L, 41L, "b-1", "h-1", 1,
                         fixture.blocks().get(1).canonicalStart(),
                         fixture.blocks().get(1).canonicalEnd(),
+                        "Manual > Refund Policy",
                         List.of(new HighlightFragment(List.of(
                                 new HighlightSegment("Refunds", true),
                                 new HighlightSegment(" are allowed", false)
@@ -102,7 +104,8 @@ class RetrieveServiceImplTest {
                         1, 31L, 41L, "card-h-1", "HEADING_NODE", "h-1",
                         0, 2,
                         fixture.blocks().get(0).canonicalStart(),
-                        fixture.blocks().get(1).canonicalEnd()
+                        fixture.blocks().get(1).canonicalEnd(),
+                        "Manual > Refund Policy"
                 ));
             }
         };
@@ -213,6 +216,73 @@ class RetrieveServiceImplTest {
         assertThat(idempotency.completedJson).contains("\"results\":[]");
     }
 
+    @Test
+    void answerCoverageInterleavesSectionFamiliesWithoutChangingPublicRetrieve() {
+        Fixture fixture = coverageFixture();
+        int[] blockIndexes = {2, 4, 6, 8, 10};
+        String[] headingIds = {"a-1", "a-2", "a-3", "b", "c"};
+        String[] headingPaths = {
+                "Manual > Family A > A1",
+                "Manual > Family A > A2",
+                "Manual > Family A > A3",
+                "Manual > Family B",
+                "Manual > Family C"
+        };
+        SearchRetrievalGateway search = new SearchRetrievalGateway() {
+            @Override
+            public List<KeywordHit> searchKeyword(
+                    QueryAccessContext context,
+                    String query,
+                    int candidates
+            ) {
+                java.util.ArrayList<KeywordHit> hits = new java.util.ArrayList<>();
+                for (int index = 0; index < blockIndexes.length; index++) {
+                    EvidenceBlock block = fixture.blocks().get(blockIndexes[index]);
+                    hits.add(new KeywordHit(
+                            index + 1,
+                            31L,
+                            41L,
+                            block.blockId(),
+                            headingIds[index],
+                            block.ordinal(),
+                            block.canonicalStart(),
+                            block.canonicalEnd(),
+                            headingPaths[index],
+                            List.of()
+                    ));
+                }
+                return List.copyOf(hits);
+            }
+
+            @Override
+            public List<SemanticHit> searchSemantic(
+                    QueryAccessContext context,
+                    float[] queryVector,
+                    int k,
+                    int numCandidates
+            ) {
+                throw new AssertionError("Keyword mode must not run semantic search");
+            }
+        };
+        RetrieveServiceImpl service = service(
+                fixture,
+                search,
+                query -> new float[2560],
+                new StatefulIdempotency()
+        );
+        RetrieveRequestDTO request = request("topic", "KEYWORD", 3);
+
+        RetrieveResponseVO standard = service.retrieve(context(), request);
+        RetrieveResponseVO answer = service.retrieveForAnswer(context(), request);
+
+        assertThat(standard.getResults())
+                .extracting(RetrieveResponseVO.Result::getHeadingNodeId)
+                .containsExactly("a-1", "a-2", "a-3");
+        assertThat(answer.getResults())
+                .extracting(RetrieveResponseVO.Result::getHeadingNodeId)
+                .containsExactly("a-1", "b", "c");
+    }
+
     private RetrieveServiceImpl service(
             Fixture fixture,
             SearchRetrievalGateway search,
@@ -265,7 +335,8 @@ class RetrieveServiceImplTest {
                 EvidenceBlock block = fixture.blocks().get(1);
                 return List.of(new KeywordHit(
                         1, 31L, 41L, block.blockId(), "h-1", block.ordinal(),
-                        block.canonicalStart(), block.canonicalEnd(), List.of()
+                        block.canonicalStart(), block.canonicalEnd(),
+                        "Manual > Refund Policy", List.of()
                 ));
             }
 
@@ -343,6 +414,92 @@ class RetrieveServiceImplTest {
         );
         new CanonicalDocumentValidator().validate(canonical);
 
+        return fixture(canonical);
+    }
+
+    private Fixture coverageFixture() {
+        String[] texts = {
+                "Family A", "A1", "A1 repeated topic", "A2", "A2 repeated topic",
+                "A3", "A3 repeated topic", "Family B", "B broader context",
+                "Family C", "C additional context"
+        };
+        String[] headingIds = {
+                "a", "a-1", "a-1", "a-2", "a-2", "a-3", "a-3",
+                "b", "b", "c", "c"
+        };
+        List<EvidenceBlock> blocks = new java.util.ArrayList<>();
+        StringBuilder canonicalText = new StringBuilder();
+        for (int index = 0; index < texts.length; index++) {
+            if (!canonicalText.isEmpty()) {
+                canonicalText.append("\n\n");
+            }
+            long start = canonicalText.length();
+            canonicalText.append(texts[index]);
+            blocks.add(new EvidenceBlock(
+                    "coverage-" + index,
+                    index,
+                    index == 0 || index == 1 || index == 3 || index == 5
+                            || index == 7 || index == 9
+                            ? BlockKind.HEADING
+                            : BlockKind.PARAGRAPH,
+                    texts[index],
+                    start,
+                    canonicalText.length(),
+                    headingIds[index],
+                    null,
+                    SourcePosition.markdown(index + 1, 1, index + 1, texts[index].length())
+            ));
+        }
+        CanonicalDocument canonical = new CanonicalDocument(
+                1,
+                41L,
+                "MARKDOWN",
+                sha256("coverage-source"),
+                "markdown",
+                "1",
+                Instant.parse("2026-08-11T00:00:00Z"),
+                List.copyOf(blocks),
+                List.of(
+                        new HeadingNode(
+                                "root", null, 0, 0, "Manual", null,
+                                "DOCUMENT_ROOT", 0, 11
+                        ),
+                        new HeadingNode(
+                                "a", "root", 1, 1, texts[0], "coverage-0",
+                                "MARKDOWN", 0, 7
+                        ),
+                        new HeadingNode(
+                                "a-1", "a", 2, 2, texts[1], "coverage-1",
+                                "MARKDOWN", 1, 3
+                        ),
+                        new HeadingNode(
+                                "a-2", "a", 2, 2, texts[3], "coverage-3",
+                                "MARKDOWN", 3, 5
+                        ),
+                        new HeadingNode(
+                                "a-3", "a", 2, 2, texts[5], "coverage-5",
+                                "MARKDOWN", 5, 7
+                        ),
+                        new HeadingNode(
+                                "b", "root", 1, 1, texts[7], "coverage-7",
+                                "MARKDOWN", 7, 9
+                        ),
+                        new HeadingNode(
+                                "c", "root", 1, 1, texts[9], "coverage-9",
+                                "MARKDOWN", 9, 11
+                        )
+                ),
+                List.of(),
+                null,
+                canonicalText.length(),
+                sha256(canonicalText.toString())
+        );
+        new CanonicalDocumentValidator().validate(canonical);
+        return fixture(canonical);
+    }
+
+    private Fixture fixture(CanonicalDocument canonical) {
+
         ObjectMapper objectMapper = new ObjectMapper();
         DocumentParsingProperties parsing = new DocumentParsingProperties();
         CanonicalJsonlWriter.WrittenArtifact written = new CanonicalJsonlWriter(
@@ -358,7 +515,7 @@ class RetrieveServiceImplTest {
                     canonical.textLength(), canonical.blocks().size(),
                     canonical.headings().size(), 0, null, LocalDateTime.now()
             );
-            return new Fixture(bytes, manifest, blocks);
+            return new Fixture(bytes, manifest, canonical.blocks());
         } catch (IOException exception) {
             throw new IllegalStateException(exception);
         } finally {
@@ -430,8 +587,10 @@ class RetrieveServiceImplTest {
         }
 
         @Override
-        public List<ObjectSummary> list(String prefix, int limit) {
-            return List.of();
+        public ObjectListingPage<ObjectSummary> listPage(
+                String prefix, int limit, String continuationToken
+        ) {
+            return new ObjectListingPage<>(List.of(), null);
         }
     }
 

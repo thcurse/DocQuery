@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-audit-summary-v1",
+  "source": "application_query_audit",
+  "rows": [
+    {"caseId":"mmlongbench-r3-0562","requestId":"04a7d993-5c2c-45cb-a154-af6dd2dd2d0b","queryExecutionId":"4db1d43a-834c-4098-a622-cbf396d4fe98","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":2,"toolCalls":6,"modelCalls":4,"canonicalCharacters":16328,"durationMs":28832},
+    {"caseId":"mmlongbench-r3-0607","requestId":"3be4d72f-efe9-4d4e-9741-56dc9cf03cdf","queryExecutionId":"9f6e523b-78dd-4f65-8d57-c88bcc4e9221","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":20,"toolCalls":37,"modelCalls":22,"canonicalCharacters":52739,"durationMs":214148},
+    {"caseId":"mmlongbench-r3-0831","attempts":[
+      {"requestId":"3b7d3ab6-ddb3-43ab-b0ea-253967ab2545","httpStatus":503,"failureCode":"ANSWER_OUTPUT_INVALID","toolRounds":4,"toolCalls":10,"modelCalls":7,"canonicalCharacters":0,"durationMs":110800},
+      {"requestId":"3dd1f032-483a-4114-bd8f-b46986d5ce45","httpStatus":503,"failureCode":"ANSWER_OUTPUT_INVALID","toolRounds":4,"toolCalls":9,"modelCalls":7,"canonicalCharacters":0,"durationMs":127714}
+    ]},
+    {"caseId":"mmlongbench-r3-0937","requestId":"9e59321a-19f2-46c4-923b-cc5d8828cad7","queryExecutionId":"7752dcbd-6ed5-4ad6-9cdd-6d94acd3cc4a","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":2,"toolCalls":3,"modelCalls":4,"canonicalCharacters":16974,"durationMs":21886},
+    {"caseId":"mmlongbench-r3-1032","requestId":"96c28a51-b312-4cb8-a0e1-883124903923","queryExecutionId":"3e59ed4b-8c82-4eac-abf2-f44e459673b7","httpStatus":200,"answerStatus":"ANSWERED","failureCode":null,"toolRounds":3,"toolCalls":4,"modelCalls":5,"canonicalCharacters":219690,"durationMs":68293}
+  ],
+  "diagnosis": [
+    "All four successful answers performed real Agent tool calls; no successful answer bypassed the verification gate.",
+    "0831 did not fail because the model stopped after one search: both attempts executed four tool rounds and nine or ten tool calls, then failed output validation.",
+    "1032 completed three tool rounds and registered extensive canonical evidence, but still omitted one component and the requested sum; this remains an answer-completion failure rather than a provider outage.",
+    "Strict manual correctness remains 3/5, so the v8 fixed-five acceptance result is failed."
+  ]
+}

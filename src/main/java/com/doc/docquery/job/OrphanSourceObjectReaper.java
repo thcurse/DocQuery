@@ -3,6 +3,7 @@ package com.doc.docquery.job;
 import com.doc.docquery.config.ObjectStorageProperties;
 import com.doc.docquery.mapper.DocumentVersionMapper;
 import com.doc.docquery.service.SourceObjectStore;
+import com.doc.docquery.service.ObjectListingPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +31,8 @@ public class OrphanSourceObjectReaper {
     );
 
     private final SourceObjectStore objectStore;
+    /** 每次调度只处理一页，扫描结束后从头检查先前保留的对象。 */
+    private String continuationToken;
     private final DocumentVersionMapper documentVersionMapper;
     private final ObjectStorageProperties properties;
 
@@ -45,13 +48,15 @@ public class OrphanSourceObjectReaper {
 
     /** 定时入口；public 的 runOnce 也允许集成测试直接验证单轮行为。 */
     @Scheduled(fixedDelayString = "${docquery.object-storage.orphan-scan-delay:15m}")
-    public void runOnce() {
+    public synchronized void runOnce() {
         Instant cutoff = Instant.now().minus(properties.getOrphanGrace());
         int removed = 0;
-        for (SourceObjectStore.ObjectSummary object : objectStore.list(
+        ObjectListingPage<SourceObjectStore.ObjectSummary> page = objectStore.listPage(
                 properties.getOrphanPrefix(),
-                properties.getOrphanBatchSize()
-        )) {
+                properties.getOrphanBatchSize(),
+                continuationToken
+        );
+        for (SourceObjectStore.ObjectSummary object : page.objects()) {
             if (object.lastModified() == null || !object.lastModified().isBefore(cutoff)) {
                 continue;
             }
@@ -69,6 +74,7 @@ public class OrphanSourceObjectReaper {
                 LOG.warn("Orphan source object check failed; object was retained");
             }
         }
+        continuationToken = page.nextContinuationToken();
         if (removed > 0) {
             LOG.info("Removed {} unreferenced source objects", removed);
         }

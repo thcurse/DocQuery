@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v8-claude-opus-anthropic-two-case-v1",
+  "model": "claude-opus-5",
+  "protocol": "ANTHROPIC_MESSAGES",
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "question": "How to prepare for Tomorrow's Workplace Skills for QUARTER 3?",
+      "referenceAnswer": "['Use the Google search engine', 'Pick a small business in your community', 'Pick a specific product that you use frequently']",
+      "http": {
+        "ok": false,
+        "httpStatus": 503,
+        "requestId": "80f1ac82-8faa-4843-85d2-8bee9b0088b4",
+        "latencyMs": 161973.049,
+        "finalAttemptLatencyMs": 80054.967,
+        "attemptCount": 2,
+        "attempts": [
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "f13ecf96-0081-4387-81c9-fd802cb155ad",
+            "latencyMs": 81918.082
+          },
+          {
+            "ok": false,
+            "httpStatus": 503,
+            "requestId": "80f1ac82-8faa-4843-85d2-8bee9b0088b4",
+            "latencyMs": 80054.967
+          }
+        ]
+      },
+      "response": {
+        "status": null,
+        "answer": null,
+        "citations": [],
+        "degraded": false,
+        "errorCode": "ANSWER_OUTPUT_INVALID"
+      }
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "question": "What amount did  personnel-related costs increase for Netfilx in 2015? Answer in millions.",
+      "referenceAnswer": "253.3",
+      "http": {
+        "ok": true,
+        "httpStatus": 200,
+        "requestId": "69b7259a-781c-41da-91e5-fe333381e7d5",
+        "latencyMs": 46338.481,
+        "finalAttemptLatencyMs": 46338.481,
+        "attemptCount": 1,
+        "attempts": [
+          {
+            "ok": true,
+            "httpStatus": 200,
+            "requestId": "69b7259a-781c-41da-91e5-fe333381e7d5",
+            "latencyMs": 46338.481
+          }
+        ]
+      },
+      "response": {
+        "queryExecutionId": "2fa4bc3d-026e-416a-b73f-9a8f8210049e",
+        "status": "ANSWERED",
+        "answer": "Netflix's 2015 10-K reports two personnel-related cost increases for the year ended December 31, 2015 versus 2014: a $133.2 million increase in personnel-related costs within technology and development expenses, and a $120.1 million increase in personnel-related costs (including stock-based compensation) within general and administrative expenses — about $253.3 million combined [E121] [E60]. Note that the $87.4 million and $70.6 million personnel-related increases in the same filing relate to 2014 versus 2013, not 2015 [E121] [E135].",
+        "requestedMode": "HYBRID",
+        "executedMode": "HYBRID",
+        "degraded": false,
+        "degradationReason": null,
+        "citations": [
+          {
+            "evidenceId": "E121",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000315",
+            "text": "Table of Contents\n\nOur Domestic DVD segment had a contribution margin of 50% for the year ended December 31, 2015, up from 48% for the year ended December 31, 2014 due to the decrease in DVD usage by paying members.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nThe decrease in our domestic DVD revenues was due to a 16% decrease in the average number of paid memberships.\n\nThe decrease in domestic DVD cost of revenues was primarily due to a $16.0 million decrease in content expenses and a $43.0 million decrease in delivery expenses resulting from a 22% decrease in the number of DVDs mailed to members. The decrease in shipments was driven by a decline in the number of DVD memberships coupled with a decrease in usage by these members. Other costs, primarily those associated with processing and customer service expenses, decreased $15.6 million primarily due to a decrease in hub operation expenses resulting from the decline in DVD shipments.\n\nOur Domestic DVD segment had a contribution margin of 48% for the year ended December 31, 2014, and was relatively flat as compared to the year ended December 31, 2013.\n\nConsolidated Operating Expenses\n\nTechnologyandDevelopment\n\nTechnology and development expenses consist of payroll and related costs incurred in making improvements to our service offerings, including testing, maintaining and modifying our user interface, our recommendation, merchandising and streaming delivery technology and infrastructure. Technology and development expenses also include costs associated with computer hardware and software.\n\n<table><caption> Year Ended December 31,</caption>\n<tr><td  >2015</td><td  >2014</td><td  >2013</td><td  >2015 vs.2014</td><td  >2014 vs.2013</td></tr>\n</table>\n\n<table>\n<tr><th></th><th></th><th></th><th></th><th  >(in thousands, except percentages)</th><th></th><th></th><th  >Change</th><th></th><th></th></tr>\n<tr><td  >Technology and development</td><td  >650,788</td><td  >$</td><td  >472,321</td><td  >378,769 $</td><td  >$</td><td  >178,467</td><td  >38% $</td><td  >93,552</td><td  >25%</td></tr>\n<tr><td  >As a percentage of revenues</td><td  >10%</td><td></td><td  >9%</td><td  >9%</td><td></td><td></td><td></td><td></td><td></td></tr>\n</table>\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nThe increase in technology and development expenses was primarily due to a $133.2 million increase in personnel-related costs resulting from an increase in compensation for existing employees and a 20% growth in average headcount supporting continued improvements in our streaming service and our international expansion. In addition, third party expenses, including costs associated with cloud computing, increased $23.8 million.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nThe increase in technology and development expenses was primarily due to an $87.4 million increase in personnel-related costs, including stock-based compensation expense, resulting from an increase in compensation for existing employees and a 12% growth in average headcount supporting continued improvements in our streaming service and our international expansion.\n\nGeneralandAdministrative\n\n<table><caption> General and administrative expenses consist of payroll and related expenses for corporate personnel, as well as professional fees and other general corporate expenses.</caption>\n<tr><th></th><th></th><th  >2015</th><th  >Year Ended December 31, 2014</th><th  >2013</th><th></th><th  >2015 vs.2014</th><th  >Change</th><th  >2014 vs.2013</th><th></th></tr>\n<tr><th></th><th></th><th></th><th></th><th  >(in thousands, except percentages)</th><th></th><th></th><th></th><th></th><th></th></tr>\n<tr><th  >General and administrative</th><th  >$</th><th  >407,329</th><th  >$ 269,741</th><th  >$ 180,301</th><th  >$</th><th  >137,588</th><th  >51% $</th><th  >89,440</th><th  >50%</th></tr>\n<tr><td  >As a percentage of revenues</td><td></td><td  >6%</td><td  > 5%</td><td  >4%</td><td></td><td></td><td></td><td></td><td></td></tr>\n</table>\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nGeneral and administrative expenses increased primarily due to a $120.1 million increase in personnel-related costs, including stock-based compensation expense, resulting from a 51% increase in average headcount primarily to support our international expansion and increased production of original content, and an increase in compensation for existing employees.",
+            "truncated": false,
+            "pageNumber": 24
+          },
+          {
+            "evidenceId": "E60",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000327",
+            "text": "The increase in technology and development expenses was primarily due to a $133.2 million increase in personnel-related costs resulting from an increase in compensation for existing employees and a 20% growth in average headcount supporting continued improvements in our streaming service and our international expansion. In addition, third party expenses, including costs associated with cloud computing, increased $23.8 million.",
+            "truncated": false,
+            "pageNumber": 24
+          },
+          {
+            "evidenceId": "E135",
+            "documentKey": "mmlongbench-af042068d3845d87e107",
+            "documentName": "NETFLIX_2015_10K.pdf",
+            "headingPath": [
+              "NETFLIX_2015_10K.pdf"
+            ],
+            "blockId": "113:b:000334",
+            "text": "Year ended December31,2014 as compared to the year ended December 31,2013\n\nGeneral and administrative expenses increased primarily due to a $70.6 million increase in personnel-related costs, including stock-based compensation expense, resulting from a 37% increase in average headcount primarily to support our international expansion, and an increase in compensation for existing employees. In addition, there was an $11.6 million increase in legal costs for the year ended December 31, 2014 as compared to the year ended December 31, 2013.\n\nInterestExpense\n\nInterest expense consists primarily of the interest associated with our outstanding long-term debt obligations, including the amortization of debt issuance costs, as well as interest on our lease financing obligations.\n\n<table><caption> Year Ended December 31,</caption>\n<tr><td></td><td  >2015</td><td  >2014</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n<tr><th></th><th></th><th></th><th></th><th  >2013 (in thousands, except percentages)</th><th  >2015 vs. 2014</th><th></th><th  >2014 vs. 2013</th><th></th></tr>\n<tr><th  >Interest expense</th><th  >(132,716)</th><th  >(50,219)</th><th  >$</th><th  >(29,142) $</th><th  >82,497</th><th  >164% $</th><th  >21,077</th><th  >72%</th></tr>\n<tr><td  >As a percentage of revenues</td><td  >2%</td><td  >1%</td><td></td><td  >1%</td><td></td><td></td><td></td><td></td></tr>\n</table>\n\nChange\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nInterest expense for the year ended December 31, 2015 consists primarily of $127.1 million of interest on our notes. The increase in interest expense for the year ended December 31, 2015 as compared to the year ended December 31, 2014 is due to the higher aggregate principal of interest bearing notes outstanding.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nInterest expense for the year ended December 31, 2014 consists primarily of $46.8 million of interest on our notes. The increase in interest expense for the year ended December 31, 2014 as compared to the year ended December 31, 2013 is due to the higher aggregate principal of interest bearing notes outstanding.\n\nInterestandOtherIncome(Expense)\n\nInterest and other income (expense) consists primarily of interest earned on cash, cash equivalents and short-term investments and foreign exchange gains and losses on foreign currency denominated balances.\n\nChange\n\n<table><caption> Year Ended December 31,</caption>\n<tr><td></td><td></td><td  >2015</td><td></td><td  >2014</td><td></td><td  >2013</td><td  >2015 vs.2014</td><td></td><td  >2014 vs.2013</td><td></td></tr>\n<tr><td  >Interest and other income (expense)</td><td  >S</td><td  >(31,225)</td><td  >$</td><td  >(3,060)</td><td  >$</td><td  >(in thousands, except percentages) (3,002)$</td><td  >(28,165)</td><td  >(920)%  $</td><td  >(58)</td><td  >(2)%</td></tr>\n</table>\n\nYear ended December 31, 2015 as compared to the year ended December 31, 2014\n\nInterest and other income (expense) decreased for the year ended December 31, 2015 as compared to the prior year due to a $37.3 million foreign exchange loss, incurred primarily in the first quarter of 2015. The foreign exchange loss was primarily driven by the remeasurement of significant content liabilities denominated in currencies other than functional currencies in our European entities coupled with the strengthening of the U.S. dollar.\n\nYear ended December 31, 2014 as compared to the year ended December 31, 2013\n\nInterest and other income (expense) for the year ended December 31, 2014 was relatively flat as compared to the prior year. Losses on foreign currency denominated balances were $8.2 million and $8.4 million for the years ended December 31, 2014 and 2013, respectively.\n\nExtinguishment of Debt\n\nIn connection with the redemption of the outstanding $200.0 million aggregate principal amount of the 8.50% Notes, we recognized a loss on extinguishment of debt of $25.1 million in the year ended December 31, 2013, which consisted of expenses associated with the redemption, including a $19.4 million premium payment pursuant to the make-whole provision in the indenture governing the 8.50% Notes. For further detail see Note 5 of Item 8, Financial Statements and Supplementary Data.",
+            "truncated": false,
+            "pageNumber": 25
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "docquery-n5.3-a37-v22-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count a refusal on an answerable question as incorrect.",
+    "Judge semantic correctness rather than exact string or number formatting.",
+    "Require cited evidence to support the material answer; equivalent duplicated corpus content may support an answer even when the automatic Gold-document check misses it.",
+    "Do not credit unsupported prior knowledge or answer leakage."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-text-0232","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Tim Ziemer is correctly identified."},
+    {"caseId":"mmlongbench-text-0383","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Florida Department of Health is correct."},
+    {"caseId":"mmlongbench-text-0387","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Rick Scott is correct."},
+    {"caseId":"mmlongbench-text-0434","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The Cat vs Dog Kaggle dataset is correct."},
+    {"caseId":"mmlongbench-text-0477","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Seven coffee-quality levels is correct."},
+    {"caseId":"mmlongbench-text-0483","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"4G connectivity is correct."},
+    {"caseId":"mmlongbench-text-0933","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"David Lubliner is correct."},
+    {"caseId":"mmlongbench-text-1012","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"No shares had been repurchased under the January 31, 2019 program, so USD 0 billion is correct."},
+    {"caseId":"mmlongbench-text-1080","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"25% is correct."},
+    {"caseId":"mmlongbench-text-1077","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The lower of cost or net realizable value is correct."},
+    {"caseId":"mmlongbench-text-0907","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Three application steps are correctly stated."},
+    {"caseId":"mmlongbench-text-0908","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The complete 726 Broadway address is correct."},
+    {"caseId":"mmlongbench-text-0914","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"8,300 square feet is correct."},
+    {"caseId":"mmlongbench-text-0948","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The Libertarian Party of Georgia, Inc. is correctly identified."},
+    {"caseId":"mmlongbench-text-0949","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Case number 21-13199 is correct."},
+    {"caseId":"mmlongbench-text-0950","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE although the answerable first page states January 5, 2022."},
+    {"caseId":"mmlongbench-text-0961","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The chemical reaction involving CFCs is correctly identified."},
+    {"caseId":"mmlongbench-text-0977","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Rung 2 as doing/intervention is correct."},
+    {"caseId":"mmlongbench-text-0987","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"5.00pm is correct; the citation comes from an equivalent duplicate StudentSupport guidebook rather than the Gold file."},
+    {"caseId":"mmlongbench-text-1069","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"A software subscription model is correct."}
+  ]
+}

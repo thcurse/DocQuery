@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "docquery-n5.3-a10-v10-grok-fixed-five-v1",
+  "status": "COMPLETED_WITH_FAILURES",
+  "generatedAt": "2026-08-25T05:49:59.524440+00:00",
+  "scope": {
+    "kind": "KNOWN_FAILURE_TARGETED_REVALIDATION",
+    "caseIds": [
+      "mmlongbench-r3-0562",
+      "mmlongbench-r3-0607",
+      "mmlongbench-r3-0831",
+      "mmlongbench-r3-0937",
+      "mmlongbench-r3-1032"
+    ],
+    "caseCount": 5,
+    "documentIdsProvided": false,
+    "mode": "HYBRID",
+    "topK": 10,
+    "answerPolicyVersion": "answer-policy-v10"
+  },
+  "metrics": {
+    "successes": 1,
+    "attempts": 5,
+    "answered": 0,
+    "controlledRefusals": 1,
+    "automaticReferenceMatches": 0,
+    "relevantDocumentCitations": 0,
+    "anyGoldPageCitations": 0,
+    "goldPageCitationCoverage": 0.0,
+    "allGoldPagesCited": 0,
+    "latency": {
+      "count": 1,
+      "p50Ms": 12113.607,
+      "p95Ms": 12113.607,
+      "p99Ms": 12113.607,
+      "minMs": 12113.607,
+      "maxMs": 12113.607,
+      "meanMs": 12113.607
+    },
+    "errorCounts": {
+      "ANSWER_MODEL_UNAVAILABLE": 4
+    },
+    "manualReview": "PENDING"
+  },
+  "usageBoundary": {
+    "paidLogicalRequestUpperBound": 5,
+    "exactProviderTokenUsage": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT",
+    "exactCost": "NOT_AVAILABLE"
+  },
+  "run": {
+    "runId": "n5.3-a10-v10-grok-fixed-five",
+    "actorRef": "n5.3-a10-v10-grok-fixed-five-revalidation"
+  },
+  "artifacts": {
+    "cases": "cases.jsonl",
+    "rawResults": "raw-results.jsonl",
+    "manualAdjudication": null,
+    "auditSummary": null
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "docquery-n5.3-a7-v2-manual-adjudication-v1",
+  "reviewPolicy": [
+    "An answerable public question returned as INSUFFICIENT_EVIDENCE is incorrect.",
+    "Provider or output-contract failures are incorrect for this revalidation.",
+    "Finding correct operands without performing the explicitly requested arithmetic is incomplete and incorrect.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE after four tool rounds; the frozen R3 retrieval had the correct document at rank 1 and both Gold pages."
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Both HTTP attempts failed, first with invalid model output and then model unavailable; no answer was produced."
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE after one search despite the answerable frozen page-16 evidence."
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE after one search; this same case was answered correctly in A6 from Gold page 4."
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "correct": false,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Citations correctly support 133.2 and 120.1 million on Gold page 24, but the answer did not perform the requested sum of 253.3 million."
+    }
+  ]
+}

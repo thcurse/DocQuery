@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "docquery-n5.3-a19-v19-sonnet-isolated-final-manual-v1",
+  "reviewPolicy": [
+    "The answer must cover the frozen reference items rather than merely return ANSWERED.",
+    "Citations must support the claimed quarter-to-task association.",
+    "Do not modify the frozen public question, reference answer, or Gold page."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": false,
+      "citationSupport": "UNSUPPORTED",
+      "datasetIssue": null,
+      "note": "The isolated final pass answered instead of refusing, but selected Quarter 4/final-project evidence and recalled none of the three frozen Quarter 3 items. The correct page-16 table cell 124:b:000553 was registered but not handed to the final pass."
+    }
+  ]
+}

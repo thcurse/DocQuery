@@ -14,6 +14,24 @@ describe('admin api client security', () => {
 
   afterEach(() => vi.unstubAllGlobals())
 
+  it.each(['retrieve', 'answer'] as const)('%s 在离页取消后终止包含凭证的请求', async (operation) => {
+    const controller = new AbortController()
+    vi.mocked(fetch).mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('Request aborted', 'AbortError'))
+      }, { once: true })
+    }))
+
+    const pending = api[operation](7, 'test-only-credential', 'query-key', {
+      query: '问题', mode: 'HYBRID', topK: 5,
+    }, undefined, controller.signal)
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    controller.abort()
+
+    await rejected
+    expect(vi.mocked(fetch).mock.calls[0][1]?.signal).toBe(controller.signal)
+  })
+
   it('登录后丢弃旧 CSRF 并获取新 Session 的 Token', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock
@@ -157,5 +175,22 @@ describe('admin api client security', () => {
     expect(headers.has('Content-Type')).toBe(false)
     expect(headers.get('X-CSRF-TOKEN')).toBe('upload-token')
     expect(headers.get('Idempotency-Key')).toBe('upload-key')
+  })
+
+  it('文档重建使用独立管理路由且不上传文件正文', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'rebuild-token' }))
+      .mockResolvedValueOnce(jsonResponse({ documentId: 9, documentVersionId: 12, versionNo: 2 }, 202))
+
+    await api.rebuildDocument(3, 7, 9, 'rebuild-key')
+
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/admin/v1/tenants/3/knowledge-bases/7/documents/9/rebuild')
+    const request = fetchMock.mock.calls[1][1] as RequestInit
+    const headers = new Headers(request.headers)
+    expect(request.method).toBe('POST')
+    expect(request.body).toBeUndefined()
+    expect(headers.get('X-CSRF-TOKEN')).toBe('rebuild-token')
+    expect(headers.get('Idempotency-Key')).toBe('rebuild-key')
   })
 })

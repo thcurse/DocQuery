@@ -1,6 +1,7 @@
 package com.doc.docquery.retrieval;
 
 import com.doc.docquery.config.DocumentRetrievalProperties;
+import com.doc.docquery.config.ChatProfilesProperties;
 import com.doc.docquery.parser.BlockKind;
 import com.doc.docquery.parser.CanonicalDocument;
 import com.doc.docquery.parser.EvidenceBlock;
@@ -9,6 +10,7 @@ import com.doc.docquery.parser.SourcePosition;
 import com.doc.docquery.service.NavigationEmbeddingGateway;
 import com.doc.docquery.service.RetrievalCardChatGateway;
 import com.doc.docquery.service.RetrievalGenerationException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
@@ -21,12 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * N2.4 核心算法：按真实标题树自底向上生成语义卡，再批量生成导航向量。
- * 临时长文本摘要只存在于内存，任何部分结果都不会写入对象存储或数据库。
+ * 超过模型安全输入预算时，临时摘要只存在于内存，任何部分结果都不会写入对象存储或数据库。
  */
 @Component
 @ConditionalOnProperty(
@@ -42,27 +49,36 @@ public class RetrievalArtifactGenerator {
     private final RetrievalCardChatGateway chatGateway;
     private final NavigationEmbeddingGateway embeddingGateway;
     private final RetrievalSemanticValidator semanticValidator;
+    private final NavigationPartitionPlanner partitionPlanner;
     private final NavigationTextBuilder textBuilder;
     private final EmbeddingCodec embeddingCodec;
     private final RetrievalGenerationFingerprint fingerprint;
     private final DocumentRetrievalProperties properties;
+    private final ChatProfilesProperties chatProfiles;
+    private final Executor retrievalChatExecutor;
 
     public RetrievalArtifactGenerator(
             RetrievalCardChatGateway chatGateway,
             NavigationEmbeddingGateway embeddingGateway,
             RetrievalSemanticValidator semanticValidator,
+            NavigationPartitionPlanner partitionPlanner,
             NavigationTextBuilder textBuilder,
             EmbeddingCodec embeddingCodec,
             RetrievalGenerationFingerprint fingerprint,
-            DocumentRetrievalProperties properties
+            DocumentRetrievalProperties properties,
+            ChatProfilesProperties chatProfiles,
+            @Qualifier("retrievalChatExecutor") Executor retrievalChatExecutor
     ) {
         this.chatGateway = chatGateway;
         this.embeddingGateway = embeddingGateway;
         this.semanticValidator = semanticValidator;
+        this.partitionPlanner = partitionPlanner;
         this.textBuilder = textBuilder;
         this.embeddingCodec = embeddingCodec;
         this.fingerprint = fingerprint;
         this.properties = properties;
+        this.chatProfiles = chatProfiles;
+        this.retrievalChatExecutor = retrievalChatExecutor;
     }
 
     public RetrievalArtifact generate(
@@ -85,6 +101,7 @@ public class RetrievalArtifactGenerator {
                 .orElseThrow(() -> limit("Canonical heading root is missing"));
         Map<String, List<HeadingNode>> children = childrenByParent(document.headings());
         Map<String, List<EvidenceBlock>> directBlocks = blocksByHeading(document.blocks());
+        Map<String, List<NodePlan>> plansByHeading = new HashMap<>();
         Map<String, RetrievalNodeSemantic> semantics = new HashMap<>();
 
         int maximumDepth = document.headings().stream()
@@ -96,17 +113,20 @@ public class RetrievalArtifactGenerator {
                     .toList();
             List<RetrievalCardChatGateway.NodeInput> inputs = new ArrayList<>();
             for (HeadingNode heading : level) {
-                String source = sectionSource(heading, directBlocks, children, semantics);
-                source = reduceSourceIfNeeded(
-                        source,
-                        titlePath(heading, byId),
-                        budget
+                List<NodePlan> plans = plansForHeading(
+                        document, documentTitle, heading, byId, directBlocks,
+                        children, plansByHeading, semantics, budget
                 );
-                inputs.add(new RetrievalCardChatGateway.NodeInput(
-                        heading.nodeId(),
-                        titlePath(heading, byId),
-                        source
-                ));
+                plansByHeading.put(heading.nodeId(), plans);
+                for (NodePlan plan : plans) {
+                    inputs.add(new RetrievalCardChatGateway.NodeInput(
+                            plan.requestId(),
+                            plan.titlePath(),
+                            reduceSourceIfNeeded(
+                                    plan.sourceText(), plan.titlePath(), budget
+                            )
+                    ));
+                }
             }
             for (RetrievalCardChatGateway.GeneratedNode generated
                     : invokeNodeInputs(inputs, budget)) {
@@ -114,7 +134,29 @@ public class RetrievalArtifactGenerator {
             }
         }
 
-        String profileSource = sectionSource(root, directBlocks, children, semantics);
+        if (children.getOrDefault(root.nodeId(), List.of()).isEmpty()
+                && shouldPartition(rangeBlocks(document, root))) {
+            List<NodePlan> rootPlans = partitionPlans(
+                    document, documentTitle, root, byId, budget
+            );
+            plansByHeading.put(root.nodeId(), rootPlans);
+            List<RetrievalCardChatGateway.NodeInput> inputs = rootPlans.stream()
+                    .map(plan -> new RetrievalCardChatGateway.NodeInput(
+                            plan.requestId(),
+                            plan.titlePath(),
+                            reduceSourceIfNeeded(
+                                    plan.sourceText(), plan.titlePath(), budget
+                            )
+                    )).toList();
+            for (RetrievalCardChatGateway.GeneratedNode generated
+                    : invokeNodeInputs(inputs, budget)) {
+                semantics.put(generated.requestId(), generated.semantic());
+            }
+        }
+
+        String profileSource = profileSource(
+                root, directBlocks, children, plansByHeading, semantics
+        );
         profileSource = reduceSourceIfNeeded(profileSource, documentTitle, budget);
         DocumentProfileSemantic profileSemantic = invokeProfile(
                 new RetrievalCardChatGateway.ProfileInput(
@@ -130,6 +172,7 @@ public class RetrievalArtifactGenerator {
                 documentTitle,
                 canonicalSha256,
                 byId,
+                plansByHeading,
                 semantics,
                 profileSemantic
         );
@@ -138,7 +181,15 @@ public class RetrievalArtifactGenerator {
     private void validateLimits(CanonicalDocument document) {
         long rawChars = document.blocks().stream().mapToLong(block -> block.text().length()).sum();
         if (rawChars > properties.getMaxTotalSourceChars()
-                || document.headings().size() > properties.getMaxCards()) {
+                || document.headings().size() > properties.getMaxCards()
+                || properties.getMaxSourceTokensPerChatCall() < 1
+                || properties.getNavigationPartitionThresholdTokens() < 1
+                || properties.getNavigationPartitionMinimumTokens() < 1
+                || properties.getNavigationPartitionMinimumTokens()
+                > properties.getNavigationPartitionThresholdTokens()
+                || properties.getNavigationPartitionMaxCount() < 2
+                || properties.getNavigationPartitionMaxCandidates()
+                < properties.getNavigationPartitionMaxCount()) {
             throw limit("Document exceeds N2.4 generation limits");
         }
     }
@@ -168,6 +219,7 @@ public class RetrievalArtifactGenerator {
             HeadingNode heading,
             Map<String, List<EvidenceBlock>> directBlocks,
             Map<String, List<HeadingNode>> children,
+            Map<String, List<NodePlan>> plansByHeading,
             Map<String, RetrievalNodeSemantic> semantics
     ) {
         StringBuilder source = new StringBuilder();
@@ -177,17 +229,225 @@ public class RetrievalArtifactGenerator {
             }
         }
         for (HeadingNode child : children.getOrDefault(heading.nodeId(), List.of())) {
-            RetrievalNodeSemantic childSemantic = semantics.get(child.nodeId());
-            if (childSemantic == null) {
+            List<NodePlan> childPlans = plansByHeading.get(child.nodeId());
+            if (childPlans == null || childPlans.isEmpty()) {
                 throw new IllegalStateException("Child card must be generated bottom-up");
             }
-            appendPart(source, renderTemporary(child.title(), childSemantic));
+            for (NodePlan childPlan : childPlans) {
+                RetrievalNodeSemantic childSemantic = semantics.get(childPlan.requestId());
+                if (childSemantic == null) {
+                    throw new IllegalStateException("Child card must be generated bottom-up");
+                }
+                appendPart(source, renderTemporary(childPlan.title(), childSemantic));
+            }
         }
         // 空章节仍携带真实标题，避免向模型发送空输入。
         if (source.isEmpty()) {
             source.append("Section title: ").append(heading.title());
         }
         return source.toString();
+    }
+
+    private String profileSource(
+            HeadingNode root,
+            Map<String, List<EvidenceBlock>> directBlocks,
+            Map<String, List<HeadingNode>> children,
+            Map<String, List<NodePlan>> plansByHeading,
+            Map<String, RetrievalNodeSemantic> semantics
+    ) {
+        List<NodePlan> rootPlans = plansByHeading.get(root.nodeId());
+        if (rootPlans == null || rootPlans.isEmpty()) {
+            return sectionSource(
+                    root, directBlocks, children, plansByHeading, semantics
+            );
+        }
+        StringBuilder source = new StringBuilder();
+        for (NodePlan plan : rootPlans) {
+            RetrievalNodeSemantic semantic = semantics.get(plan.requestId());
+            if (semantic == null) {
+                throw new IllegalStateException("Root navigation partition is missing");
+            }
+            appendPart(source, renderTemporary(plan.title(), semantic));
+        }
+        return source.toString();
+    }
+
+    private List<NodePlan> plansForHeading(
+            CanonicalDocument document,
+            String documentTitle,
+            HeadingNode heading,
+            Map<String, HeadingNode> byId,
+            Map<String, List<EvidenceBlock>> directBlocks,
+            Map<String, List<HeadingNode>> children,
+            Map<String, List<NodePlan>> plansByHeading,
+            Map<String, RetrievalNodeSemantic> semantics,
+            GenerationBudget budget
+    ) {
+        if (children.getOrDefault(heading.nodeId(), List.of()).isEmpty()
+                && shouldPartition(rangeBlocks(document, heading))) {
+            return partitionPlans(
+                    document, documentTitle, heading, byId, budget
+            );
+        }
+        return List.of(new NodePlan(
+                heading.nodeId(),
+                normalCardId(document, heading),
+                RetrievalNode.HEADING_NODE,
+                null,
+                heading,
+                heading.title(),
+                titlePath(heading, byId),
+                heading.sectionStartBlockOrdinal(),
+                heading.sectionEndBlockOrdinalExclusive(),
+                sectionSource(
+                        heading, directBlocks, children, plansByHeading, semantics
+                )
+        ));
+    }
+
+    private boolean shouldPartition(List<EvidenceBlock> blocks) {
+        return properties.isNavigationPartitionEnabled()
+                && !blocks.isEmpty()
+                && partitionPlanner.estimateTokens(blocks)
+                > properties.getNavigationPartitionThresholdTokens();
+    }
+
+    private List<NodePlan> partitionPlans(
+            CanonicalDocument document,
+            String documentTitle,
+            HeadingNode heading,
+            Map<String, HeadingNode> byId,
+            GenerationBudget budget
+    ) {
+        List<EvidenceBlock> blocks = rangeBlocks(document, heading);
+        int estimatedTokens = partitionPlanner.estimateTokens(blocks);
+        NavigationPartitionPlanner.PartitionBounds bounds = partitionPlanner.bounds(
+                estimatedTokens
+        );
+        int minimumCandidates = Math.max(6, bounds.minimum() * 3);
+        int maximumCandidates = Math.min(20, minimumCandidates + 4);
+        RetrievalCardChatGateway.BoundaryInput input = new RetrievalCardChatGateway.BoundaryInput(
+                heading.nodeId() + ":partition-boundaries",
+                documentTitle,
+                titlePath(heading, byId),
+                heading.sectionStartBlockOrdinal(),
+                heading.sectionEndBlockOrdinalExclusive(),
+                estimatedTokens,
+                bounds.minimum(),
+                bounds.maximum(),
+                minimumCandidates,
+                maximumCandidates,
+                blocks.stream().map(block -> new RetrievalCardChatGateway.BoundaryBlock(
+                        block.ordinal(),
+                        block.sourcePosition() == null
+                                ? null : block.sourcePosition().pageNumber(),
+                        block.kind().name(),
+                        block.text()
+                )).toList()
+        );
+        List<NavigationPartitionPlanner.NavigationPartition> partitions;
+        try {
+            partitions = callAndPlanBoundaries(input, blocks, null, budget);
+        } catch (RetrievalGenerationException exception) {
+            if (!"RETRIEVAL_MODEL_OUTPUT_INVALID".equals(exception.code())) {
+                throw exception;
+            }
+            partitions = callAndPlanBoundaries(
+                    input, blocks, correctionHint(exception), budget
+            );
+        }
+        List<NodePlan> result = new ArrayList<>();
+        for (NavigationPartitionPlanner.NavigationPartition partition : partitions) {
+            String partitionTitlePath = titlePath(heading, byId);
+            if (!partition.title().equalsIgnoreCase(heading.title())) {
+                partitionTitlePath += " > " + partition.title();
+            }
+            result.add(new NodePlan(
+                    input.requestId() + ":" + partition.partitionOrdinal(),
+                    partitionCardId(document, heading, partition.partitionOrdinal()),
+                    RetrievalNode.HEADING_SUBPARTITION,
+                    partition.partitionOrdinal(),
+                    heading,
+                    partition.title(),
+                    partitionTitlePath,
+                    partition.startBlockOrdinal(),
+                    partition.endBlockOrdinalExclusive(),
+                    blocksSource(blocks, partition.startBlockOrdinal(),
+                            partition.endBlockOrdinalExclusive())
+            ));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<NavigationPartitionPlanner.NavigationPartition> callAndPlanBoundaries(
+            RetrievalCardChatGateway.BoundaryInput input,
+            List<EvidenceBlock> blocks,
+            String correctionHint,
+            GenerationBudget budget
+    ) {
+        budget.consumeCall();
+        try {
+            return partitionPlanner.plan(
+                    blocks,
+                    chatGateway.generateBoundaryCandidates(input, correctionHint)
+            );
+        } catch (RetrievalGenerationException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw new RetrievalGenerationException(
+                    "RETRIEVAL_MODEL_UNAVAILABLE",
+                    "Chat model boundary request failed",
+                    true,
+                    exception
+            );
+        }
+    }
+
+    private List<EvidenceBlock> rangeBlocks(
+            CanonicalDocument document,
+            HeadingNode heading
+    ) {
+        return document.blocks().stream()
+                .filter(block -> block.ordinal() >= heading.sectionStartBlockOrdinal()
+                        && block.ordinal() < heading.sectionEndBlockOrdinalExclusive())
+                .toList();
+    }
+
+    private String blocksSource(List<EvidenceBlock> blocks, int start, int end) {
+        StringBuilder source = new StringBuilder();
+        blocks.stream()
+                .filter(block -> block.ordinal() >= start && block.ordinal() < end)
+                .filter(block -> block.kind() != BlockKind.HEADING)
+                .forEach(block -> appendPart(source, block.text()));
+        if (source.isEmpty()) {
+            source.append("Navigation range ").append(start).append("..").append(end);
+        }
+        return source.toString();
+    }
+
+    private String normalCardId(CanonicalDocument document, HeadingNode heading) {
+        int index = nonRootHeadingIndex(document, heading);
+        return document.documentVersionId() + ":rn:" + "%06d".formatted(index);
+    }
+
+    private String partitionCardId(
+            CanonicalDocument document,
+            HeadingNode heading,
+            int partitionOrdinal
+    ) {
+        int index = heading.parentNodeId() == null ? 0 : nonRootHeadingIndex(document, heading);
+        return document.documentVersionId() + ":rsp:" + "%06d".formatted(index)
+                + ":" + "%02d".formatted(partitionOrdinal);
+    }
+
+    private int nonRootHeadingIndex(CanonicalDocument document, HeadingNode heading) {
+        List<HeadingNode> nonRoot = document.headings().stream()
+                .filter(item -> item.parentNodeId() != null).toList();
+        int index = nonRoot.indexOf(heading);
+        if (index < 0) {
+            throw new IllegalStateException("Non-root heading is missing from canonical order");
+        }
+        return index + 1;
     }
 
     private void appendPart(StringBuilder target, String value) {
@@ -200,17 +460,17 @@ public class RetrievalArtifactGenerator {
         target.append(value);
     }
 
-    /** 超长源文本先生成内存临时卡，并递归合并到单次调用上限以内。 */
+    /** 只有超过模型级 token 安全预算时才生成内存临时卡。 */
     private String reduceSourceIfNeeded(
             String source,
             String titlePath,
             GenerationBudget budget
     ) {
-        int limit = properties.getMaxSourceCharsPerChatCall();
+        int limit = properties.getMaxSourceTokensPerChatCall();
         String current = source;
         int round = 0;
-        while (current.length() > limit) {
-            List<String> chunks = splitSafely(current, limit);
+        while (partitionPlanner.estimateTokens(current) > limit) {
+            List<String> chunks = splitSafelyByEstimatedTokens(current, limit);
             List<RetrievalCardChatGateway.NodeInput> inputs = new ArrayList<>();
             for (String chunk : chunks) {
                 inputs.add(new RetrievalCardChatGateway.NodeInput(
@@ -232,15 +492,24 @@ public class RetrievalArtifactGenerator {
         return current;
     }
 
-    private List<String> splitSafely(String value, int limit) {
+    private List<String> splitSafelyByEstimatedTokens(String value, int limit) {
         List<String> chunks = new ArrayList<>();
         int start = 0;
         while (start < value.length()) {
-            int end = Math.min(start + limit, value.length());
-            if (end < value.length()
-                    && Character.isHighSurrogate(value.charAt(end - 1))
-                    && Character.isLowSurrogate(value.charAt(end))) {
-                end--;
+            int end = start;
+            long ascii = 0;
+            long nonAscii = 0;
+            while (end < value.length()) {
+                int codePoint = value.codePointAt(end);
+                long nextAscii = ascii + (codePoint <= 0x7f ? 1 : 0);
+                long nextNonAscii = nonAscii + (codePoint <= 0x7f ? 0 : 1);
+                long tokens = (nextAscii + 3L) / 4L + nextNonAscii;
+                if (tokens > limit && end > start) {
+                    break;
+                }
+                ascii = nextAscii;
+                nonAscii = nextNonAscii;
+                end += Character.charCount(codePoint);
             }
             chunks.add(value.substring(start, end));
             start = end;
@@ -252,27 +521,50 @@ public class RetrievalArtifactGenerator {
             List<RetrievalCardChatGateway.NodeInput> inputs,
             GenerationBudget budget
     ) {
-        List<RetrievalCardChatGateway.GeneratedNode> result = new ArrayList<>();
+        List<List<RetrievalCardChatGateway.NodeInput>> batches = new ArrayList<>();
         List<RetrievalCardChatGateway.NodeInput> batch = new ArrayList<>();
-        int batchChars = 0;
+        int batchTokens = 0;
         for (RetrievalCardChatGateway.NodeInput input : inputs) {
-            if (input.sourceText().length() > properties.getMaxSourceCharsPerChatCall()) {
+            int inputTokens = partitionPlanner.estimateTokens(input.sourceText());
+            if (inputTokens > properties.getMaxSourceTokensPerChatCall()) {
                 throw limit("A chat item exceeds the configured input limit");
             }
             if (!batch.isEmpty() && (batch.size() >= properties.getMaxItemsPerChatCall()
-                    || batchChars + input.sourceText().length()
-                    > properties.getMaxSourceCharsPerChatCall())) {
-                result.addAll(invokeNodeBatch(batch, budget));
+                    || batchTokens + inputTokens
+                    > properties.getMaxSourceTokensPerChatCall())) {
+                batches.add(List.copyOf(batch));
                 batch = new ArrayList<>();
-                batchChars = 0;
+                batchTokens = 0;
             }
             batch.add(input);
-            batchChars += input.sourceText().length();
+            batchTokens += inputTokens;
         }
         if (!batch.isEmpty()) {
-            result.addAll(invokeNodeBatch(batch, budget));
+            batches.add(List.copyOf(batch));
         }
-        return result;
+        List<CompletableFuture<List<RetrievalCardChatGateway.GeneratedNode>>> futures =
+                batches.stream()
+                        .map(items -> CompletableFuture.supplyAsync(
+                                () -> invokeNodeBatch(items, budget),
+                                retrievalChatExecutor
+                        ))
+                        .toList();
+        try {
+            CompletableFuture.allOf(
+                    futures.toArray(CompletableFuture[]::new)
+            ).join();
+            // Future 顺序等于拆批顺序；批内也已恢复请求顺序，故并发完成顺序
+            // 不参与稳定 artifact 定义。
+            return futures.stream()
+                    .flatMap(future -> future.join().stream())
+                    .toList();
+        } catch (CompletionException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof RetrievalGenerationException generationException) {
+                throw generationException;
+            }
+            throw exception;
+        }
     }
 
     private List<RetrievalCardChatGateway.GeneratedNode> invokeNodeBatch(
@@ -285,27 +577,9 @@ public class RetrievalArtifactGenerator {
             if (!"RETRIEVAL_MODEL_OUTPUT_INVALID".equals(exception.code())) {
                 throw exception;
             }
-            try {
-                return callAndValidateNodes(inputs, correctionHint(exception), budget);
-            } catch (RetrievalGenerationException correctedFailure) {
-                if (!"RETRIEVAL_MODEL_OUTPUT_INVALID".equals(correctedFailure.code())
-                        || inputs.size() <= 1) {
-                    throw correctedFailure;
-                }
-                // 多项 JSON 即使纠正后仍可能漏项或截断；只对异常批次二分，
-                // 正常批次不增加调用，单项仍失败则保留稳定失败语义。
-                int middle = inputs.size() / 2;
-                List<RetrievalCardChatGateway.GeneratedNode> split = new ArrayList<>();
-                split.addAll(invokeNodeBatch(
-                        List.copyOf(inputs.subList(0, middle)),
-                        budget
-                ));
-                split.addAll(invokeNodeBatch(
-                        List.copyOf(inputs.subList(middle, inputs.size())),
-                        budget
-                ));
-                return split;
-            }
+            // 严格 JSON Schema 已机械保证批次键集合；语义校验失败只允许一次
+            // 有界纠正，仍失败就结束本次入库，禁止递归拆批放大耗时和费用。
+            return callAndValidateNodes(inputs, correctionHint(exception), budget);
         }
     }
 
@@ -403,19 +677,24 @@ public class RetrievalArtifactGenerator {
             String documentTitle,
             String canonicalSha256,
             Map<String, HeadingNode> byId,
+            Map<String, List<NodePlan>> plansByHeading,
             Map<String, RetrievalNodeSemantic> semantics,
             DocumentProfileSemantic profileSemantic
     ) {
-        List<HeadingNode> nonRoot = document.headings().stream()
-                .filter(heading -> heading.parentNodeId() != null)
-                .toList();
+        List<NodePlan> orderedPlans = new ArrayList<>();
+        for (HeadingNode heading : document.headings()) {
+            orderedPlans.addAll(plansByHeading.getOrDefault(heading.nodeId(), List.of()));
+        }
+        if (orderedPlans.size() + 1 > properties.getMaxCards()) {
+            throw limit("Document exceeds the maximum navigation card count");
+        }
         List<String> texts = new ArrayList<>();
         texts.add(textBuilder.profile(documentTitle, profileSemantic));
-        for (HeadingNode heading : nonRoot) {
+        for (NodePlan plan : orderedPlans) {
             texts.add(textBuilder.node(
                     documentTitle,
-                    titlePath(heading, byId),
-                    semantics.get(heading.nodeId())
+                    plan.titlePath(),
+                    semantics.get(plan.requestId())
             ));
         }
         List<float[]> vectors = embedInBatches(texts);
@@ -432,25 +711,30 @@ public class RetrievalArtifactGenerator {
                         properties.getEmbeddingDimension())
         );
 
-        Map<String, Integer> siblingCounters = new HashMap<>();
+        Map<String, Integer> siblingOrders = siblingOrders(document);
         List<RetrievalNode> nodes = new ArrayList<>();
-        for (int index = 0; index < nonRoot.size(); index++) {
-            HeadingNode heading = nonRoot.get(index);
-            RetrievalNodeSemantic semantic = semantics.get(heading.nodeId());
-            Range range = range(document, heading);
-            int siblingOrder = siblingCounters.merge(
-                    heading.parentNodeId(), 1, Integer::sum
-            ) - 1;
+        for (int index = 0; index < orderedPlans.size(); index++) {
+            NodePlan plan = orderedPlans.get(index);
+            HeadingNode heading = plan.heading();
+            RetrievalNodeSemantic semantic = semantics.get(plan.requestId());
+            Range range = range(document, plan.startBlockOrdinal(),
+                    plan.endBlockOrdinalExclusive());
+            int siblingOrder = heading.parentNodeId() == null
+                    ? plan.partitionOrdinal()
+                    : siblingOrders.get(heading.nodeId());
             nodes.add(new RetrievalNode(
-                    document.documentVersionId() + ":rn:" + "%06d".formatted(index + 1),
+                    plan.cardId(),
+                    plan.cardType(),
+                    plan.partitionOrdinal(),
                     heading.nodeId(),
-                    heading.parentNodeId(),
+                    heading.parentNodeId() == null
+                            ? heading.nodeId() : heading.parentNodeId(),
                     siblingOrder,
-                    heading.depth(),
-                    heading.title(),
-                    titlePath(heading, byId),
-                    heading.sectionStartBlockOrdinal(),
-                    heading.sectionEndBlockOrdinalExclusive(),
+                    heading.parentNodeId() == null ? 1 : heading.depth(),
+                    plan.title(),
+                    plan.titlePath(),
+                    plan.startBlockOrdinal(),
+                    plan.endBlockOrdinalExclusive(),
                     range.canonicalStart(),
                     range.canonicalEnd(),
                     range.sourceStart(),
@@ -464,11 +748,17 @@ public class RetrievalArtifactGenerator {
                             properties.getEmbeddingDimension())
             ));
         }
+        ChatProfilesProperties.Profile chatProfile = chatProfiles.require(
+                properties.getChatProfile()
+        );
         return new RetrievalArtifact(
                 properties.getSchemaVersion(),
                 document.documentVersionId(),
                 canonicalSha256,
-                properties.getChatModel(),
+                chatProfile.getProvider(),
+                chatProfile.normalizedProtocol(),
+                chatProfile.getModel(),
+                chatProfile.getThinkingMode(),
                 properties.getChatPromptVersion(),
                 properties.getEmbeddingModel(),
                 properties.getEmbeddingDimension(),
@@ -478,6 +768,19 @@ public class RetrievalArtifactGenerator {
                 profile,
                 nodes
         );
+    }
+
+    private Map<String, Integer> siblingOrders(CanonicalDocument document) {
+        Map<String, Integer> counters = new HashMap<>();
+        Map<String, Integer> result = new HashMap<>();
+        for (HeadingNode heading : document.headings()) {
+            if (heading.parentNodeId() != null) {
+                result.put(heading.nodeId(), counters.merge(
+                        heading.parentNodeId(), 1, Integer::sum
+                ) - 1);
+            }
+        }
+        return result;
     }
 
     private List<float[]> embedInBatches(List<String> texts) {
@@ -510,9 +813,7 @@ public class RetrievalArtifactGenerator {
         return vectors;
     }
 
-    private Range range(CanonicalDocument document, HeadingNode heading) {
-        int start = heading.sectionStartBlockOrdinal();
-        int end = heading.sectionEndBlockOrdinalExclusive();
+    private Range range(CanonicalDocument document, int start, int end) {
         if (start >= end) {
             return new Range(0, 0, null, null);
         }
@@ -569,19 +870,33 @@ public class RetrievalArtifactGenerator {
     ) {
     }
 
+    private record NodePlan(
+            String requestId,
+            String cardId,
+            String cardType,
+            Integer partitionOrdinal,
+            HeadingNode heading,
+            String title,
+            String titlePath,
+            int startBlockOrdinal,
+            int endBlockOrdinalExclusive,
+            String sourceText
+    ) {
+    }
+
     /** 每次真实 Chat 请求（包括一次纠错）都从同一文档预算扣减。 */
     private final class GenerationBudget {
-        private int calls;
-        private long sequence;
+        private final AtomicInteger calls = new AtomicInteger();
+        private final AtomicLong sequence = new AtomicLong();
 
         private void consumeCall() {
-            if (++calls > properties.getMaxChatCalls()) {
+            if (calls.incrementAndGet() > properties.getMaxChatCalls()) {
                 throw limit("Document exceeds the maximum number of chat calls");
             }
         }
 
         private long nextSequence() {
-            return ++sequence;
+            return sequence.incrementAndGet();
         }
     }
 }

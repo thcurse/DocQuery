@@ -6,6 +6,7 @@ import {
   DatabaseOutlined,
   ExperimentOutlined,
   LogoutOutlined,
+  MessageOutlined,
   SafetyCertificateOutlined,
   UserOutlined,
 } from '@ant-design/icons'
@@ -40,12 +41,13 @@ export function AppShell() {
     : [
         { key: '/applications', icon: <AppstoreOutlined />, label: '应用管理' },
         { key: '/knowledge-bases', icon: <DatabaseOutlined />, label: '知识库管理' },
+        { key: '/knowledge-chat', icon: <MessageOutlined />, label: '知识库问答' },
         { key: '/api-playground', icon: <ExperimentOutlined />, label: 'API 调试' },
         { key: '/query-audits', icon: <AuditOutlined />, label: '查询审计' },
         { key: '/guide', icon: <BookOutlined />, label: '使用说明' },
       ]
 
-  const selected = ['/knowledge-bases', '/applications', '/api-playground', '/query-audits', '/guide', '/tenants']
+  const selected = ['/knowledge-bases', '/applications', '/knowledge-chat', '/api-playground', '/query-audits', '/guide', '/tenants']
     .find((path) => location.pathname.startsWith(path)) ?? '/tenants'
 
   const userMenu: MenuProps['items'] = [

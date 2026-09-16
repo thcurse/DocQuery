@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "docquery-n5.3-contextualized-text20-c-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "Contextualized single-page text evaluation for knowledge-base-wide Answer requests without documentIds",
+  "selectionPolicy": [
+    "Reuse the independently selected facts and Gold pages from n5.3-normal-text20-b-selection.json.",
+    "Add only the minimum document, entity, case, presentation, or programme scope needed to resolve deictic public-dataset wording in a multi-document knowledge base.",
+    "Correct an obvious lease/least typo where the original wording changes the requested accounting concept.",
+    "Do not add the answer, search keywords copied from the answer, documentIds, or hidden retrieval hints.",
+    "Keep all other constraints: existing corpus, single physical Gold page, plain-text evidence, and no visual/table dependency."
+  ],
+  "sourceRowIndexes": [
+    134,
+    238,
+    364,
+    366,
+    578,
+    583,
+    587,
+    594,
+    595,
+    656,
+    668,
+    700,
+    704,
+    833,
+    836,
+    932,
+    937,
+    1026,
+    1038,
+    1061
+  ],
+  "questionOverrides": {
+    "134": "In The Limes Residential Home inspection report, what five primary questions are asked about services?",
+    "238": "In the Hamilton County Nebraska Historic Buildings Survey, what email address is listed for H. Jason Combs on the second cover page?",
+    "364": "Which banks are listed as bankers for Godfrey Phillips India Limited?",
+    "366": "According to Godfrey Phillips India Limited's 2002-03 Directors' Report, by how many percentage points did India's actual GDP growth fall short of the forecast?",
+    "578": "At the beginning of the U.S. House hearing titled 'Improving the Quality and Efficiency of Commodity Distribution to Federal Child Nutrition Programs', what date is shown? Format it as YYYY-MM-DD.",
+    "583": "On page 14 of the INF LLP defence for The Toronto-Dominion Bank in the Majestic Asset Management and TURN8 Partners class action, what date is shown? Format it as YYYY-MM-DD.",
+    "587": "In the INF LLP defence for The Toronto-Dominion Bank against Majestic Asset Management and TURN8 Partners, what type of court is named on the cover page?",
+    "594": "According to the legal filing discussing the Mont Blanc company, what were the amounts of the two checks issued to Mont Blanc?",
+    "595": "In the legal filing discussing the Mont Blanc investigation, what California Bar number is listed for Assistant United States Attorney Adriana Dydell?",
+    "656": "Among the two people quoted on the South Asian Studies Programme page of the NUS FASS Graduate Guidebook, how many are assistant professors?",
+    "668": "According to the refrigerator owner's manual, how many numbered steps are required to replace the base grille? Return the answer as a float.",
+    "700": "In the Delaware Superior Court opinion involving Diane Hanson, what EFiled Filing ID and Case Number are shown?",
+    "704": "In the Delaware Superior Court opinion involving Diane Hanson, which public body is named as the defendant?",
+    "833": "In Semester 1 Unit 8 of the SBCUSD business course plan, what is the title of the Critical Thinking case study?",
+    "836": "In the SBCUSD business course plan, what topic is assigned to Unit 14?",
+    "932": "What is the full title of David Lubliner's presentation on medical informatics?",
+    "937": "In David Lubliner's 'Medical Informatics and HIT Systems' presentation, what HIT applications are listed?",
+    "1026": "How much did Costco spend on repurchasing common stock in FY2021? Answer in millions.",
+    "1038": "What was Netflix's rent expense associated with operating leases in FY2015? Answer in millions.",
+    "1061": "How does Amazon recognize lease costs under its leases and asset retirement obligations policy?"
+  },
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "documentIds": "OMITTED",
+    "paidModelRun": "NOT_STARTED"
+  }
+}

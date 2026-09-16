@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "docquery-n5.3-a9-v7-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Judge correctness against the frozen question, answer format, reference answer, and cited canonical evidence.",
+    "A failed HTTP request is incorrect.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0562","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned [46,27,64] in the requested order with supporting Pew evidence."},
+    {"caseId":"mmlongbench-r3-0607","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Cited both 61% values on Gold pages 37 and 38 and computed 122."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"SUPPORTED_WRONG_SCOPE","datasetIssue":null,"note":"The response now contains all three reference actions, but it is not the requested three-item list, mixes additional Unit 9 material into the result, and still does not use the Quarter 3 summary on Gold page 16. The frozen strict acceptance point is not met."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returned all 14 HIT applications and cited Gold page 4; the additional related HIMSS sentence does not contradict them."},
+    {"caseId":"mmlongbench-r3-1032","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"The logical case failed with ANSWER_MODEL_UNAVAILABLE. The first HTTP attempt made one tool call and six model calls before failing; the built-in retry failed immediately."}
+  ]
+}

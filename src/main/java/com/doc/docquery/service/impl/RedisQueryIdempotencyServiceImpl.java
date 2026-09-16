@@ -7,7 +7,6 @@ import com.doc.docquery.config.QueryIdempotencyProperties;
 import com.doc.docquery.security.QueryAccessContext;
 import com.doc.docquery.service.QueryIdempotencyService;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -49,7 +48,8 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
     private static final long CLAIM_CONFLICT = -1L;
     private static final long CLAIM_CONTEXT_CHANGED = -2L;
 
-    private static final DefaultRedisScript<Long> CLAIM_SCRIPT = new DefaultRedisScript<>("""
+    @SuppressWarnings("rawtypes")
+    private static final DefaultRedisScript<List> CLAIM_SCRIPT = new DefaultRedisScript<>("""
             if redis.call('EXISTS', KEYS[1]) == 0 then
               redis.call('HSET', KEYS[1],
                 'state', 'RUNNING',
@@ -57,18 +57,22 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
                 'snapshotFingerprint', ARGV[2],
                 'ownerToken', ARGV[3])
               redis.call('PEXPIRE', KEYS[1], ARGV[4])
-              return 1
+              return {1}
             end
             local requestFingerprint = redis.call('HGET', KEYS[1], 'requestFingerprint')
             local snapshotFingerprint = redis.call('HGET', KEYS[1], 'snapshotFingerprint')
-            if not requestFingerprint or not snapshotFingerprint then return -3 end
-            if requestFingerprint ~= ARGV[1] then return -1 end
-            if snapshotFingerprint ~= ARGV[2] then return -2 end
+            if not requestFingerprint or not snapshotFingerprint then return {-3} end
+            if requestFingerprint ~= ARGV[1] then return {-1} end
+            if snapshotFingerprint ~= ARGV[2] then return {-2} end
             local state = redis.call('HGET', KEYS[1], 'state')
-            if state == 'RUNNING' then return 2 end
-            if state == 'SUCCEEDED' then return 3 end
-            return -3
-            """, Long.class);
+            if state == 'RUNNING' then return {2} end
+            if state == 'SUCCEEDED' then
+              local result = redis.call('HGET', KEYS[1], 'result')
+              if not result then return {-3} end
+              return {3, result}
+            end
+            return {-3}
+            """, List.class);
 
     private static final DefaultRedisScript<Long> RENEW_SCRIPT = new DefaultRedisScript<>("""
             if redis.call('HGET', KEYS[1], 'state') ~= 'RUNNING' then return 0 end
@@ -123,7 +127,7 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
         String storageKey = storageKey(accessContext, operation, idempotencyKey);
         String ownerToken = UUID.randomUUID().toString();
         try {
-            Long result = redisTemplate.execute(
+            List<?> result = redisTemplate.execute(
                     CLAIM_SCRIPT,
                     List.of(storageKey),
                     requestFingerprint,
@@ -134,7 +138,13 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
             if (result == null) {
                 throw unavailable(null);
             }
-            if (result == CLAIM_OWNER) {
+            if (result.isEmpty() || !(result.get(0) instanceof Long status)) {
+                throw corruptedState();
+            }
+            if (status != CLAIM_REPLAY && result.size() != 1) {
+                throw corruptedState();
+            }
+            if (status == CLAIM_OWNER) {
                 return QueryIdempotencyClaim.owner(
                         storageKey,
                         ownerToken,
@@ -142,21 +152,17 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
                         accessContext.getSnapshotFingerprint()
                 );
             }
-            if (result == CLAIM_IN_PROGRESS) {
+            if (status == CLAIM_IN_PROGRESS) {
                 return QueryIdempotencyClaim.inProgress(
                         storageKey,
                         requestFingerprint,
                         accessContext.getSnapshotFingerprint()
                 );
             }
-            if (result == CLAIM_REPLAY) {
-                HashOperations<String, String, String> hashes = redisTemplate.opsForHash();
-                String replayResult = hashes.get(storageKey, "result");
-                if (replayResult == null) {
-                    throw new QueryIdempotencyException(
-                            CORRUPTED_STATE,
-                            "Query idempotency result is incomplete"
-                    );
+            if (status == CLAIM_REPLAY) {
+                // 指纹校验和响应读取在同一个脚本中完成，避免过期重用后的二次读取。
+                if (result.size() != 2 || !(result.get(1) instanceof String replayResult)) {
+                    throw corruptedState();
                 }
                 return QueryIdempotencyClaim.replay(
                         storageKey,
@@ -165,22 +171,19 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
                         replayResult
                 );
             }
-            if (result == CLAIM_CONFLICT) {
+            if (status == CLAIM_CONFLICT) {
                 throw new QueryIdempotencyException(
                         IDEMPOTENCY_CONFLICT,
                         "Idempotency-Key is already bound to another request"
                 );
             }
-            if (result == CLAIM_CONTEXT_CHANGED) {
+            if (status == CLAIM_CONTEXT_CHANGED) {
                 throw new QueryIdempotencyException(
                         CONTEXT_CHANGED,
                         "Idempotency-Key is bound to another active-version snapshot"
                 );
             }
-            throw new QueryIdempotencyException(
-                    CORRUPTED_STATE,
-                    "Query idempotency state is invalid"
-            );
+            throw corruptedState();
         } catch (QueryIdempotencyException exception) {
             throw exception;
         } catch (DataAccessException exception) {
@@ -339,6 +342,13 @@ public class RedisQueryIdempotencyServiceImpl implements QueryIdempotencyService
 
     private QueryIdempotencyException invalidRequest(String message) {
         return new QueryIdempotencyException(INVALID_REQUEST, message);
+    }
+
+    private QueryIdempotencyException corruptedState() {
+        return new QueryIdempotencyException(
+                CORRUPTED_STATE,
+                "Query idempotency state is invalid"
+        );
     }
 
     private QueryIdempotencyException unavailable(Throwable cause) {

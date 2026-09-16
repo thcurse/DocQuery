@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "docquery-n5.3-curated-text20-f-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "purpose": "A second independently curated batch of natural single-page text questions for an 80-question cumulative Answer evaluation",
+  "selectionPolicy": [
+    "Freeze each question and reference answer only after checking the indexed evidence and the original PDF page.",
+    "Use natural entity- or topic-scoped wording without file names, document IDs, page numbers, answer leakage, or hidden retrieval hints.",
+    "Require one physical Gold page containing all material evidence for the answer.",
+    "Exclude questions that require visual interpretation, table reconstruction, cross-page aggregation, or ambiguous document-relative wording.",
+    "Prefer direct factual, definitional, procedural, and short-list questions across distinct domains and documents."
+  ],
+  "customCases": [
+    {
+      "caseId": "docquery-curated-f-001",
+      "question": "What parameter-size range does the Llama 2 model collection cover?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "Str",
+      "referenceAnswer": "7 billion to 70 billion parameters",
+      "documentKey": "mmlongbench-c8496d4dc7639b5a19fd",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-002",
+      "question": "What use cases is Llama 2-Chat optimized for?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "Str",
+      "referenceAnswer": "dialogue use cases",
+      "documentKey": "mmlongbench-c8496d4dc7639b5a19fd",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-003",
+      "question": "What does Step-Back Prompting derive from instances that contain specific details?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "List",
+      "referenceAnswer": ["high-level concepts", "first principles"],
+      "documentKey": "mmlongbench-850604efe0d46663cf85",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-004",
+      "question": "By how much did Step-Back Prompting improve PaLM-2L performance on TimeQA?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "Float",
+      "referenceAnswer": "27%",
+      "documentKey": "mmlongbench-850604efe0d46663cf85",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-005",
+      "question": "In the study describing label words as anchors in in-context learning, what two roles do label words play?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "List",
+      "referenceAnswer": [
+        "semantic information aggregates into label-word representations in shallow layers",
+        "the consolidated information serves as a reference for final predictions"
+      ],
+      "documentKey": "mmlongbench-a18167143e0d2f59c896",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-006",
+      "question": "What three applications are introduced from the label-words-as-anchors findings?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "List",
+      "referenceAnswer": [
+        "anchor re-weighting to improve in-context learning",
+        "demonstration compression to speed up inference",
+        "an analysis framework for diagnosing GPT2-XL in-context-learning errors"
+      ],
+      "documentKey": "mmlongbench-a18167143e0d2f59c896",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-007",
+      "question": "How many multimodal instruction-response pairs does the MIMIC-IT dataset contain? Answer in millions.",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "Float",
+      "referenceAnswer": "2.8",
+      "documentKey": "mmlongbench-fe84bc284e756e5bc3c9",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-008",
+      "question": "Which model was released together with the MIMIC-IT dataset, collection pipeline, and benchmarks?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "Str",
+      "referenceAnswer": "Otter",
+      "documentKey": "mmlongbench-fe84bc284e756e5bc3c9",
+      "physicalEvidencePages": [1]
+    },
+    {
+      "caseId": "docquery-curated-f-009",
+      "question": "What is the operating-temperature range of the ThinkPad T480 at altitudes up to 2,438 metres?",
+      "sourceDomain": "Guidebook",
+      "answerFormat": "Str",
+      "referenceAnswer": "5°C to 35°C",
+      "documentKey": "mmlongbench-71eee6ee12f41872e2ef",
+      "physicalEvidencePages": [31]
+    },
+    {
+      "caseId": "docquery-curated-f-010",
+      "question": "What minimum battery temperature does the ThinkPad T480 guide require when charging?",
+      "sourceDomain": "Guidebook",
+      "answerFormat": "Str",
+      "referenceAnswer": "10°C (50°F)",
+      "documentKey": "mmlongbench-71eee6ee12f41872e2ef",
+      "physicalEvidencePages": [31]
+    },
+    {
+      "caseId": "docquery-curated-f-011",
+      "question": "How many internships are NUS Business School students encouraged to undertake during their studies?",
+      "sourceDomain": "Brochure",
+      "answerFormat": "Str",
+      "referenceAnswer": "at least two internships",
+      "documentKey": "mmlongbench-109cc6bd55824aedc41f",
+      "physicalEvidencePages": [16]
+    },
+    {
+      "caseId": "docquery-curated-f-012",
+      "question": "Under the new NUS Business School curriculum, what status does an internship have?",
+      "sourceDomain": "Brochure",
+      "answerFormat": "Str",
+      "referenceAnswer": "a graduation requirement",
+      "documentKey": "mmlongbench-109cc6bd55824aedc41f",
+      "physicalEvidencePages": [16]
+    },
+    {
+      "caseId": "docquery-curated-f-013",
+      "question": "Before using Device+ with a Vision device on a Huawei nova Y70, what two connection conditions must the Vision meet?",
+      "sourceDomain": "Guidebook",
+      "answerFormat": "List",
+      "referenceAnswer": [
+        "connected to the same LAN",
+        "logged in to the same Huawei ID as the phone"
+      ],
+      "documentKey": "mmlongbench-5c5e05a08df23db30f30",
+      "physicalEvidencePages": [11]
+    },
+    {
+      "caseId": "docquery-curated-f-014",
+      "question": "Which ongoing phone tasks can Huawei nova Y70 Device+ transfer to a Vision device?",
+      "sourceDomain": "Guidebook",
+      "answerFormat": "List",
+      "referenceAnswer": ["MeeTime calls", "streaming audio", "streaming video"],
+      "documentKey": "mmlongbench-5c5e05a08df23db30f30",
+      "physicalEvidencePages": [11]
+    },
+    {
+      "caseId": "docquery-curated-f-015",
+      "question": "What percentage of Americans aged 65 or older reported going online in Pew Research Center's seniors-and-technology findings?",
+      "sourceDomain": "Research report / Introduction",
+      "answerFormat": "Float",
+      "referenceAnswer": "59%",
+      "documentKey": "mmlongbench-f3a3352ccbc29352d24d",
+      "physicalEvidencePages": [2]
+    },
+    {
+      "caseId": "docquery-curated-f-016",
+      "question": "What percentage of Americans expected economic inequality to become much worse if robots and computers could perform many jobs then done by humans?",
+      "sourceDomain": "Research report / Introduction",
+      "answerFormat": "Float",
+      "referenceAnswer": "76%",
+      "documentKey": "mmlongbench-e83f4fafdc9b37f48d50",
+      "physicalEvidencePages": [4]
+    },
+    {
+      "caseId": "docquery-curated-f-017",
+      "question": "What percentage of Americans expected the economy not to create many new, better-paying human jobs under widespread workforce automation?",
+      "sourceDomain": "Research report / Introduction",
+      "answerFormat": "Float",
+      "referenceAnswer": "75%",
+      "documentKey": "mmlongbench-e83f4fafdc9b37f48d50",
+      "physicalEvidencePages": [4]
+    },
+    {
+      "caseId": "docquery-curated-f-018",
+      "question": "In Pew's December 2015 terrorism survey, what percentage said the U.S. government was doing well at reducing the threat of terrorism?",
+      "sourceDomain": "Research report / Introduction",
+      "answerFormat": "Float",
+      "referenceAnswer": "46%",
+      "documentKey": "mmlongbench-a412659ac1eaf4009a9e",
+      "physicalEvidencePages": [2]
+    },
+    {
+      "caseId": "docquery-curated-f-019",
+      "question": "In Pew's December 2015 terrorism survey, what percentage regarded ISIS as a major threat to U.S. well-being?",
+      "sourceDomain": "Research report / Introduction",
+      "answerFormat": "Float",
+      "referenceAnswer": "83%",
+      "documentKey": "mmlongbench-a412659ac1eaf4009a9e",
+      "physicalEvidencePages": [2]
+    },
+    {
+      "caseId": "docquery-curated-f-020",
+      "question": "Which three RAG paradigms are covered by the large-language-model RAG survey?",
+      "sourceDomain": "Academic paper",
+      "answerFormat": "List",
+      "referenceAnswer": ["Naive RAG", "Advanced RAG", "Modular RAG"],
+      "documentKey": "mmlongbench-94c8c165f78c97901510",
+      "physicalEvidencePages": [1]
+    }
+  ],
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "documentIds": "OMITTED",
+    "paidModelRun": "NOT_STARTED"
+  }
+}

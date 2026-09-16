@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "docquery-n5.3-a7-v2-audit-summary-v1",
+  "source": "application_query_audit",
+  "attemptCount": 7,
+  "rows": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "requestId": "8ca02d08-c6b7-407a-a50d-9c9973fddc36",
+      "outcome": "FAILED",
+      "failureCode": "ANSWER_EXECUTION_LIMIT_EXCEEDED",
+      "toolRounds": 0,
+      "toolCalls": 0,
+      "modelCalls": 12,
+      "canonicalCharacters": 0,
+      "durationMs": 98626
+    },
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "requestId": "b682ba26-41b2-47ff-b766-5d84f02bb957",
+      "queryExecutionId": "68dc16cb-bbd4-46ff-a9ab-1c996046c2eb",
+      "outcome": "SUCCEEDED",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 4,
+      "toolCalls": 4,
+      "modelCalls": 6,
+      "canonicalCharacters": 8435,
+      "durationMs": 58998
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "requestId": "cb0f54af-4fc1-4c63-9d08-4eec88c9e475",
+      "outcome": "FAILED",
+      "failureCode": "ANSWER_OUTPUT_INVALID",
+      "toolRounds": 1,
+      "toolCalls": 1,
+      "modelCalls": 5,
+      "canonicalCharacters": 8582,
+      "durationMs": 24348
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "requestId": "cb3b75db-5448-4c47-b904-ccdcec4c2418",
+      "outcome": "FAILED",
+      "failureCode": "ANSWER_MODEL_UNAVAILABLE",
+      "toolRounds": 1,
+      "toolCalls": 1,
+      "modelCalls": 2,
+      "canonicalCharacters": 0,
+      "durationMs": 122626
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "requestId": "416c1ecf-7547-4c00-833f-e5f60f9408dc",
+      "queryExecutionId": "07318cf4-4297-4a26-b34b-671923ea5e9a",
+      "outcome": "SUCCEEDED",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 1,
+      "toolCalls": 1,
+      "modelCalls": 4,
+      "canonicalCharacters": 4967,
+      "durationMs": 38585
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "requestId": "ef3c4270-ba51-4062-9199-ec5c1cede104",
+      "queryExecutionId": "a1123615-19bd-46b0-9e96-72c846a0c4b5",
+      "outcome": "SUCCEEDED",
+      "answerStatus": "INSUFFICIENT_EVIDENCE",
+      "toolRounds": 1,
+      "toolCalls": 1,
+      "modelCalls": 4,
+      "canonicalCharacters": 8308,
+      "durationMs": 20337
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "requestId": "7a552fcf-391f-4ec6-a425-ba70af2405e5",
+      "queryExecutionId": "fa73781f-51e1-477d-b491-ee460070ab2e",
+      "outcome": "SUCCEEDED",
+      "answerStatus": "ANSWERED",
+      "toolRounds": 2,
+      "toolCalls": 3,
+      "modelCalls": 4,
+      "canonicalCharacters": 23199,
+      "durationMs": 45553
+    }
+  ],
+  "diagnosis": [
+    "Full append-only Responses context is the correct stateless protocol shape; the first A7 attempt that sent only prior output plus tool results lost the original task context and is invalid as quality evidence.",
+    "After fixing context replay, A7-v2 still achieved zero manually correct answers and one provider failure across the five frozen cases.",
+    "The persistent prompt did not prevent one-search refusals for cases 0831 and 0937, and case 0937 regressed from the correct A6 result.",
+    "Case 1032 found both correct operands and Gold page evidence but still omitted the explicitly requested sum, so tool access alone is not the remaining blocker.",
+    "The experimental A7 runtime changes were rolled back; A6 remains the active baseline pending a separately frozen design."
+  ]
+}

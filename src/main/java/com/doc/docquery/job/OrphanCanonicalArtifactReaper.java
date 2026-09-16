@@ -3,6 +3,7 @@ package com.doc.docquery.job;
 import com.doc.docquery.config.DocumentParsingProperties;
 import com.doc.docquery.mapper.DocumentCanonicalArtifactMapper;
 import com.doc.docquery.service.CanonicalArtifactStore;
+import com.doc.docquery.service.ObjectListingPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -28,6 +29,8 @@ public class OrphanCanonicalArtifactReaper {
     );
 
     private final CanonicalArtifactStore objectStore;
+    /** 每次调度只处理一页，扫描结束后从头检查先前保留的对象。 */
+    private String continuationToken;
     private final DocumentCanonicalArtifactMapper artifactMapper;
     private final DocumentParsingProperties properties;
 
@@ -43,13 +46,15 @@ public class OrphanCanonicalArtifactReaper {
 
     /** 引用或数据库状态不确定时 fail closed，绝不按宽前缀盲删。 */
     @Scheduled(fixedDelayString = "${docquery.parsing.orphan-scan-delay:15m}")
-    public void runOnce() {
+    public synchronized void runOnce() {
         Instant cutoff = Instant.now().minus(properties.getOrphanGrace());
         int removed = 0;
-        for (CanonicalArtifactStore.ObjectSummary object : objectStore.list(
+        ObjectListingPage<CanonicalArtifactStore.ObjectSummary> page = objectStore.listPage(
                 properties.getCanonicalPrefix(),
-                properties.getOrphanBatchSize()
-        )) {
+                properties.getOrphanBatchSize(),
+                continuationToken
+        );
+        for (CanonicalArtifactStore.ObjectSummary object : page.objects()) {
             if (object.lastModified() == null || !object.lastModified().isBefore(cutoff)) {
                 continue;
             }
@@ -66,6 +71,7 @@ public class OrphanCanonicalArtifactReaper {
                 LOG.warn("Orphan canonical object check failed; object was retained");
             }
         }
+        continuationToken = page.nextContinuationToken();
         if (removed > 0) {
             LOG.info("Removed {} unreferenced canonical objects", removed);
         }

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "docquery-n5.3-a28-manual-adjudication-v1",
+  "reviewPolicy": [
+    "Count every controlled refusal on an answerable public question as incorrect.",
+    "Judge semantic correctness against the cited source text and rendered-source findings when the frozen public reference conflicts with the source.",
+    "Treat an answer as incorrect when its requested result happens to match but its supporting factual decomposition is materially false.",
+    "Treat unrelated items presented as members of the requested category as a material scope error.",
+    "Mark citation support unsupported when cited text does not support the relation, completeness, period, entity, row, or referenced work asserted by the answer."
+  ],
+  "decisions": [
+    {"caseId":"mmlongbench-r3-0016","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"The definition and added explanation are supported by the cited page-11 text."},
+    {"caseId":"mmlongbench-r3-0078","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Returned Dense X Retrieval instead of resolving the phrase-granularity method to the cited paper title Copy is all you need."},
+    {"caseId":"mmlongbench-r3-0136","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":null,"note":"Returned four unique regulations (12, 13, 17, 18), but the rendered report contains seven unique breached regulations: 9, 10, 11, 12, 13, 17, and 18. The submitted evidence omitted 9, 10, and 11."},
+    {"caseId":"mmlongbench-r3-0221","correct":false,"citationSupport":"UNSUPPORTED","datasetIssue":"GOLD_PAGE_INCORRECT","note":"The 12-point gap is numerically correct, but the answer falsely attributes total-65+ values 59% and 47% to men; the male values are 65% and 53%. The exact tables are on physical pages 16-17 rather than frozen Gold pages 7-8."},
+    {"caseId":"mmlongbench-r3-0239","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"538 square miles matches the cited source text and reference."},
+    {"caseId":"mmlongbench-r3-0243","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"435,000,000 square feet matches the cited Staten Island table row; automatic mismatch is formatting-only."},
+    {"caseId":"mmlongbench-r3-0305","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"For 500 MHz and 10 W the cited table uses d=1.2*sqrt(P) and displays 3.8 metres; 3.80 is source-grounded while the frozen 2.92 reference conflicts with the source."},
+    {"caseId":"mmlongbench-r3-0364","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"All eight bankers match the cited table; Union correctly fixes the public reference's Unioon typo."},
+    {"caseId":"mmlongbench-r3-0562","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns the requested 46%, 27%, and 64% values and supports them with the page-11 evidence."},
+    {"caseId":"mmlongbench-r3-0607","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly retrieves both 61% components and returns their 122% sum."},
+    {"caseId":"mmlongbench-r3-0653","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"REFERENCE_ANSWER_INCORRECT","note":"The rendered guidebook shows that Economics, English Language and Literature, and History all offer PhD programmes, so none is the source-grounded answer."},
+    {"caseId":"mmlongbench-r3-0677","correct":true,"citationSupport":"SUPPORTED","datasetIssue":"GOLD_PAGE_INCOMPLETE","note":"Returns all four compulsory ISEP module codes in ascending code order, supported by the complete physical-page-22 table."},
+    {"caseId":"mmlongbench-r3-0741","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":null,"note":"Returned INSUFFICIENT_EVIDENCE for an answerable table question; ten English tweets out of 24 is about 41.67%."},
+    {"caseId":"mmlongbench-r3-0831","correct":false,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Includes the three expected Preparing for Tomorrow's Workplace Skills items, but materially misclassifies Interview, Team Activity, quizzes, Using the Net, and Working the Net as additional members of that requested category."},
+    {"caseId":"mmlongbench-r3-0903","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Clearly answers that first-time Mac pairing takes four steps and supports those steps; the separately labelled reconnection guidance is unnecessary but not contradictory."},
+    {"caseId":"mmlongbench-r3-0937","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Returns all fourteen HIT applications supported by the cited page-4 evidence."},
+    {"caseId":"mmlongbench-r3-0960","correct":false,"citationSupport":"NOT_APPLICABLE","datasetIssue":"GOLD_PAGE_INCORRECT","note":"Returned INSUFFICIENT_EVIDENCE for an answerable yes/no question; physical pages 20-21 support the UV radiation, CFC/ozone, and filtering chain while frozen page 18 is unrelated."},
+    {"caseId":"mmlongbench-r3-0982","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"No is supported by the cited shallow-layer versus deep-layer information-flow analysis."},
+    {"caseId":"mmlongbench-r3-1032","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"Correctly combines the cited 133.2 million and 120.1 million 2015 increases to return 253.3 million."},
+    {"caseId":"mmlongbench-r3-1062","correct":true,"citationSupport":"SUPPORTED","datasetIssue":null,"note":"3.0 billion matches the cited FY2017 gift-card liability and public reference."}
+  ]
+}

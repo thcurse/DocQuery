@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "docquery-n5.3-a1-answer-pilot-selection-v1",
+  "datasetVersion": "mmlongbench-docquery-v1",
+  "sourceEvaluation": "n5.2-r3-valid",
+  "purpose": "Fresh Answer-quality PILOT over public questions without documentIds",
+  "selectionPolicy": [
+    "Use only the frozen N5.2-R3 formal cases and original public-dataset question text.",
+    "Do not use N5.2-R3 retrieval results when selecting cases.",
+    "Sort cases by SHA-256 of 'docquery-n5.3-a1-v1:' plus caseId, then greedily select the first case whose answer-format quota is not full and whose source document has not been selected.",
+    "Select exactly five Str, five Int, five Float, and five List cases, covering 20 distinct source documents and all seven source domains.",
+    "Do not replace failures with reserve cases after execution."
+  ],
+  "selectionSeed": "docquery-n5.3-a1-v1",
+  "caseIds": [
+    "mmlongbench-r3-0016",
+    "mmlongbench-r3-0078",
+    "mmlongbench-r3-0221",
+    "mmlongbench-r3-0239",
+    "mmlongbench-r3-0243",
+    "mmlongbench-r3-0265",
+    "mmlongbench-r3-0305",
+    "mmlongbench-r3-0364",
+    "mmlongbench-r3-0562",
+    "mmlongbench-r3-0607",
+    "mmlongbench-r3-0653",
+    "mmlongbench-r3-0677",
+    "mmlongbench-r3-0741",
+    "mmlongbench-r3-0831",
+    "mmlongbench-r3-0903",
+    "mmlongbench-r3-0937",
+    "mmlongbench-r3-0960",
+    "mmlongbench-r3-0982",
+    "mmlongbench-r3-1032",
+    "mmlongbench-r3-1062"
+  ],
+  "execution": {
+    "knowledgeBaseId": 1,
+    "mode": "HYBRID",
+    "topK": 10,
+    "documentIds": "OMITTED",
+    "exactTokenAndCost": "NOT_AVAILABLE_IN_CURRENT_ANSWER_CONTRACT"
+  }
+}

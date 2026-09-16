@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "phase": "N5.2-O1-P0",
+  "generatedAt": "2026-08-21T11:20:33.025463+00:00",
+  "selectionSha256": "b4b19e84f09925bf8738bbb6961f12b12c1da157bace377e7ddf018788b6ad15",
+  "thresholdEstimatedTokens": 64000,
+  "tokenEstimator": "UTF16_CHARS_DIV_4_CEILING",
+  "model": null,
+  "paidRequestsAttempted": 0,
+  "samples": [
+    {
+      "sampleId": "3m-overview",
+      "documentVersionId": 28,
+      "documentName": "3M_2018_10K.pdf",
+      "headingNodeId": "28:h:000001",
+      "headingTitle": "OVERVIEW",
+      "sectionStartBlockOrdinal": 262,
+      "sectionEndBlockOrdinalExclusive": 1606,
+      "sourceChars": 529780,
+      "estimatedTokens": 132445,
+      "minimumPartitions": 3,
+      "maximumPartitions": 4,
+      "minimumBoundaryCandidates": 9,
+      "maximumBoundaryCandidates": 13,
+      "sectionInputSha256": "6b0cd13f5fdd23af2d0aed2de66e5b9c40c4700dcf7a3aab211d4e51cc643822",
+      "status": "DRY_RUN_READY",
+      "latencyMs": 443
+    },
+    {
+      "sampleId": "activision-overview",
+      "documentVersionId": 36,
+      "documentName": "ACTIVISIONBLIZZARD_2019_10K.pdf",
+      "headingNodeId": "36:h:000001",
+      "headingTitle": "Overview",
+      "sectionStartBlockOrdinal": 126,
+      "sectionEndBlockOrdinalExclusive": 926,
+      "sourceChars": 274178,
+      "estimatedTokens": 68545,
+      "minimumPartitions": 2,
+      "maximumPartitions": 3,
+      "minimumBoundaryCandidates": 6,
+      "maximumBoundaryCandidates": 10,
+      "sectionInputSha256": "991edeef74895d3afd685c5af38c61c7097eee5dbfade4b3425b45bfbe557d8d",
+      "status": "DRY_RUN_READY",
+      "latencyMs": 375
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "docquery-n5.3-a6-manual-adjudication-v1",
+  "reviewPolicy": [
+    "An answerable public question returned as INSUFFICIENT_EVIDENCE is incorrect.",
+    "Judge semantic correctness against the existing A2 PDF manual review and the current returned citations.",
+    "A citation may support the returned statement while the answer remains incomplete or irrelevant.",
+    "Do not modify the frozen public questions, reference answers, or Gold pages."
+  ],
+  "decisions": [
+    {
+      "caseId": "mmlongbench-r3-0562",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE for an answerable question; the frozen R3 retrieval had the correct document at rank 1 and covered both Gold pages."
+    },
+    {
+      "caseId": "mmlongbench-r3-0607",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE; the required 61 plus 61 calculation is answerable from physical pages 37 and 38."
+    },
+    {
+      "caseId": "mmlongbench-r3-0831",
+      "correct": false,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "The citations support the returned Unit 9 to 11 activities, but the answer misses the frozen page-16 three-item preparation and cites pages 7 to 8 instead."
+    },
+    {
+      "caseId": "mmlongbench-r3-0937",
+      "correct": true,
+      "citationSupport": "SUPPORTED",
+      "datasetIssue": null,
+      "note": "Returns all 14 HIT applications and cites the correct source document and physical Gold page 4."
+    },
+    {
+      "caseId": "mmlongbench-r3-1032",
+      "correct": false,
+      "citationSupport": "NOT_APPLICABLE",
+      "datasetIssue": null,
+      "note": "Returned INSUFFICIENT_EVIDENCE; the frozen R3 top 10 contained the Netflix document and physical Gold page 24 with the two values needed for 253.3."
+    }
+  ]
+}
