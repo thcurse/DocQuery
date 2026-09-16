@@ -1,78 +1,277 @@
 # DocQuery
 
-面向传统业务系统的知识库服务。N0—N4.3 均已实现、验证并由用户确认完成。
+**为业务系统提供可追溯的文档检索与问答 API。**
 
-当前支持管理面 multipart 上传，默认以 SeaweedFS 提供 S3 兼容对象存储，并通过 Transactional Outbox 和 RabbitMQ 建立可靠异步投递、重试和 DLQ；支持 PDF、DOCX、TXT、Markdown 的无模型解析，生成 `canonical.jsonl`，再沿真实标题树生成带 2,560 维导航向量的 `retrieval.jsonl`。N2.5 已把原文和导航卡分别投影到 Elasticsearch Evidence/Navigation 索引，完整校验后原子切换 `activeVersionId` 并进入 `READY`。N3.1 增加了服务请求内部 Credential/Grant 前置校验、不可变 activeVersion 快照和 Redis 请求幂等；N3.2 已开放 `/retrieve`；N3.3 已开放受控单轮 `/answer`，使用 Java 管理的有限 Tool Calling、canonical Evidence ID 和严格引用校验；N3.4 已落地查询审计和评测执行器。N4.1 已提供文档、版本、任务查询和失败任务人工重试；N4.2 已提供文档立即检索下线、删除墓碑及全部版本内容的可靠异步清理。N4.3 已提供同源 `/admin/` 管理后台，覆盖平台侧 Tenant 和租户侧 Application、Credential、Grant、KnowledgeBase 核心管理。真实模型、Elasticsearch 投影、生产 Listener 和查询幂等在公共配置中仍默认关闭；文档生命周期页面仍不在 N4.3 范围内。后续技术路线见 [`N2 技术选型总览`](docs/technical-decisions/02-文档检索与异步处理技术选型.md)。
+DocQuery 是基于 Java 的多租户知识库服务。上传 PDF、Word（DOCX）、文本或 Markdown 文档后，业务后端可以通过 HTTP API 检索原文，或生成带文档、章节和页码引用的回答。
 
-产品边界和后续开发顺序见 [`docs/product`](docs/product)。
+项目包含文档处理管道、应用凭证与知识库授权、混合检索、受控问答和 Web 管理后台，适合为企业内部系统、客服平台、业务助手等应用接入文档知识。
 
-## 本地运行
+[快速开始](#快速开始) · [启用检索与问答](#启用检索与问答) · [API 示例](#api-示例) · [开发与测试](#开发与测试) · [文档](#文档)
 
-前置条件：JDK 17、Docker Desktop；从源码构建还需要本机 Node.js 和 npm，生产运行打包后的 JAR 不需要 Node.js。
+## 核心能力
 
-可提交的公共配置位于 `src/main/resources/application.yml`。真实模型调用所需的两个 API Key 保存在本地 `config/application-secrets.yml`，该文件已被 `.gitignore` 排除，并以外部配置方式加载，不会打进 JAR。填写 `chat-api-key`、`embedding-api-key` 和百炼 `embedding-base-url` 后，将 `provider-enabled` 改为 `true`；不要把真实密钥写回公共配置。
+| 能力 | 说明 |
+| --- | --- |
+| 多格式文档 | 支持 PDF、DOCX、TXT、Markdown；保留原文、标题结构和来源位置 |
+| 混合检索 | 支持关键词检索、语义检索及两者融合，同时检索原文和章节导航信息 |
+| 带引用的回答 | 在授权范围内检索、阅读证据并生成回答；证据不足时返回明确状态 |
+| 多租户与应用授权 | 通过应用凭证访问指定知识库，校验租户、应用状态及知识库授权 |
+| 文档版本管理 | 支持上传新版本、重建、失败重试和删除；新版本处理完成后才替换生效版本 |
+| 异步处理 | 使用事务 Outbox、RabbitMQ、重试队列和死信队列处理文档任务 |
+| 查询幂等与审计 | 支持 Redis 请求幂等，记录查询结果、错误、降级情况和追踪信息 |
+| Web 管理后台 | 管理租户、应用、凭证、知识库、文档与任务，并提供问答、API 调试和审计查询 |
 
-```powershell
-docker compose up -d
-.\mvnw.cmd spring-boot:run
+## 工作方式
+
+```mermaid
+flowchart LR
+    A[上传文档] --> B[对象存储]
+    A --> C[Outbox / RabbitMQ]
+    C --> D[解析原文与标题结构]
+    D --> E[生成章节导航与向量]
+    E --> F[Elasticsearch 双索引]
+    F --> G[校验并激活版本]
+    H[业务后端] --> I[凭证与知识库授权]
+    I --> J[混合检索]
+    J --> F
+    J --> K[原文证据 / 带引用的回答]
 ```
 
-默认 Compose 分组包含 MySQL、SeaweedFS、RabbitMQ、Elasticsearch、Redis 和生产 DeepDoc GPU HTTP 服务；在 Docker Desktop 中启动整个 `docquery-greenfield` 分组即可启动这六个服务。`deepdoc-p0-cpu`、`deepdoc-p0-gpu` 仍只是显式 profile 下的可复现技术验证任务，不属于默认分组。MySQL 默认发布到 `localhost:3308`，SeaweedFS S3 API 发布到 `localhost:8333`，RabbitMQ 发布到 `localhost:25672`（容器内仍为标准 `5672`，管理端为 `15672`），Elasticsearch 发布到 `localhost:19200`，Redis 只绑定回环地址 `localhost:26379`，DeepDoc 只绑定 `localhost:18080` 并请求 Docker GPU。开发账号和密码均可通过 `DOCQUERY_*` 环境变量替换。生产 HTTPS 环境还必须设置 `DOCQUERY_SESSION_COOKIE_SECURE=true`。
+原文件和派生内容保存在 S3 兼容对象存储中，MySQL 保存资源、版本与任务状态，Elasticsearch 保存可重建的检索索引。查询只使用已经完成处理并生效的文档版本。
 
-首次部署且数据库中不存在任何管理员时，通过交互式终端创建首个平台管理员：
+问答由服务端限制工具调用范围、轮次、时间和证据预算，并校验返回引用。业务系统负责自己的最终用户登录与业务权限，DocQuery 负责应用到知识库的访问控制。
 
-```powershell
-java -jar target\docquery-0.0.1-SNAPSHOT.jar bootstrap-admin --login-name=platform.admin
+## 技术栈
+
+| 层级 | 技术 |
+| --- | --- |
+| 后端 | Java 17、Spring Boot 4、MyBatis、Flyway |
+| 管理后台 | React 19、TypeScript、Vite、Ant Design |
+| 数据与检索 | MySQL、Elasticsearch、Redis |
+| 文件与任务 | S3 兼容对象存储（默认 SeaweedFS）、RabbitMQ |
+| 文档解析 | DeepDoc / RAGFlow，以及可选的本地格式解析器 |
+| 模型接入 | LangChain4j；Chat 支持 Responses、Chat Completions 和 Anthropic 协议，Embedding 使用阿里云百炼适配器 |
+| 测试 | JUnit、Testcontainers、Vitest、Playwright |
+
+前端构建产物随 Spring Boot JAR 一起发布。运行打包后的应用不需要单独部署 Node.js 服务。
+
+## 快速开始
+
+以下步骤先启动管理后台，完成账号和资源配置。完整的文档入库、检索和问答需要继续配置[解析服务与模型](#启用检索与问答)。
+
+### 1. 准备环境
+
+- JDK 17。
+- Node.js 24 与 npm，用于构建前端。
+- Docker Engine / Docker Desktop，以及 Docker Compose。
+- 使用 DeepDoc GPU 解析时，还需要 NVIDIA GPU 和容器 GPU 支持；也可以选择本地解析方式。
+
+以下命令在项目根目录执行。Shell 示例使用 `sh ./mvnw`；Windows PowerShell 中将其替换为 `.\mvnw.cmd`。项目已包含 Maven Wrapper，无需另行安装 Maven。
+
+```bash
+git clone https://github.com/thcurse/DocQuery.git
+cd DocQuery
+
+docker compose up -d mysql seaweedfs rabbitmq elasticsearch redis
+docker compose ps
 ```
 
-密码会在终端中读取并二次确认，不要把密码放入命令参数。该命令只创建一个 `PLATFORM_ADMIN`，不会创建租户；已有管理员时会拒绝执行。
+等待依赖服务就绪。默认本地连接地址如下，端口和账号可通过 `compose.yaml` 中的 `DOCQUERY_*` 环境变量调整。
 
-管理员认证接口位于 `/api/admin/v1/auth`，调用登录和登出前必须先通过 `GET /csrf` 获取 CSRF Token。完整契约和验证证据见 [`docs/development/N1-身份与授权.md`](docs/development/N1-身份与授权.md)。
+| 服务 | 默认地址 |
+| --- | --- |
+| MySQL | `localhost:3308` |
+| SeaweedFS S3 | `localhost:8333` |
+| RabbitMQ | `localhost:25672`，管理页面 `localhost:15672` |
+| Elasticsearch | `localhost:19200` |
+| Redis | `localhost:26379` |
+| DeepDoc（另行启动） | `localhost:18080` |
 
-应用启动后可通过 `http://localhost:8080/admin/` 进入管理后台。前端与后端同源，沿用服务端 Session、CSRF、角色和租户隔离；当前页面范围为 Tenant、Application、Credential、Grant 和 KnowledgeBase 核心管理。
+### 2. 构建应用
 
-Tenant 管理接口位于 `/api/admin/v1/tenants`。平台管理员可以创建、分页查看和更新 Tenant；租户管理员只能查看自己的 Tenant。所有修改请求都必须携带登录后重新获取的 CSRF Token。
-
-Application 和 KnowledgeBase 管理接口位于 `/api/admin/v1/tenants/{tenantId}/applications` 与 `/api/admin/v1/tenants/{tenantId}/knowledge-bases`，只接受所属租户的租户管理员，不接受平台管理员跨租户代管。
-
-Application Credential 管理接口位于 `/api/admin/v1/tenants/{tenantId}/applications/{applicationId}/credentials`，支持创建、分页查看和幂等撤销。完整凭证只在创建成功响应中返回一次，数据库只保存 Secret 的 SHA-256 摘要；同一 Application 最多同时保留两把有效凭证。
-
-ApplicationGrant 管理接口位于 `/api/admin/v1/tenants/{tenantId}` 下，支持按 Application 与 KnowledgeBase 建立、查看和撤销授权。权限代码为 `1=READ`、`2=WRITE`、`3=READ_WRITE`；服务面检索会先执行 N3.1 的凭证、授权、activeVersion 快照和 Redis 幂等边界，再进入 N3.2 的真实检索链路。
-
-真实文档上传接口位于 `/api/admin/v1/tenants/{tenantId}/knowledge-bases/{knowledgeBaseId}/documents` 及其 `/{documentId}/versions` 子路径，要求管理员 Session、CSRF、`Idempotency-Key` 和 multipart 文件；单文件上限默认 50 MiB。完整契约与边界见 [`docs/development/N2.2-对象存储与异步投递.md`](docs/development/N2.2-对象存储与异步投递.md)。
-
-N2.3 标准化能力由内部 `DocumentCanonicalService` 提供；N2.5 完整 Processor 已将它接入异步链路。解析范围与验证证据见 [`docs/development/N2.3-文档解析与标准化.md`](docs/development/N2.3-文档解析与标准化.md)。
-
-N2.4 已实现使用 DeepSeek 官方 `deepseek-v4-flash` 生成真实标题检索卡，使用阿里云百炼 `qwen3.7-text-embedding` 生成 2,560 维导航向量，并保存单一 `retrieval.jsonl` 派生对象及 V7 MySQL 清单。供应商 API Key 不进入仓库；真实调用需显式开启，DeepSeek + 百炼小样本冒烟测试已于 2026-08-10 执行通过，N2.4 同日经用户确认完成。详见 [`docs/development/N2.4-检索卡与导航向量.md`](docs/development/N2.4-检索卡与导航向量.md)。
-
-N2.5 已实现 Elasticsearch 9.4.4 双索引、V8 投影验收单、确定性幂等重建和版本原子激活，并以真实 MySQL、SeaweedFS、RabbitMQ、Elasticsearch + Fake Gateway 完成端到端验证；用户已于 2026-08-11 确认完成。详见 [`docs/development/N2.5-双索引投影与版本激活.md`](docs/development/N2.5-双索引投影与版本激活.md)。
-
-N3.1 已实现每次请求重新校验 Application Credential、READ Grant 和 KnowledgeBase 状态，用一条 MySQL 查询固定不可变 activeVersion 快照，并以 Redis Lua 提供 owner token、续租、冲突和短期成功重放；用户已于 2026-08-11 确认完成。该阶段尚未开放 Retrieve/Answer。详见 [`docs/development/N3.1-查询授权与Redis幂等.md`](docs/development/N3.1-查询授权与Redis幂等.md)。
-
-N3.2 已实现 `POST /api/v1/service/knowledge-bases/{knowledgeBaseId}/retrieve`：支持 `KEYWORD`、`SEMANTIC`、`HYBRID`，使用 2,560 维查询向量、Evidence BM25、Navigation KNN、Java RRF 和 canonical 原文引用，并在语义支路失败时对 HYBRID 做明确关键词降级；用户已于 2026-08-11 确认完成。详见 [`docs/development/N3.2-BM25与KNN检索及原文引用.md`](docs/development/N3.2-BM25与KNN检索及原文引用.md)。
-
-N3.3 已实现 `POST /api/v1/service/knowledge-bases/{knowledgeBaseId}/answer`：先按原问题完成一次 N3.2 检索，再由 Java 在固定权限/版本快照和硬预算内控制四个只读工具；最终只接受 `ANSWERED` 或 `INSUFFICIENT_EVIDENCE`，并校验每个 Evidence ID 和 canonical 引用。实现与全量验证已通过，用户已于 2026-08-11 确认完成；审计和评测仍属于 N3.4。详见 [`docs/development/N3.3-受控单轮Answer与只读工具.md`](docs/development/N3.3-受控单轮Answer与只读工具.md)。
-
-N3.4 已实现服务面查询审计、管理面审计查询、确定性评测执行器和性能脚本；`n3-eval-v1` 只作为格式、链路和指标冒烟夹具。成熟公开数据集的真实供应商质量、成本与端到端延迟评测尚未执行，继续作为完整功能落地后的发布前最终门禁。详见 [`docs/development/N3.4-查询审计与检索评测基线.md`](docs/development/N3.4-查询审计与检索评测基线.md)。
-
-N4.1 已实现租户管理面的文档列表/详情、版本历史、ProcessingJob 列表/详情和最终失败任务人工重试，且新 attempt 成功前旧 activeVersion 持续服务；用户已于 2026-08-12 确认完成。详见 [`docs/development/N4.1-文档版本任务查询与失败重试.md`](docs/development/N4.1-文档版本任务查询与失败重试.md)。
-
-N4.2 已实现 `DELETE /api/admin/v1/tenants/{tenantId}/knowledge-bases/{knowledgeBaseId}/documents/{documentId}` 及删除失败人工重试：受理事务立即清空 `activeVersionId`，独立 RabbitMQ 链路幂等清理全部版本的双索引、canonical/retrieval 和原文件，最终保留墓碑与历史并释放名称；用户已于 2026-08-12 确认完成。详见 [`docs/development/N4.2-文档安全删除与异步清理.md`](docs/development/N4.2-文档安全删除与异步清理.md)。
-
-N4.3 已实现 React + TypeScript 管理后台并打入同一个 Spring Boot JAR：平台管理员管理 Tenant，租户管理员管理 Application、Credential、Grant 和 KnowledgeBase；完整 Credential 只在创建后一次性展示。用户已于 2026-08-15 确认完成。详见 [`docs/development/N4.3-管理后台前端基础与核心资源管理.md`](docs/development/N4.3-管理后台前端基础与核心资源管理.md)。
-
-工程代码按 `Controller -> Service 接口 -> service.impl -> Mapper -> Entity` 组织；DTO 使用普通 class、Lombok 和 Jakarta Validation 承载请求或查询数据，VO 使用只读普通 class 承载接口响应，Entity 不直接返回。详细规则见 [`docs/development/01-工程代码分层规范.md`](docs/development/01-工程代码分层规范.md)。
-
-完整验证会通过 Testcontainers 启动临时 MySQL、SeaweedFS、RabbitMQ、Elasticsearch 和 Redis，不连接 Compose 持久数据。2026-08-13 的默认免费回归包含 144 项 Java 测试：142 项执行通过，2 项真实供应商冒烟按设计跳过，0 failure、0 error；同一 Maven 生命周期中的前端 Vitest 为 8/8：
-
-```powershell
-.\mvnw.cmd clean verify
+```bash
+sh ./mvnw -DskipTests package
 ```
 
-停止本地服务（保留四个命名卷；Redis 本身没有持久卷）：
+构建会安装前端依赖、构建管理页面并打包 JAR。这里跳过 Java 测试以便首次启动；完整验证命令见[开发与测试](#开发与测试)。
 
-```powershell
+### 3. 创建管理员并启动
+
+首次运行时，在交互式终端中创建平台管理员：
+
+```bash
+java -jar target/docquery-0.0.1-SNAPSHOT.jar bootstrap-admin --login-name=platform.admin
+```
+
+按提示输入并确认密码。该命令仅用于数据库中尚无管理员的首次初始化，完成后会退出。
+
+随后启动应用：
+
+```bash
+java -jar target/docquery-0.0.1-SNAPSHOT.jar
+```
+
+打开 [管理后台](http://localhost:8080/admin/)，使用刚创建的账号登录。平台管理员负责创建租户及租户管理员；租户管理员负责本租户的应用、知识库和文档。
+
+停止本地依赖并保留数据：
+
+```bash
 docker compose stop
 ```
 
-该命令不会退出 Docker Desktop，也不会删除任何数据卷。
+## 启用检索与问答
+
+公共配置默认关闭真实模型调用、搜索投影和文档消费，以便在未配置模型时也能启动管理功能。完整链路需要同时准备解析服务、模型配置和处理开关。
+
+### 1. 选择文档解析方式
+
+**DeepDoc GPU 解析**是默认路径。首次使用需构建基础镜像和 HTTP 服务镜像：
+
+```bash
+docker compose --profile deepdoc-p0-gpu build deepdoc-p0-gpu
+docker compose up -d --build deepdoc
+```
+
+通过 `http://localhost:18080/health/ready` 检查就绪状态。镜像构建会下载 RAGFlow 和 CUDA 相关依赖，具体配置见 [DeepDoc 服务说明](tools/deepdoc-service/README.md)。
+
+**无 GPU 的本地开发**可以使用 PDFBox、Apache POI 等本地解析器。在下方配置的 `docquery` 节点中添加：
+
+```yaml
+parsing:
+  deepdoc:
+    enabled: false
+```
+
+此方式无需启动 DeepDoc 容器，适合先用 TXT、Markdown、DOCX 或带文本层的 PDF 验证流程；不提供 DeepDoc 的 OCR 能力。
+
+### 2. 配置模型与处理链路
+
+新建 `config/application-secrets.yml`。该文件已被 Git 忽略，并由应用从工作目录加载，不会打入 JAR。请从项目根目录启动应用。
+
+下面展示配置结构。将示例中所有 `your-model-name` 替换为同一个实际模型名，并在启动应用的环境中设置所引用的 URL 和密钥。
+
+```yaml
+docquery:
+  chat:
+    profiles:
+      your-model-name:
+        model: your-model-name
+        protocol: CHAT_COMPLETIONS
+        base-url: ${DOCQUERY_CHAT_BASE_URL}
+        api-key: ${DOCQUERY_CHAT_API_KEY}
+  retrieval:
+    provider-enabled: true
+    chat-profile: your-model-name
+    embedding-base-url: ${DOCQUERY_ALIBABA_EMBEDDING_BASE_URL}
+    embedding-api-key: ${DASHSCOPE_API_KEY}
+  search:
+    enabled: true
+  messaging:
+    listener-enabled: true
+  query:
+    idempotency:
+      enabled: true
+    answer:
+      chat-profile: your-model-name
+```
+
+Chat 模型需要支持工具调用和 JSON 输出，profile 的名称必须与 `model` 一致。也可以分别为检索卡生成和问答配置不同模型；协议可选 `RESPONSES`、`CHAT_COMPLETIONS` 或 `ANTHROPIC`，对应的 Base URL 需匹配所选服务。
+
+Embedding 默认使用 `qwen3.7-text-embedding` 和 2,560 维向量，需配置相应的百炼接入地址与密钥。更换向量模型或维度时，需要同步检索配置并重建派生内容与索引。启用模型后，文档入库和问答会产生实际供应商调用。
+
+修改配置后重启 Java 应用。完整参数见 [application.yml](src/main/resources/application.yml)。
+
+### 3. 准备第一个知识库
+
+使用租户管理员账号在后台完成以下操作：
+
+1. 创建知识库并上传文档，等待文档版本变为 `READY`。
+2. 创建应用，为应用生成 Credential，并保存创建时显示的完整凭证。
+3. 为应用授予该知识库的 `READ` 或 `READ_WRITE` 权限。
+4. 复制知识库 ID，通过后台“知识库问答”“API 调试”或业务后端发起请求。
+
+默认单文件上传上限为 50 MiB。文档重建与版本更新均异步执行；处理完成前，已有生效版本继续提供查询。
+
+## API 示例
+
+两个服务接口使用相同的凭证与知识库授权：
+
+| 接口 | 用途 |
+| --- | --- |
+| `POST /api/v1/service/knowledge-bases/{id}/retrieve` | 返回排序后的原文证据及来源位置 |
+| `POST /api/v1/service/knowledge-bases/{id}/answer` | 返回基于证据的回答及引用 |
+
+下面是业务后端发起问答的示例。将知识库 ID 替换为实际值，并通过环境变量提供 Credential：
+
+```bash
+curl --request POST \
+  'http://localhost:8080/api/v1/service/knowledge-bases/1/answer' \
+  --header "Authorization: Bearer ${DOCQUERY_CREDENTIAL}" \
+  --header 'Idempotency-Key: expense-policy-001' \
+  --header 'Content-Type: application/json' \
+  --data '{"query":"差旅住宿报销标准是什么？","mode":"HYBRID","topK":5}'
+```
+
+将路径末尾的 `/answer` 改为 `/retrieve` 即可仅检索原文。`mode` 支持 `KEYWORD`、`SEMANTIC`、`HYBRID`，`topK` 范围为 1–20。每个新请求使用新的 `Idempotency-Key`，同一请求的超时重试复用原值。
+
+问答结果可能为 `ANSWERED` 或 `INSUFFICIENT_EVIDENCE`。后者是证据不足的正常结果；调用方应展示该状态，而不是把它当作已有答案。成功响应中的 `X-DocQuery-Request-Id` 可用于审计查询和排障。
+
+应用 Credential 应由业务后端保存，不应分发给最终用户的浏览器或移动端。完整请求、错误处理及客户端示例见 [API 接入说明](docs/api/外部服务API接入说明.md)，也可使用 [OpenAPI 定义](frontend/public/docs/docquery-service-api.openapi.yaml) 导入 API 工具。
+
+## 开发与测试
+
+完整构建与验证：
+
+```bash
+sh ./mvnw clean verify
+```
+
+该命令包含前端测试与构建、Java 单元测试，以及使用 Testcontainers 的集成测试。集成测试需要 Docker，并使用临时 MySQL、SeaweedFS、RabbitMQ、Elasticsearch 和 Redis，不连接本地 Compose 的业务数据。真实模型供应商测试默认跳过，需要显式配置后运行。
+
+单独开发前端时，先启动 Java 后端，再执行：
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+开发页面位于 `http://localhost:5173/admin/`，API 请求代理到 `localhost:8080`。前端测试和构建可分别运行 `npm test`、`npm run build`。
+
+```text
+src/main/java/          后端接口、业务服务、文档处理与检索
+src/main/resources/     公共配置与数据库迁移
+src/test/               Java 单元测试与集成测试
+frontend/               管理后台
+tools/deepdoc-service/  文档解析 HTTP 服务
+tools/evaluation/       评测与复验脚本
+evaluation/             评测样本定义与结果记录
+docs/                   API、设计与开发文档
+```
+
+## 使用边界
+
+- 项目仍在持续开发，公开评测记录用于说明特定样本与配置下的结果，不代表对所有文档的准确率承诺。复杂表格、扫描件和跨页内容建议使用自己的文档验证。
+- 带引用的回答仍可能存在理解或推理错误，调用方应保留查看原文的入口。
+- 管理后台包含问答调试页面；面向业务用户的会话、登录和权限由接入系统管理。
+- `compose.yaml` 面向本地开发。部署到生产环境前应替换默认密码、限制依赖服务的网络暴露、启用 TLS 与必要的服务认证，并在 HTTPS 环境设置 `DOCQUERY_SESSION_COOKIE_SECURE=true`。
+
+## 文档
+
+- [API 接入说明](docs/api/外部服务API接入说明.md)
+- [OpenAPI 定义](frontend/public/docs/docquery-service-api.openapi.yaml)
+- [管理后台功能说明](docs/product/02-DocQuery-管理后台页面说明-v0.1.md)
+- [文档检索与异步处理设计](docs/technical-decisions/02-文档检索与异步处理技术选型.md)
+- [工程分层约定](docs/development/01-工程代码分层规范.md)
+- [DeepDoc 服务说明](tools/deepdoc-service/README.md)
+- [评测样本与记录](evaluation/)
+
+## 反馈与贡献
+
+欢迎通过 [Issues](https://github.com/thcurse/DocQuery/issues) 提交问题、使用反馈或功能建议，也欢迎提交 Pull Request。
+
+报告问题时，请提供复现步骤、运行环境和脱敏后的错误信息。涉及文档解析或检索时，尽量附上可以公开的最小文档样例。修改代码时，请为行为变化补充相应测试；涉及 API 或配置变化时，一并更新文档。
+
+## 许可证
+
+仓库目前尚未提供 `LICENSE` 文件，许可证信息待补充。
