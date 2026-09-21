@@ -558,7 +558,7 @@ def write_dataset(
         "DocQuery 不生成、不转换、不改写这些文件。\n\n"
         "正式来源：[MMLongBench-Doc 官方仓库](https://github.com/mayubo2333/MMLongBench-Doc)。"
         "上游数据仅限研究用途并采用 CC BY-NC 4.0；本产物只用于 DocQuery 的非商业评测与"
-        "秋招展示，不得作为商用语料重新分发。\n\n"
+        "技术演示，不得作为商用语料重新分发。\n\n"
         "本子集只选择官方标为 `Pure-text (Plain-text)` 的可回答题，排除依赖图片、图表、"
         "表格或版面坐标的问题；不可回答题保留官方空证据标注。它不是官方完整榜单结果，"
         "也不证明 OCR、扫描件、复杂表格、视觉问答或 DOCX 质量。\n\n"

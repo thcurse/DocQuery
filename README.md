@@ -245,13 +245,12 @@ src/test/               Java 单元测试与集成测试
 frontend/               管理后台
 tools/deepdoc-service/  文档解析 HTTP 服务
 tools/evaluation/       评测与复验脚本
-evaluation/             评测样本定义与结果记录
-docs/                   API、设计与开发文档
+docs/                   API 接入说明
 ```
 
 ## 使用边界
 
-- 项目仍在持续开发，公开评测记录用于说明特定样本与配置下的结果，不代表对所有文档的准确率承诺。复杂表格、扫描件和跨页内容建议使用自己的文档验证。
+- 项目仍在持续开发，检索与回答效果会随文档类型和配置变化，不代表对所有文档的准确率承诺。复杂表格、扫描件和跨页内容建议使用自己的文档验证。
 - 带引用的回答仍可能存在理解或推理错误，调用方应保留查看原文的入口。
 - 管理后台包含问答调试页面；面向业务用户的会话、登录和权限由接入系统管理。
 - `compose.yaml` 面向本地开发。部署到生产环境前应替换默认密码、限制依赖服务的网络暴露、启用 TLS 与必要的服务认证，并在 HTTPS 环境设置 `DOCQUERY_SESSION_COOKIE_SECURE=true`。
@@ -261,7 +260,6 @@ docs/                   API、设计与开发文档
 - [API 接入说明](docs/api/外部服务API接入说明.md)
 - [OpenAPI 定义](frontend/public/docs/docquery-service-api.openapi.yaml)
 - [DeepDoc 服务说明](tools/deepdoc-service/README.md)
-- [评测样本与记录](evaluation/)
 
 ## 反馈与贡献
 
@@ -271,4 +269,4 @@ docs/                   API、设计与开发文档
 
 ## 许可证
 
-仓库目前尚未提供 `LICENSE` 文件，许可证信息待补充。
+本项目采用 [Apache License 2.0](LICENSE) 授权。
