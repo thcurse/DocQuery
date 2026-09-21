@@ -260,9 +260,6 @@ docs/                   API、设计与开发文档
 
 - [API 接入说明](docs/api/外部服务API接入说明.md)
 - [OpenAPI 定义](frontend/public/docs/docquery-service-api.openapi.yaml)
-- [管理后台功能说明](docs/product/02-DocQuery-管理后台页面说明-v0.1.md)
-- [文档检索与异步处理设计](docs/technical-decisions/02-文档检索与异步处理技术选型.md)
-- [工程分层约定](docs/development/01-工程代码分层规范.md)
 - [DeepDoc 服务说明](tools/deepdoc-service/README.md)
 - [评测样本与记录](evaluation/)
 

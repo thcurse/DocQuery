@@ -14,3 +14,9 @@ evaluation/**/.render-qa/
 evaluation/mmlongbench-docquery-v1/corpus/*.pdf
 tmp/
 /config/application-secrets.yml
+
+# 内部文档：仅保留在本地，不入库、不推送
+docs/development/
+docs/product/
+docs/technical-decisions/
+docs/DocQuery-Java后端项目面试100问答.md
