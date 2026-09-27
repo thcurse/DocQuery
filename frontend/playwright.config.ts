@@ -1,8 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
-
-const baseURL = process.env.DOCQUERY_E2E_BASE_URL ?? 'http://127.0.0.1:8080'
-const browserChannel = process.env.DOCQUERY_E2E_BROWSER_CHANNEL || undefined
-
+const external = process.env.DOCQUERY_E2E_BASE_URL
+const baseURL = external || 'http://127.0.0.1:5173'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -14,8 +12,16 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     baseURL,
-    channel: browserChannel,
+    channel: process.env.DOCQUERY_E2E_BROWSER_CHANNEL || undefined,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
+  webServer: external
+    ? undefined
+    : {
+        command: 'node scripts/dev.mjs',
+        url: `${baseURL}/admin/`,
+        reuseExistingServer: !process.env.CI,
+        timeout: 60_000,
+      },
 })

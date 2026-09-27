@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: DocQuery Service API
-  version: 1.0.0
+  version: 1.1.0
   description: Application Credential authenticated retrieval and controlled single-turn answer API.
 servers:
   - url: "{baseUrl}"
@@ -83,6 +83,60 @@ paths:
           $ref: '#/components/responses/Conflict'
         '503':
           $ref: '#/components/responses/Unavailable'
+  /api/v1/service/knowledge-bases/{knowledgeBaseId}/answer/stream:
+    post:
+      summary: Generate a controlled single-turn answer with citations
+      operationId: answerStream
+      security:
+        - applicationCredential: []
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeBaseId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/TraceId'
+        - $ref: '#/components/parameters/ActorRef'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: |
+            SSE events: start(version, requestId), progress(stage), delta(seq, text),
+            done(result: AnswerResponse, replayed), error(code, message, retryable, clearPreview).
+            Preview text is unvalidated. done is authoritative. EOF without done/error is interrupted.
+            Replays send start and done without delta. No automatic reconnect or Last-Event-ID replay.
+            ANSWER_OUTPUT_INVALID clears preview; invalid output is not insufficient evidence.
+            ANSWER_MODEL_REQUEST_INVALID clears preview and has retryable=false.
+            Only done establishes citations. User retry reuses the key; explicit regenerate uses a new key.
+          headers:
+            X-DocQuery-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: start
+                data: {"version":1,"requestId":"example-request"}
+
+                event: progress
+                data: {"stage":"generating"}
+
+                event: delta
+                data: {"seq":1,"text":"Answer preview"}
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/KnowledgeBaseUnavailable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
 components:
   securitySchemes:
     applicationCredential:
@@ -148,13 +202,19 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Conflict:
-      description: Idempotency conflict, active-version context change, or request still in progress
+      description: Idempotency conflict (including model/output-mode/policy changes), active-version context change, or request still in progress
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
     Unavailable:
-      description: Idempotency, embedding, search, evidence, or answer dependency is temporarily unavailable
+      description: |
+        Dependency or answer failure. ANSWER_OUTPUT_INVALID means malformed output, invalid citations,
+        or truncated output; it is not INSUFFICIENT_EVIDENCE and is never cached as a valid answer.
+        ANSWER_MODEL_REQUEST_INVALID means incompatible model configuration: do not retry unchanged.
+        ANSWER_MODEL_UNAVAILABLE and ANSWER_EXECUTION_TIMEOUT retain their dependency/timeout meaning.
+        For an established SSE response, these failures use HTTP 200 plus a terminal error event.
+        Output/configuration failures have clearPreview=true; configuration failures have retryable=false.
       content:
         application/json:
           schema:

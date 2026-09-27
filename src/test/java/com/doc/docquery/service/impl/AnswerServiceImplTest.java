@@ -38,6 +38,93 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 /** 不依赖供应商或容器，验证 N3.3 Agent 控制面、工具边界、引用和幂等。 */
 class AnswerServiceImplTest {
+    @Test void modelPolicyAndBudgetChangesRejectOldCompletedKeys() {
+        for (String setting : List.of("model", "policy", "budget", "outline-budget")) {
+            var fixture = fixture(true);
+            var gateway = new ScriptedGateway(answered("七天内退款。", "E1"));
+            var cache = new StatefulIdempotency(); cache.checkFingerprint = true;
+            var properties = new AnswerProperties();
+            var service = service(fixture,gateway,cache,Optional.empty(),properties);
+            var request = request("退款期限", "HYBRID", 1);
+            service.answer("Bearer token", "same-key", 21L, request);
+            int calls = gateway.calls;
+            switch (setting) {
+                case "model" -> gateway.identity = "different-model-configuration";
+                case "policy" -> properties.setPolicyVersion("changed-policy");
+                case "budget" -> properties.setMaxOutputTokens(8192);
+                case "outline-budget" -> properties.setMaxOutlineNodes(100);
+            }
+            var failure = catchThrowableOfType(com.doc.docquery.cache.QueryIdempotencyException.class,
+                    () -> service.answer("Bearer token", "same-key", 21L, request));
+            assertThat(failure.reason()).isEqualTo(com.doc.docquery.cache.QueryIdempotencyException.Reason.IDEMPOTENCY_CONFLICT);
+            assertThat(gateway.calls).isEqualTo(calls);
+        }
+    }
+
+    @Test
+    void rejectsInvalidFinalOutputsWithoutCachingAndAllowsRetry() {
+        List<String> invalid = List.of(
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[\"E1\"]} {}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"[E1]\",\"evidenceIds\":[\"E1\"]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[\"E1\"],\"extra\":true}",
+                "not-json", "{}", "{\"status\":\"ANSWERED\",\"answer\":\"text\"}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":\"E1\"}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[1]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[\"[1]\"]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"text\",\"evidenceIds\":[\"E99\"]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"\",\"evidenceIds\":[\"E1\"]}",
+                "{\"status\":\"UNKNOWN\",\"answer\":null,\"evidenceIds\":[]}",
+                "{\"status\":\"INSUFFICIENT_EVIDENCE\",\"answer\":\"text\",\"evidenceIds\":[]}",
+                "{\"status\":\"ANSWERED\",\"answer\":\"unfinished");
+        for (String output : invalid) for (boolean stream : List.of(false, true)) {
+            Fixture fixture = fixture(true);
+            StatefulIdempotency cache = new StatefulIdempotency();
+            ScriptedGateway gateway = new ScriptedGateway(answered("selection", "E1")).withFinalization(output);
+            AnswerServiceImpl service = service(fixture, gateway, cache);
+            AnswerException failure = catchThrowableOfType(AnswerException.class, () ->
+                    service.prepare("Bearer token", "retry-key", 21L, request("退款期限", "HYBRID", 1), new QueryExecutionTelemetry())
+                            .execute(new com.doc.docquery.stream.AnswerExecution(stream, stage -> {}, text -> {})));
+            assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
+            assertThat(cache.completedJson).isNull();
+            assertThat(cache.releases).isEqualTo(1);
+            var retry = service(fixture, new ScriptedGateway(answered("七天内退款。", "E1")), cache)
+                    .answer("Bearer token", "retry-key", 21L, request("退款期限", "HYBRID", 1));
+            assertThat(retry.getStatus()).isEqualTo("ANSWERED");
+            assertThat(cache.completedJson).isNotNull();
+        }
+    }
+
+
+    @Test
+    void streamAndOrdinaryShareCompletedResultAndCancellationDoesNotCommit() {
+        Fixture fixture = fixture(true);
+        ScriptedGateway gateway = new ScriptedGateway(answered("流式答案", "E1"));
+        StatefulIdempotency idempotency = new StatefulIdempotency();
+        AnswerServiceImpl service = service(fixture, gateway, idempotency);
+        var prepared = service.prepare("Bearer token", "stream-key", 21L,
+                request("退款期限？", "HYBRID", 2), new QueryExecutionTelemetry());
+        List<String> pieces = new ArrayList<>();
+        var result = prepared.execute(new com.doc.docquery.stream.AnswerExecution(true, stage -> {}, pieces::add));
+        assertThat(pieces).containsExactly("预览文字");
+        assertThat(result.getStatus()).isEqualTo("ANSWERED");
+        int calls = gateway.calls;
+        var replay = service.answer("Bearer token", "stream-key", 21L, request("退款期限？", "HYBRID", 2));
+        assertThat(replay.getAnswer()).isEqualTo(result.getAnswer());
+        assertThat(gateway.calls).isEqualTo(calls);
+        assertThat(idempotency.releases).isZero();
+
+        var other = new StatefulIdempotency();
+        var cancelled = service(fixture, new ScriptedGateway(answered("不提交", "E1")), other)
+                .prepare("Bearer token", "cancel-key", 21L, request("退款期限？", "HYBRID", 2), new QueryExecutionTelemetry());
+        var execution = new com.doc.docquery.stream.AnswerExecution(true, stage -> {}, text -> {});
+        execution.cancel(com.doc.docquery.stream.AnswerStreamException.cancelled());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> cancelled.execute(execution))
+                .isInstanceOf(com.doc.docquery.stream.AnswerStreamException.class);
+        assertThat(other.completedJson).isNull();
+        assertThat(other.releases).isEqualTo(1);
+    }
+
 
     @Test
     void answersFromCanonicalEvidenceAndReplaysWithoutSecondModelCall() {
@@ -435,19 +522,17 @@ class AnswerServiceImplTest {
         properties.setMaxFinalizationSourceTokens(11);
         QueryExecutionTelemetry telemetry = new QueryExecutionTelemetry();
 
-        AnswerResponseVO response = service(
+        AnswerException failure = catchThrowableOfType(AnswerException.class, () -> service(
                 fixture, gateway, new StatefulIdempotency(), Optional.empty(), properties
         ).answer(
                 "Bearer token", "over-finalization-budget-key", 21L,
                 request("列出全部三项要求", "HYBRID", 1), telemetry
-        );
+        ));
 
         var payload = new ObjectMapper().readTree(gateway.finalizationRequest.userPayload());
         assertThat(payload.get("budgetExhausted").asBoolean()).isTrue();
         assertThat(payload.get("evidencePackages")).isEmpty();
-        assertThat(response.getStatus()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(response.getAnswer()).isNull();
-        assertThat(response.getCitations()).isEmpty();
+        assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
         assertThat(telemetry.getCanonicalCharacters()).isEqualTo("First item".length());
     }
 
@@ -565,16 +650,14 @@ class AnswerServiceImplTest {
                 answered("First item only", "E1")
         ).withFinalization(answered("越权引用下一页。", "E5").text());
 
-        AnswerResponseVO response = service(
+        AnswerException failure = catchThrowableOfType(AnswerException.class, () -> service(
                 fixture, gateway, new StatefulIdempotency()
         ).answer(
                 "Bearer token", "finalizer-handoff-boundary-key", 21L,
                 request("列出第二页要求", "HYBRID", 1)
-        );
+        ));
 
-        assertThat(response.getStatus()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(response.getAnswer()).isNull();
-        assertThat(response.getCitations()).isEmpty();
+        assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
     }
 
     @Test
@@ -761,7 +844,7 @@ class AnswerServiceImplTest {
         ScriptedGateway gateway = new ScriptedGateway(
                 toolTurn("c1", "open", "{\"ref\":\"S1\"}"),
                 toolTurn("c2", "search", "{\"query\":\"中间三项验证\"}"),
-                answered("三项齐全。", "E4")
+                answered("三项齐全。", "E2")
         );
 
         service(fixture, gateway, new StatefulIdempotency()).answer(
@@ -901,16 +984,14 @@ class AnswerServiceImplTest {
                 new AnswerChatGateway.Turn("七天内退款。[E1]", List.of())
         );
 
-        AnswerResponseVO response = service(
+        AnswerException failure = catchThrowableOfType(AnswerException.class, () -> service(
                 fixture, gateway, new StatefulIdempotency()
         ).answer(
                 "Bearer token", "ordinary-text-key", 21L,
                 request("退款期限", "HYBRID", 1)
-        );
+        ));
 
-        assertThat(response.getStatus()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(response.getAnswer()).isNull();
-        assertThat(response.getCitations()).isEmpty();
+        assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
     }
 
     @Test
@@ -920,16 +1001,14 @@ class AnswerServiceImplTest {
                 new AnswerChatGateway.Turn("I cannot verify this from the evidence.", List.of())
         );
 
-        AnswerResponseVO response = service(
+        AnswerException failure = catchThrowableOfType(AnswerException.class, () -> service(
                 fixture, gateway, new StatefulIdempotency()
         ).answer(
                 "Bearer token", "ordinary-refusal-key", 21L,
                 request("退款期限", "HYBRID", 1)
-        );
+        ));
 
-        assertThat(response.getStatus()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(response.getAnswer()).isNull();
-        assertThat(response.getCitations()).isEmpty();
+        assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
     }
 
     @Test
@@ -965,16 +1044,14 @@ class AnswerServiceImplTest {
         ScriptedGateway gateway = new ScriptedGateway(
                 invalidUnknownCitation()
         );
-        AnswerResponseVO response = service(
+        AnswerException failure = catchThrowableOfType(AnswerException.class, () -> service(
                 fixture, gateway, new StatefulIdempotency()
         ).answer(
                 "Bearer token", "unknown-only-key", 21L,
                 request("退款期限", "HYBRID", 1)
-        );
+        ));
 
-        assertThat(response.getStatus()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(response.getAnswer()).isNull();
-        assertThat(response.getCitations()).isEmpty();
+        assertThat(failure.reason()).isEqualTo(AnswerException.Reason.OUTPUT_INVALID);
     }
 
     @Test
@@ -1748,6 +1825,9 @@ class AnswerServiceImplTest {
 
     private static final class ScriptedGateway
             implements AnswerChatGateway, AnswerAgentGateway {
+        private String identity = "test-model-configuration";
+        @Override public String configurationIdentity() { return identity; }
+
         private final Deque<Turn> turns = new ArrayDeque<>();
         private final List<Boolean> toolsEnabled = new ArrayList<>();
         private final List<List<Message>> messages = new ArrayList<>();
@@ -1799,10 +1879,24 @@ class AnswerServiceImplTest {
         }
 
         @Override
+        public String streamFinalAnswer(FinalizationRequest request, Observer observer,
+                com.doc.docquery.stream.AnswerExecution execution, int maxBytes) {
+            execution.delta("预览文字");
+            return finalizeAnswer(request, observer);
+        }
+
+        @Override
         public String finalizeAnswer(FinalizationRequest request, Observer observer) {
             finalizationRequest = request;
             if (finalizationOutput == null) {
-                return AnswerAgentGateway.super.finalizeAnswer(request, observer);
+                try {
+                    var value = new ObjectMapper().readTree(request.agentSelectionJson());
+                    if (value.isObject()) {
+                        ((tools.jackson.databind.node.ObjectNode) value).remove("readRefs");
+                        return value.toString();
+                    }
+                } catch (RuntimeException ignored) { }
+                return request.agentSelectionJson();
             }
             observer.beforeModelCall();
             return finalizationOutput;
@@ -1813,6 +1907,8 @@ class AnswerServiceImplTest {
     private static final class StatefulIdempotency implements QueryIdempotencyService {
         private QueryOperation operation;
         private String completedJson;
+        private String fingerprint;
+        private boolean checkFingerprint;
         private int renewals;
         private int releases;
 
@@ -1823,6 +1919,10 @@ class AnswerServiceImplTest {
                 String key,
                 String requestFingerprint
         ) {
+            if (checkFingerprint && fingerprint != null && !fingerprint.equals(requestFingerprint))
+                throw new com.doc.docquery.cache.QueryIdempotencyException(
+                    com.doc.docquery.cache.QueryIdempotencyException.Reason.IDEMPOTENCY_CONFLICT, "changed");
+            fingerprint = requestFingerprint;
             this.operation = operation;
             if (completedJson != null) {
                 return QueryIdempotencyClaim.replay(

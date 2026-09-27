@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$SkipBuild,
     [switch]$ManualBrowser
 )
@@ -22,6 +22,8 @@ $storageSecretKey = 'n44-e2e-storage-secret'
 $platformLogin = 'platform.e2e'
 $platformPassword = 'Platform Browser Password 2026!'
 $appProcess = $null
+$frontend = $null
+. (Join-Path $PSScriptRoot '..\frontend-e2e.ps1')
 $fakeProcess = $null
 $appClasspath = $null
 $preexistingAppPids = @()
@@ -182,9 +184,17 @@ try {
         'DOCQUERY_SEARCH_ENABLED' = 'true'
         'DOCQUERY_ELASTICSEARCH_ENDPOINT' = "http://127.0.0.1:$elasticsearchPort"
         'DOCQUERY_RETRIEVAL_PROVIDER_ENABLED' = 'true'
-        'DOCQUERY_PACKY_BASE_URL' = "http://127.0.0.1:$fakePort/v1"
-        'PACKY_API_KEY' = 'n44-fake-chat-key'
-        'DOCQUERY_PACKY_CHAT_MODEL' = 'grok-4.6'
+        # Explicit profiles keep this isolated test independent of local model credentials.
+        'SPRING_CONFIG_IMPORT' = ''
+        'SPRING_APPLICATION_JSON' = (@{
+            'docquery.retrieval.chat-profile' = 'n44-fake-chat'
+            'docquery.query.answer.chat-profile' = 'n44-fake-chat'
+            'docquery.chat.profiles.n44-fake-chat.model' = 'n44-fake-chat'
+            'docquery.chat.profiles.n44-fake-chat.protocol' = 'CHAT_COMPLETIONS'
+            'docquery.chat.profiles.n44-fake-chat.base-url' = "http://127.0.0.1:$fakePort/v1"
+            'docquery.chat.profiles.n44-fake-chat.api-key' = 'n44-fake-chat-key'
+            'docquery.chat.profiles.n44-fake-chat.max-retries' = 0
+        } | ConvertTo-Json -Compress)
         'DOCQUERY_ALIBABA_EMBEDDING_BASE_URL' = "http://127.0.0.1:$fakePort/v1"
         'DASHSCOPE_API_KEY' = 'n44-fake-embedding-key'
         'DOCQUERY_REDIS_HOST' = '127.0.0.1'
@@ -216,6 +226,7 @@ try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/api/admin/v1/auth/csrf" -TimeoutSec 2
         return $response.StatusCode -eq 200
     } 180 'Spring Boot did not become ready'
+    $frontend = Start-DocQueryFrontend $projectRoot $baseUrl
 
     Push-Location (Join-Path $projectRoot 'frontend')
     try {
@@ -232,18 +243,18 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Failed to seed the platform administrator' }
 
     if ($ManualBrowser) {
-        Write-Host "N4.4 browser environment ready: $baseUrl/admin/"
+        Write-Host "N4.4 browser environment ready: $( $frontend.BaseUrl )/admin/"
         Write-Host "Platform test login: $platformLogin"
         Write-Host 'Press Enter to stop the isolated browser environment.'
         [void](Read-Host)
     } else {
-        $env:DOCQUERY_E2E_BASE_URL = $baseUrl
+        $env:DOCQUERY_E2E_BASE_URL = $frontend.BaseUrl
         $env:DOCQUERY_E2E_PLATFORM_LOGIN = $platformLogin
         $env:DOCQUERY_E2E_PLATFORM_PASSWORD = $platformPassword
         $env:DOCQUERY_E2E_BROWSER_CHANNEL = 'msedge'
         Push-Location (Join-Path $projectRoot 'frontend')
         try {
-            & npx.cmd playwright test e2e/n44-showcase-flow.spec.ts
+            & pnpm exec playwright test e2e/n44-showcase-flow.spec.ts
             if ($LASTEXITCODE -ne 0) { throw 'N4.4 Playwright browser acceptance failed' }
         } finally {
             Pop-Location
@@ -272,6 +283,7 @@ try {
     }
     throw
 } finally {
+    Stop-DocQueryFrontend $frontend
     if ($appProcess -and -not $appProcess.HasExited) {
         Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
         $appProcess.WaitForExit(10000) | Out-Null

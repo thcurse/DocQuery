@@ -11,12 +11,19 @@ logs/
 __pycache__/
 *.pyc
 tmp/
+/.local/
+/.claude/
 /config/application-secrets.yml
+hs_err_pid*.log
+replay_pid*.log
 
 # 内部资料：仅保留在本地，不入库、不推送（前导 / 锚定仓库根目录）
 /docs/development/
 /docs/product/
 /docs/technical-decisions/
+/docs/design/
+/docs/diagnostics/
 /docs/DocQuery-Java后端项目面试100问答.md
 /CLAUDE.md
 /evaluation/
+/tools/evaluation/probe_answer_contract.py

@@ -8,6 +8,12 @@ import com.doc.docquery.vo.RetrieveResponseVO;
 
 /** 正式HTTP服务面唯一允许使用的应用审计门面。 */
 public interface AuditedQueryService {
+    default com.doc.docquery.stream.PreparedAnswer prepareAnswer(
+            String requestId, String authorization, String key, String trace, String actor,
+            long knowledgeBaseId, AnswerRequestDTO request) {
+        throw new UnsupportedOperationException("Prepared execution is not supported");
+    }
+
     AuditedQueryResult<RetrieveResponseVO> retrieve(
             String requestId,
             String authorizationHeader,

@@ -61,6 +61,32 @@ class LangChain4jAnswerAgentAdapterTest {
     }
 
     @Test
+    void exposesOnlySupportedToolArguments() {
+        AtomicReference<ChatRequest> captured = new AtomicReference<>();
+        ChatModel model = new ChatModel() {
+            @Override public ChatResponse doChat(ChatRequest request) {
+                captured.set(request);
+                return submitEvidence();
+            }
+        };
+        new LangChain4jAnswerAgentAdapter(model).start(
+                new AnswerAgentGateway.Request("system", 3),
+                (name, arguments) -> "{}", new NoopObserver()).next("question");
+        var specifications = captured.get().toolSpecifications();
+        assertThat(specifications).extracting(spec -> spec.name())
+                .containsExactly("search", "open", "submit_evidence");
+        var search = specifications.get(0).parameters();
+        assertThat(search.required()).containsExactly("query");
+        assertThat(search.properties()).containsOnlyKeys("query", "documentRef", "cursor");
+        var open = specifications.get(1).parameters();
+        assertThat(open.required()).containsExactly("ref");
+        assertThat(open.properties()).containsOnlyKeys("ref");
+        var submit = specifications.get(2).parameters();
+        assertThat(submit.required()).containsExactly("evidenceIds", "readRefs");
+        assertThat(submit.properties()).containsOnlyKeys("evidenceIds", "readRefs");
+    }
+
+    @Test
     void reservesLastToolRoundForSubmitEvidenceHandoff() {
         List<ChatRequest> observed = new ArrayList<>();
         AtomicInteger modelCalls = new AtomicInteger();
@@ -213,15 +239,41 @@ class LangChain4jAnswerAgentAdapterTest {
             assertThat(appender.list).singleElement().satisfies(event -> {
                 assertThat(event.getFormattedMessage())
                         .contains("docquery_answer_provider_failure")
-                        .contains("java.lang.IllegalStateException");
-                assertThat(event.getThrowableProxy()).isNotNull();
-                assertThat(event.getThrowableProxy().getMessage())
-                        .contains("provider-status=400 unsupported response_format");
+                        .contains("category=UNAVAILABLE")
+                        .doesNotContain("provider-status", "unsupported response_format");
+                assertThat(event.getThrowableProxy()).isNull();
             });
         } finally {
             logger.detachAppender(appender);
             appender.stop();
         }
+    }
+
+    @Test
+    void unknownToolChecksLifecycleBeforeNextModelCall() {
+        AtomicInteger calls = new AtomicInteger();
+        AtomicInteger after = new AtomicInteger();
+        ChatModel model = new ChatModel() {
+            @Override public ChatResponse doChat(ChatRequest request) {
+                if (calls.getAndIncrement() == 0) {
+                    return ChatResponse.builder().aiMessage(AiMessage.from(ToolExecutionRequest.builder()
+                            .id("unknown-1").name("invented_tool").arguments("{}").build())).build();
+                }
+                assertThat(after).hasValue(1);
+                assertThat(request.messages()).anySatisfy(message ->
+                        assertThat(message.toString()).contains("Unknown tool; use search, open or submit_evidence"));
+                return submitEvidence();
+            }
+        };
+        AnswerAgentGateway.Observer observer = new NoopObserver() {
+            @Override public void afterToolCall() { after.incrementAndGet(); }
+        };
+        String result = new LangChain4jAnswerAgentAdapter(model).start(
+                new AnswerAgentGateway.Request("system", 3),
+                (name, arguments) -> { throw new AssertionError("Unknown tool must not execute"); },
+                observer).next("question");
+        assertThat(result).contains("E1");
+        assertThat(calls).hasValue(2);
     }
 
     private static ChatResponse submitEvidence() {

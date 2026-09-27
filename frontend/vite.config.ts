@@ -1,23 +1,17 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-
+import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   base: '/admin/',
-  plugins: [react()],
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-  },
+  plugins: [vue()],
   server: {
     port: 5173,
-    proxy: {
-      '/api': 'http://127.0.0.1:8080',
-    },
+    strictPort: true,
+    proxy: { '/api': process.env.DOCQUERY_API_TARGET || 'http://127.0.0.1:8080' },
   },
   test: {
+    maxWorkers: 1,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    css: true,
     exclude: ['e2e/**', '**/node_modules/**', '**/dist/**'],
   },
 })

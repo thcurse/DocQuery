@@ -1,29 +1,22 @@
-import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
-
-afterEach(cleanup)
-
-// JSDOM has no layout engine; Ant Design still needs the browser observer API.
+import { vi } from 'vitest'
+Object.defineProperty(window, 'matchMedia', {
+  value: vi.fn().mockImplementation(() => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
+})
 globalThis.ResizeObserver = class {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
-
-const nativeGetComputedStyle = window.getComputedStyle.bind(window)
-window.getComputedStyle = (element: Element) => nativeGetComputedStyle(element)
-
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => undefined,
-    removeListener: () => undefined,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-    dispatchEvent: () => false,
-  }),
-})
+if (!Blob.prototype.text)
+  Blob.prototype.text = function () {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(reader.error)
+      reader.readAsText(this)
+    })
+  }

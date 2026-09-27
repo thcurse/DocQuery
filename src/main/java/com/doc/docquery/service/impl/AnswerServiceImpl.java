@@ -1,5 +1,8 @@
 package com.doc.docquery.service.impl;
 
+import com.doc.docquery.stream.AnswerExecution;
+import com.doc.docquery.stream.PreparedAnswer;
+
 import com.doc.docquery.cache.QueryIdempotencyClaim;
 import com.doc.docquery.cache.QueryIdempotencyException;
 import com.doc.docquery.cache.QueryOperation;
@@ -62,7 +65,7 @@ import static com.doc.docquery.service.AnswerException.Reason.REQUEST_IN_PROGRES
 public class AnswerServiceImpl implements AnswerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnswerServiceImpl.class);
-    private static final String REQUEST_VERSION = "answer-request-v3";
+    private static final String REQUEST_VERSION = "answer-request-v5";
     private static final String RETRIEVE_RANKING_VERSION =
             "answer-search-coverage-rerank-v2";
     private static final int SEARCH_CONTEXT_RADIUS = 3;
@@ -130,8 +133,13 @@ public class AnswerServiceImpl implements AnswerService {
 
             Output exactly one JSON object with keys status, answer, and evidenceIds. For ANSWERED,
             answer is concise plain text without citation markers and evidenceIds contains only
-            supporting E# values present in the payload. For INSUFFICIENT_EVIDENCE, answer is null
+            supporting E# values from allowedEvidenceIds. ANSWERED requires a non-empty answer and
+            a non-empty evidenceIds array. Never omit citations or replace them with numbers,
+            section references, objects, or document names. For INSUFFICIENT_EVIDENCE, answer is null
             and evidenceIds is empty. Do not output reasoning or markdown fences.
+            Valid examples (E1 must actually exist in allowedEvidenceIds):
+            {"status":"ANSWERED","answer":"A fact supported by the evidence.","evidenceIds":["E1"]}
+            {"status":"INSUFFICIENT_EVIDENCE","answer":null,"evidenceIds":[]}
             """;
 
     private final QueryAccessService accessService;
@@ -188,6 +196,13 @@ public class AnswerServiceImpl implements AnswerService {
             AnswerRequestDTO request,
             QueryExecutionTelemetry telemetry
     ) {
+        return prepare(authorizationHeader, idempotencyKey, knowledgeBaseId, request, telemetry)
+                .execute(AnswerExecution.ordinary());
+    }
+
+    @Override
+    public PreparedAnswer prepare(String authorizationHeader, String idempotencyKey,
+            long knowledgeBaseId, AnswerRequestDTO request, QueryExecutionTelemetry telemetry) {
         NormalizedRequest normalized = normalize(knowledgeBaseId, request);
         QueryAccessContext context = accessService.authorizeAndSnapshot(
                 authorizationHeader,
@@ -213,36 +228,56 @@ public class AnswerServiceImpl implements AnswerService {
             telemetry.idempotency(QueryIdempotencyDisposition.IN_PROGRESS);
             throw new AnswerException(REQUEST_IN_PROGRESS, "Answer request is in progress");
         }
-        if (claim.getStatus() == QueryIdempotencyClaim.Status.REPLAY) {
-            telemetry.idempotency(QueryIdempotencyDisposition.REPLAY);
-            AnswerResponseVO response = replay(claim.getReplayResult());
-            telemetry.capture(response);
-            return response;
-        }
-        telemetry.idempotency(QueryIdempotencyDisposition.OWNER);
-
-        try {
-            AnswerResponseVO response = execute(context, claim, normalized, telemetry);
-            telemetry.capture(response);
-            idempotencyService.complete(claim, objectMapper.writeValueAsString(response));
-            return response;
-        } catch (RuntimeException exception) {
-            try {
-                idempotencyService.release(claim);
-            } catch (RuntimeException releaseFailure) {
-                exception.addSuppressed(releaseFailure);
+        boolean replayed = claim.getStatus() == QueryIdempotencyClaim.Status.REPLAY;
+        telemetry.idempotency(replayed ? QueryIdempotencyDisposition.REPLAY : QueryIdempotencyDisposition.OWNER);
+        return new PreparedAnswer() {
+            private final java.util.concurrent.atomic.AtomicBoolean used = new java.util.concurrent.atomic.AtomicBoolean();
+            private boolean finished;
+            public boolean replayed() { return replayed; }
+            public synchronized void renew() {
+                if (!finished && !replayed && !idempotencyService.renew(claim))
+                    throw new QueryIdempotencyException(OWNERSHIP_LOST, "Query ownership expired");
             }
-            throw exception;
-        }
+            public synchronized void abandon() {
+                if (!finished) {
+                    finished = true;
+                    if (!replayed) idempotencyService.release(claim);
+                }
+            }
+            public AnswerResponseVO execute(AnswerExecution execution) {
+                if (!used.compareAndSet(false, true)) throw new IllegalStateException("Execution already used");
+                execution.begin(properties.getTotalTimeout());
+                try {
+                    AnswerResponseVO result = replayed ? replay(claim.getReplayResult())
+                            : AnswerServiceImpl.this.execute(context, claim, normalized, telemetry, execution);
+                    telemetry.capture(result);
+                    execution.commit(() -> {
+                        synchronized (this) {
+                            if (!replayed) idempotencyService.complete(claim, objectMapper.writeValueAsString(result));
+                            finished = true;
+                        }
+                    });
+                    return result;
+                } catch (RuntimeException exception) {
+                    try { execution.check(); } catch (RuntimeException cancelled) { exception = cancelled; }
+                    try { abandon(); } catch (RuntimeException releaseFailure) { exception.addSuppressed(releaseFailure); }
+                    throw exception;
+                } finally {
+                    execution.clearHooks();
+                }
+            }
+        };
     }
 
     private AnswerResponseVO execute(
             QueryAccessContext context,
             QueryIdempotencyClaim claim,
             NormalizedRequest request,
-            QueryExecutionTelemetry telemetry
+            QueryExecutionTelemetry telemetry,
+            AnswerExecution execution
     ) {
         long deadline = deadline(properties.getTotalTimeout());
+        execution.progress("retrieving");
         AgentSession session = new AgentSession(context, request);
 
         Map<String, Object> initialArguments = Map.of("query", request.query());
@@ -271,10 +306,15 @@ public class AnswerServiceImpl implements AnswerService {
         AnswerAgentGateway gateway = agentGateway.orElseThrow(
                 () -> new AnswerException(MODEL_UNAVAILABLE, "Answer model is unavailable")
         );
-        AgentObserver observer = new AgentObserver(deadline, claim, telemetry);
+        AgentObserver observer = new AgentObserver(deadline, claim, telemetry, execution, session.primaryRetrieval.getQueryExecutionId());
         AnswerAgentGateway.AgentRun agent = gateway.start(
                 new AnswerAgentGateway.Request(SYSTEM_PROMPT, properties.getMaxToolRounds()),
-                (name, argumentsJson) -> executeTool(session, name, argumentsJson),
+                (name, argumentsJson) -> {
+                    execution.check();
+                    String result = executeTool(session, name, argumentsJson);
+                    execution.check();
+                    return result;
+                },
                 observer
         );
         String agentSelection = agent.next(objectMapper.writeValueAsString(userPayload));
@@ -288,15 +328,18 @@ public class AnswerServiceImpl implements AnswerService {
                 selected.sourceTokens(),
                 selected.budgetExhausted()
         );
-        String output = gateway.finalizeAnswer(
-                new AnswerAgentGateway.FinalizationRequest(
+        execution.progress("generating");
+        AnswerAgentGateway.FinalizationRequest finalization = new AnswerAgentGateway.FinalizationRequest(
                         FINALIZER_SYSTEM_PROMPT,
                         selected.payloadJson(),
                         agentSelection
-                ),
-                observer
-        );
+                );
+        String output = execution.streaming()
+                ? gateway.streamFinalAnswer(finalization, observer, execution, properties.getStreamMaxOutputBytes())
+                : gateway.finalizeAnswer(finalization, observer);
+        execution.progress("validating");
         checkDeadline(deadline);
+        telemetry.canonicalCharacters(session.canonicalCharacters);
         ValidatedCandidate candidate = validateCandidate(
                 output, session, selected.includedEvidenceIds()
         );
@@ -423,6 +466,7 @@ public class AnswerServiceImpl implements AnswerService {
         payload.put("question", session.request.query());
         payload.put("evidencePackages", List.copyOf(evidencePackages));
         payload.put("budgetExhausted", budgetExhausted);
+        payload.put("allowedEvidenceIds", List.copyOf(includedIds));
         return new SelectedFinalization(
                 objectMapper.writeValueAsString(payload),
                 selectedIds.size(),
@@ -434,15 +478,16 @@ public class AnswerServiceImpl implements AnswerService {
     }
 
     private EvidenceSubmission submittedEvidence(String draftOutput) {
+        Map<String, Object> value;
         try {
-            Map<String, Object> value = readObject(draftOutput);
-            return new EvidenceSubmission(
-                    submittedReferences(value.get("evidenceIds"), INTERNAL_EVIDENCE_ID),
-                    submittedReferences(value.get("readRefs"), INTERNAL_READ_ID)
-            );
+            value = readObject(draftOutput);
         } catch (RuntimeException exception) {
             return new EvidenceSubmission(List.of(), List.of());
         }
+        return new EvidenceSubmission(
+                submittedReferences(value.get("evidenceIds"), INTERNAL_EVIDENCE_ID),
+                submittedReferences(value.get("readRefs"), INTERNAL_READ_ID)
+        );
     }
 
     private List<String> submittedReferences(Object raw, Pattern pattern) {
@@ -642,7 +687,8 @@ public class AnswerServiceImpl implements AnswerService {
     private String executeTool(AgentSession session, String name, String argumentsJson) {
         Map<String, Object> arguments = null;
         try {
-            arguments = readObject(argumentsJson);
+            arguments = new LinkedHashMap<>(readObject(argumentsJson));
+            if (arguments.containsKey("cursor") && arguments.get("cursor") == null) arguments.remove("cursor");
             String signature = toolSignature(name, arguments);
             String cached = session.toolResults.get(signature);
             if (cached != null) {
@@ -659,9 +705,10 @@ public class AnswerServiceImpl implements AnswerService {
             logToolTrace(session, name, arguments, result, false);
             return resultJson;
         } catch (ToolArgumentException exception) {
-            logInvalidToolTrace(session, name);
+            logInvalidToolTrace(session, name, exception.reason);
             return objectMapper.writeValueAsString(Map.of(
                     "status", "INVALID_ARGUMENT",
+                    "reason", exception.reason,
                     "message", "The call was not executed. Correct the arguments using the "
                             + "declared schema, or choose another declared tool"
             ));
@@ -713,7 +760,7 @@ public class AnswerServiceImpl implements AnswerService {
             SearchCursor cursor = session.searchCursor(cursorRef);
             if (!session.normalizedSearchQuery(query).equals(cursor.normalizedQuery())
                     || !Objects.equals(documentRef, cursor.documentRef())) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("CURSOR_QUERY_OR_SCOPE_MISMATCH");
             }
             retrieval = cursor.retrieval();
             ordered = cursor.results();
@@ -971,6 +1018,11 @@ public class AnswerServiceImpl implements AnswerService {
         return toolSuccess(value);
     }
 
+    private Comparator<HeadingNode> outlineOrder() {
+        return Comparator.comparingInt(HeadingNode::sectionStartBlockOrdinal)
+                .thenComparingInt(HeadingNode::depth).thenComparing(HeadingNode::nodeId);
+    }
+
     private Map<String, Object> openSection(
             AgentSession session,
             SectionTarget target
@@ -984,9 +1036,10 @@ public class AnswerServiceImpl implements AnswerService {
         if (heading == null) {
             throw new ToolArgumentException();
         }
-        List<Map<String, Object>> children = childHeadingPayload(
-                session, document.version(), heading, canonical.headings()
-        );
+        List<HeadingNode> childNodes = canonical.headings().stream()
+                .filter(node -> heading.nodeId().equals(node.parentNodeId())).sorted(outlineOrder()).toList();
+        List<Map<String, Object>> children =
+                childHeadingPayload(session, document.version(), heading, canonical.headings());
         if (target.type() == SectionTargetType.NAVIGATION_SUBPARTITION
                 && (target.sectionStartBlockOrdinal() < heading.sectionStartBlockOrdinal()
                 || target.sectionEndBlockOrdinalExclusive()
@@ -999,7 +1052,7 @@ public class AnswerServiceImpl implements AnswerService {
                 .filter(block -> target.type() == SectionTargetType.NAVIGATION_SUBPARTITION
                         ? block.ordinal() >= target.sectionStartBlockOrdinal()
                         && block.ordinal() < target.sectionEndBlockOrdinalExclusive()
-                        : children.isEmpty()
+                        : childNodes.isEmpty()
                         ? block.ordinal() >= heading.sectionStartBlockOrdinal()
                         && block.ordinal() < heading.sectionEndBlockOrdinalExclusive()
                         : heading.nodeId().equals(block.headingNodeId()))
@@ -1309,38 +1362,56 @@ public class AnswerServiceImpl implements AnswerService {
             Set<String> allowedEvidenceIds
     ) {
         Map<String, Object> value;
-        try {
-            value = readObject(json);
-        } catch (RuntimeException exception) {
-            return insufficient("MALFORMED_TERMINAL", 0);
+        try { value = readObject(json); }
+        catch (RuntimeException exception) {
+            throw invalidOutput(session, Map.of(), allowedEvidenceIds, "MALFORMED_JSON", AnswerException.Detail.STRUCTURE);
         }
-        if (!"ANSWERED".equals(value.get("status"))) {
-            return insufficient("MODEL_REFUSAL", evidenceIdCount(value.get("evidenceIds")));
+        if (!value.keySet().equals(Set.of("status", "answer", "evidenceIds"))
+                || !(value.get("status") instanceof String)
+                || !(value.get("evidenceIds") instanceof List<?> ids)
+                || ids.stream().anyMatch(id -> !(id instanceof String))) {
+            throw invalidOutput(session, value, allowedEvidenceIds, "INVALID_FIELDS", AnswerException.Detail.STRUCTURE);
         }
-        Object rawAnswer = value.get("answer");
-        if (!(rawAnswer instanceof String answer) || answer.isBlank()) {
-            return insufficient("EMPTY_ANSWER", evidenceIdCount(value.get("evidenceIds")));
+        if ("INSUFFICIENT_EVIDENCE".equals(value.get("status"))) {
+            if (value.get("answer") != null || !ids.isEmpty())
+                throw invalidOutput(session, value, allowedEvidenceIds, "INVALID_INSUFFICIENT", AnswerException.Detail.STRUCTURE);
+            logOutputValidation(session, value, allowedEvidenceIds, "INSUFFICIENT_EVIDENCE");
+            return insufficient("MODEL_REFUSAL", 0);
         }
+        if (!"ANSWERED".equals(value.get("status")))
+            throw invalidOutput(session, value, allowedEvidenceIds, "UNKNOWN_STATUS", AnswerException.Detail.STRUCTURE);
+        if (!(value.get("answer") instanceof String answer) || answer.isBlank())
+            throw invalidOutput(session, value, allowedEvidenceIds, "EMPTY_ANSWER", AnswerException.Detail.STRUCTURE);
         List<String> submitted = submittedEvidenceIds(value.get("evidenceIds"));
-        List<String> accepted = submitted.stream()
-                .filter(allowedEvidenceIds::contains)
-                .filter(session.byId::containsKey)
-                .toList();
-        if (accepted.isEmpty()) {
-            return insufficient("NO_REGISTERED_EVIDENCE", submitted.size());
-        }
+        List<String> accepted = submitted.stream().filter(allowedEvidenceIds::contains)
+                .filter(session.byId::containsKey).toList();
+        if (accepted.isEmpty())
+            throw invalidOutput(session, value, allowedEvidenceIds, "NO_VALID_CITATIONS", AnswerException.Detail.CITATIONS);
         String normalized = sanitizeAnswer(answer);
-        if (normalized.isBlank()) {
-            return insufficient("EMPTY_ANSWER_AFTER_SANITIZATION", submitted.size());
-        }
-        return new FinalAnswer(
-                "ANSWERED",
-                normalized,
-                List.copyOf(accepted),
-                submitted.size(),
-                submitted.size() - accepted.size(),
-                "ANSWERED"
-        );
+        if (normalized.isBlank())
+            throw invalidOutput(session, value, allowedEvidenceIds, "EMPTY_AFTER_SANITIZATION", AnswerException.Detail.STRUCTURE);
+        logOutputValidation(session, value, allowedEvidenceIds, "ANSWERED");
+        return new FinalAnswer("ANSWERED", normalized, List.copyOf(accepted), submitted.size(),
+                submitted.size() - accepted.size(), "ANSWERED");
+    }
+
+    private AnswerException invalidOutput(AgentSession session, Map<String, Object> value,
+            Set<String> allowed, String reason, AnswerException.Detail detail) {
+        logOutputValidation(session, value, allowed, reason);
+        return AnswerException.invalidOutput(detail);
+    }
+
+    private void logOutputValidation(AgentSession session, Map<String, Object> value,
+            Set<String> allowed, String reason) {
+        Object ids = value.get("evidenceIds");
+        int rawCount = ids instanceof List<?> list ? list.size() : 0;
+        List<String> valid = submittedEvidenceIds(ids);
+        long accepted = valid.stream().filter(allowed::contains).filter(session.byId::containsKey).count();
+        String type = ids == null ? "NULL" : ids instanceof List<?> ? "ARRAY"
+                : ids instanceof String ? "STRING" : "OTHER";
+        LOG.info("docquery_answer_validation queryExecutionId={} reason={} citationFieldPresent={} citationType={} rawCount={} validFormatCount={} allowedCount={} acceptedCount={} filteredCount={}",
+                session.primaryRetrieval == null ? null : session.primaryRetrieval.getQueryExecutionId(), reason,
+                value.containsKey("evidenceIds"), type, rawCount, valid.size(), allowed.size(), accepted, rawCount - accepted);
     }
 
     private FinalAnswer insufficient(String reason, int submittedEvidenceCount) {
@@ -1494,12 +1565,12 @@ public class AnswerServiceImpl implements AnswerService {
         );
     }
 
-    private void logInvalidToolTrace(AgentSession session, String name) {
+    private void logInvalidToolTrace(AgentSession session, String name, String reason) {
         LOG.info(
-                "docquery_answer_tool queryExecutionId={} tool={} status=INVALID_ARGUMENT",
+                "docquery_answer_tool queryExecutionId={} tool={} status=INVALID_ARGUMENT reason={}",
                 session.primaryRetrieval == null
                         ? null : session.primaryRetrieval.getQueryExecutionId(),
-                name
+                name, reason
         );
     }
 
@@ -1577,9 +1648,11 @@ public class AnswerServiceImpl implements AnswerService {
             Set<String> allowed,
             Set<String> required
     ) {
-        if (!allowed.containsAll(arguments.keySet())
-                || !arguments.keySet().containsAll(required)) {
-            throw new ToolArgumentException();
+        if (!allowed.containsAll(arguments.keySet())) {
+            throw new ToolArgumentException("UNDECLARED_FIELDS");
+        }
+        if (!arguments.keySet().containsAll(required)) {
+            throw new ToolArgumentException("MISSING_REQUIRED_FIELDS");
         }
     }
 
@@ -1594,7 +1667,7 @@ public class AnswerServiceImpl implements AnswerService {
 
     private String requiredText(Object value) {
         if (!(value instanceof String text) || text.strip().isEmpty()) {
-            throw new ToolArgumentException();
+            throw new ToolArgumentException("EXPECTED_NON_EMPTY_TEXT");
         }
         return text.strip();
     }
@@ -1663,6 +1736,10 @@ public class AnswerServiceImpl implements AnswerService {
                 + properties.getRerank().getModel() + '\n'
                 + properties.getRerank().getCandidatePoolSize() + '\n'
                 + properties.getRerank().getInstruct() + '\n'
+                + properties.getChatProfile() + '\n'
+                + agentGateway.map(AnswerAgentGateway::configurationIdentity).orElse("") + '\n'
+                + properties.getMaxOutputTokens() + '\n'
+                + properties.getMaxOutlineNodes() + '\n'
                 + properties.getPolicyVersion() + '\n'
                 + properties.getPromptVersion() + '\n');
     }
@@ -2212,7 +2289,7 @@ public class AnswerServiceImpl implements AnswerService {
         private DocumentTarget documentTarget(String documentRef) {
             DocumentTarget target = documentTargetsByRef.get(documentRef);
             if (target == null) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("UNKNOWN_DOCUMENT_REF");
             }
             return target;
         }
@@ -2296,7 +2373,7 @@ public class AnswerServiceImpl implements AnswerService {
         private SearchCursor searchCursor(String ref) {
             SearchCursor cursor = searchCursors.get(ref);
             if (cursor == null) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("UNKNOWN_CURSOR");
             }
             return cursor;
         }
@@ -2360,7 +2437,7 @@ public class AnswerServiceImpl implements AnswerService {
         private SectionTarget sectionTarget(String sectionRef) {
             SectionTarget target = sectionTargetsByRef.get(sectionRef);
             if (target == null) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("UNKNOWN_SECTION_REF");
             }
             return target;
         }
@@ -2429,7 +2506,7 @@ public class AnswerServiceImpl implements AnswerService {
         private ReadTarget readTarget(String readRef) {
             ReadTarget target = readTargetsByRef.get(readRef);
             if (target == null) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("UNKNOWN_READ_REF");
             }
             return target;
         }
@@ -2441,7 +2518,7 @@ public class AnswerServiceImpl implements AnswerService {
         private RegisteredEvidence evidence(String evidenceId) {
             RegisteredEvidence evidence = byId.get(evidenceId);
             if (evidence == null) {
-                throw new ToolArgumentException();
+                throw new ToolArgumentException("UNKNOWN_EVIDENCE_REF");
             }
             return evidence;
         }
@@ -2525,6 +2602,8 @@ public class AnswerServiceImpl implements AnswerService {
         private final long deadline;
         private final QueryIdempotencyClaim claim;
         private final QueryExecutionTelemetry telemetry;
+        private final AnswerExecution execution;
+        private final String queryExecutionId;
         private int modelCalls;
         private int toolRounds;
         private int toolCalls;
@@ -2532,15 +2611,28 @@ public class AnswerServiceImpl implements AnswerService {
         private AgentObserver(
                 long deadline,
                 QueryIdempotencyClaim claim,
-                QueryExecutionTelemetry telemetry
+                QueryExecutionTelemetry telemetry,
+                AnswerExecution execution,
+                String queryExecutionId
         ) {
+            this.queryExecutionId = queryExecutionId;
+            this.execution = execution;
             this.deadline = deadline;
             this.claim = claim;
             this.telemetry = telemetry;
         }
 
         @Override
+        public java.time.Duration remaining() { return execution.remaining(); }
+
+        @Override
+        public String queryExecutionId() { return queryExecutionId; }
+
+        @Override public void modelUsage(Integer input, Integer output) { telemetry.modelUsage(input, output); }
+
+        @Override
         public void beforeModelCall() {
+            execution.check();
             checkDeadline(deadline);
             if (modelCalls >= properties.getMaxModelCalls()) {
                 throw limitExceeded();
@@ -2563,6 +2655,7 @@ public class AnswerServiceImpl implements AnswerService {
 
         @Override
         public void afterToolCall() {
+            execution.check();
             checkDeadline(deadline);
             if (!idempotencyService.renew(claim)) {
                 throw new QueryIdempotencyException(
@@ -2574,6 +2667,9 @@ public class AnswerServiceImpl implements AnswerService {
     }
 
     private static final class ToolArgumentException extends RuntimeException {
+        private final String reason;
+        private ToolArgumentException() { this("INVALID_ARGUMENT"); }
+        private ToolArgumentException(String reason) { this.reason = reason; }
     }
 
 }

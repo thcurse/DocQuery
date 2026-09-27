@@ -6,6 +6,12 @@ import com.doc.docquery.vo.AnswerResponseVO;
 
 /** 正式服务面受控单轮回答能力。 */
 public interface AnswerService {
+    default com.doc.docquery.stream.PreparedAnswer prepare(
+            String authorization, String key, long knowledgeBaseId, AnswerRequestDTO request,
+            QueryExecutionTelemetry telemetry) {
+        throw new UnsupportedOperationException("Prepared execution is not supported");
+    }
+
 
     AnswerResponseVO answer(
             String authorizationHeader,

@@ -156,9 +156,8 @@ docquery:
       max-total-evidence-chars: 80000
       executor-threads: ${DOCQUERY_RETRIEVE_EXECUTOR_THREADS:8}
     answer:
-      prompt-version: answer-agent-v22
-      policy-version: answer-policy-v22
-      # 前 11 轮 AUTO 探索，最后 1 轮保留给 submit_evidence 检索终止。
+      prompt-version: answer-agent-v26
+      policy-version: answer-policy-v27
       max-tool-rounds: 12
       max-tool-calls: 200
       max-model-calls: 120
@@ -173,6 +172,9 @@ docquery:
       max-output-tokens: 4096
       model-timeout: ${DOCQUERY_ANSWER_MODEL_TIMEOUT:120s}
       total-timeout: ${DOCQUERY_ANSWER_TOTAL_TIMEOUT:300s}
+      stream-concurrency: ${DOCQUERY_ANSWER_STREAM_CONCURRENCY:8}
+      stream-queue-capacity: ${DOCQUERY_ANSWER_STREAM_QUEUE_CAPACITY:256}
+      stream-max-output-bytes: ${DOCQUERY_ANSWER_STREAM_MAX_OUTPUT_BYTES:1048576}
       rerank:
         enabled: ${DOCQUERY_ANSWER_RERANK_ENABLED:false}
         model: ${DOCQUERY_ANSWER_RERANK_MODEL:qwen3-rerank}

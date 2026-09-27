@@ -14,8 +14,8 @@ public class AnswerProperties {
 
     /** 在线 Answer 使用的 Chat profile；名称必须等于真实模型名。 */
     private String chatProfile = "claude-sonnet-5";
-    private String promptVersion = "answer-agent-v22";
-    private String policyVersion = "answer-policy-v22";
+    private String promptVersion = "answer-agent-v26";
+    private String policyVersion = "answer-policy-v27";
     /** 预留最后一轮给 submit_evidence；此前的正常轮次由 Agent 在 AUTO 下自主结束。 */
     private int maxToolRounds = 12;
     private int maxToolCalls = 200;
@@ -31,6 +31,9 @@ public class AnswerProperties {
     private int maxOutputTokens = 4_096;
     private Duration modelTimeout = Duration.ofSeconds(120);
     private Duration totalTimeout = Duration.ofSeconds(300);
+    private int streamConcurrency = 8;
+    private int streamQueueCapacity = 256;
+    private int streamMaxOutputBytes = 1024 * 1024;
 
     /** Answer Search 的查询相关性重排；不负责证据去重或正确性判断。 */
     private Rerank rerank = new Rerank();

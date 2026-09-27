@@ -1,6 +1,7 @@
 package com.doc.docquery.config;
 
 import com.doc.docquery.service.AnswerAgentGateway;
+import com.doc.docquery.service.AnswerOutputSchema;
 import com.doc.docquery.service.NavigationEmbeddingGateway;
 import com.doc.docquery.service.QueryEmbeddingGateway;
 import com.doc.docquery.service.RetrievalCardChatGateway;
@@ -13,6 +14,10 @@ import com.doc.docquery.service.impl.PackyApiRetrievalCardChatAdapter;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiResponsesStreamingChatModel;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -121,11 +126,20 @@ public class RetrievalProviderConfig {
         return new PackyApiRetrievalCardChatAdapter(retrievalChatModel, objectMapper);
     }
 
+    AnswerAgentGateway answerAgentGateway(ChatModel model) {
+        return new LangChain4jAnswerAgentAdapter(model);
+    }
+
     @Bean
     AnswerAgentGateway answerAgentGateway(
-            @Qualifier("answerChatModel") ChatModel answerChatModel
+            @Qualifier("answerChatModel") ChatModel answerChatModel,
+            ChatProfilesProperties profiles, AnswerProperties answer
     ) {
-        return new LangChain4jAnswerAgentAdapter(answerChatModel);
+        ChatProfilesProperties.Profile profile = profiles.require(answer.getChatProfile());
+        return new LangChain4jAnswerAgentAdapter(answerChatModel,
+                remaining -> streamingModel(profile, answer.getMaxOutputTokens(), minTimeout(remaining, answer.getModelTimeout())),
+                remaining -> chatModel(profile, answer.getMaxOutputTokens(), minTimeout(remaining, answer.getModelTimeout()), false),
+                AnswerOutputSchema.format(profile), profile.answerIdentity(), profile.getModel() + "/" + profile.normalizedProtocol());
     }
 
     @Bean
@@ -188,13 +202,15 @@ public class RetrievalProviderConfig {
                     .apiKey(profile.getApiKey())
                     .modelName(profile.getModel())
                     .maxOutputTokens(maxOutputTokens)
+                    .reasoningEffort(reasoningEffort(profile))
                     .store(false)
                     .strictJsonSchema(strictRequestJsonSchema)
                     .httpClientBuilder(http)
                     .logRequests(false)
                     .logResponses(false);
             if (!strictRequestJsonSchema) {
-                builder.responseFormat(ResponseFormat.JSON);
+                builder.responseFormat(AnswerOutputSchema.format(profile))
+                        .strictJsonSchema("JSON_SCHEMA".equals(profile.effectiveFinalOutputMode()));
             }
             return builder.build();
         }
@@ -203,8 +219,10 @@ public class RetrievalProviderConfig {
                     .baseUrl(profile.getBaseUrl())
                     .apiKey(profile.getApiKey())
                     .modelName(profile.getModel())
-                    .responseFormat(ResponseFormat.JSON)
+                    .responseFormat(AnswerOutputSchema.format(profile))
+                    .strictJsonSchema(strictRequestJsonSchema || "JSON_SCHEMA".equals(profile.effectiveFinalOutputMode()))
                     .maxTokens(maxOutputTokens)
+                    .maxRetries(strictRequestJsonSchema ? profile.getMaxRetries() : 0)
                     .httpClientBuilder(http)
                     .logRequests(false)
                     .logResponses(false)
@@ -215,11 +233,40 @@ public class RetrievalProviderConfig {
                 .apiKey(profile.getApiKey())
                 .modelName(profile.getModel())
                 .maxTokens(maxOutputTokens)
-                .maxRetries(profile.getMaxRetries())
+                .maxRetries(strictRequestJsonSchema ? profile.getMaxRetries() : 0)
                 .httpClientBuilder(http)
                 .logRequests(false)
                 .logResponses(false)
                 .build();
+    }
+
+    private Duration minTimeout(Duration remaining, Duration configured) {
+        return remaining.compareTo(configured) < 0 ? remaining : configured;
+    }
+
+    private StreamingChatModel streamingModel(ChatProfilesProperties.Profile profile, int tokens, Duration timeout) {
+        JdkHttpClientBuilder http = new JdkHttpClientBuilder().connectTimeout(timeout).readTimeout(timeout);
+        return switch (requireProtocol(profile.getProtocol())) {
+            case "RESPONSES" -> OpenAiResponsesStreamingChatModel.builder()
+                    .baseUrl(profile.getBaseUrl()).apiKey(profile.getApiKey()).modelName(profile.getModel())
+                    .maxOutputTokens(tokens).reasoningEffort(reasoningEffort(profile))
+                    .store(false).responseFormat(AnswerOutputSchema.format(profile))
+                    .strictJsonSchema("JSON_SCHEMA".equals(profile.effectiveFinalOutputMode()))
+                    .httpClientBuilder(http).logRequests(false).logResponses(false).build();
+            case "CHAT_COMPLETIONS" -> OpenAiStreamingChatModel.builder()
+                    .baseUrl(profile.getBaseUrl()).apiKey(profile.getApiKey()).modelName(profile.getModel())
+                    .maxTokens(tokens).responseFormat(AnswerOutputSchema.format(profile))
+                    .strictJsonSchema("JSON_SCHEMA".equals(profile.effectiveFinalOutputMode()))
+                    .httpClientBuilder(http).logRequests(false).logResponses(false).build();
+            default -> AnthropicStreamingChatModel.builder()
+                    .baseUrl(profile.getBaseUrl()).apiKey(profile.getApiKey()).modelName(profile.getModel())
+                    .maxTokens(tokens).httpClientBuilder(http).logRequests(false).logResponses(false).build();
+        };
+    }
+
+    private String reasoningEffort(ChatProfilesProperties.Profile profile) {
+        return StringUtils.hasText(profile.getReasoningEffort())
+                ? profile.getReasoningEffort().strip().toLowerCase(Locale.ROOT) : null;
     }
 
     private String requireProtocol(String value) {

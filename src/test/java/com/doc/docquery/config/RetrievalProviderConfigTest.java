@@ -46,6 +46,21 @@ class RetrievalProviderConfigTest {
     }
 
     @Test
+    void sendsExplicitReasoningEffortToSynchronousResponsesModel() throws Exception {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", this::handle);
+        server.start();
+        ChatProfilesProperties profiles = profiles(baseUrl(), "RESPONSES", "RESPONSES");
+        profiles.require("claude-sonnet-5").setReasoningEffort(" LOW ");
+        profiles.require("claude-sonnet-5").setFinalOutputMode("JSON_SCHEMA");
+        new RetrievalProviderConfig().answerChatModel(profiles, new AnswerProperties()).chat("test");
+        var body = objectMapper.readTree(requestEndingWith("/responses").body());
+        assertThat(body.path("reasoning").path("effort").asText()).isEqualTo("low");
+        assertThat(body.path("text").path("format").path("type").asText()).isEqualTo("json_schema");
+        assertThat(body.path("text").path("format").path("strict").asBoolean()).isTrue();
+    }
+
+    @Test
     void sendsPackyCompatibleJsonAndToolsWithoutDeepSeekParameters() throws Exception {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", this::handle);
@@ -149,6 +164,8 @@ class RetrievalProviderConfigTest {
         assertThat(chatRequests.get(1).authorization())
                 .isEqualTo("Bearer test-sonnet-key");
         assertThat(answerJson.get("max_output_tokens").asInt()).isEqualTo(123);
+        assertThat(answerJson.path("text").path("format").path("type").asText("text"))
+                .isEqualTo("text");
         assertThat(answerJson.get("tools")).hasSize(3);
         assertThat(answerJson.get("tools")).extracting(node ->
                         node.get("name").asText())
@@ -266,8 +283,8 @@ class RetrievalProviderConfigTest {
         JsonNode first = objectMapper.readTree(chatRequests.get(0).body());
         assertThat(first.get("model").asText()).isEqualTo("claude-sonnet-5");
         assertThat(first.get("max_tokens").asInt()).isEqualTo(321);
-        assertThat(first.get("response_format").get("type").asText())
-                .isEqualTo("json_object");
+        assertThat(first.path("response_format").path("type").asText("text"))
+                .isEqualTo("text");
         assertThat(first.get("tools")).hasSize(3);
         assertThat(first.get("tools")).extracting(node ->
                         node.get("function").get("name").asText())

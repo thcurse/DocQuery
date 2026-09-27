@@ -46,14 +46,14 @@ flowchart LR
 | 层级 | 技术 |
 | --- | --- |
 | 后端 | Java 17、Spring Boot 4、MyBatis、Flyway |
-| 管理后台 | React 19、TypeScript、Vite、Ant Design |
+| 管理后台 | Vue 3、TypeScript、Vite、Naive UI、pnpm |
 | 数据与检索 | MySQL、Elasticsearch、Redis |
 | 文件与任务 | S3 兼容对象存储（默认 SeaweedFS）、RabbitMQ |
 | 文档解析 | DeepDoc / RAGFlow，以及可选的本地格式解析器 |
 | 模型接入 | LangChain4j；Chat 支持 Responses、Chat Completions 和 Anthropic 协议，Embedding 使用阿里云百炼适配器 |
 | 测试 | JUnit、Testcontainers、Vitest、Playwright |
 
-前端构建产物随 Spring Boot JAR 一起发布。运行打包后的应用不需要单独部署 Node.js 服务。
+前后端独立构建与发布：Spring Boot 提供 API，Nginx 托管前端静态文件并代理 `/api/`。详见 [部署说明](deploy/README.md)。
 
 ## 快速开始
 
@@ -62,7 +62,7 @@ flowchart LR
 ### 1. 准备环境
 
 - JDK 17。
-- Node.js 24 与 npm，用于构建前端。
+- Node.js >=22.12（建议 24 LTS）与 pnpm 12.6.0，仅用于前端开发与构建。
 - Docker Engine / Docker Desktop，以及 Docker Compose。
 - 使用 DeepDoc GPU 解析时，还需要 NVIDIA GPU 和容器 GPU 支持；也可以选择本地解析方式。
 
@@ -93,7 +93,7 @@ docker compose ps
 sh ./mvnw -DskipTests package
 ```
 
-构建会安装前端依赖、构建管理页面并打包 JAR。这里跳过 Java 测试以便首次启动；完整验证命令见[开发与测试](#开发与测试)。
+该命令只打包后端 JAR，不安装或构建前端。迁移后的首次构建请使用 `clean package`，清除旧静态资源。前端需按下面步骤单独启动；完整验证命令见[开发与测试](#开发与测试)。
 
 ### 3. 创建管理员并启动
 
@@ -111,7 +111,7 @@ java -jar target/docquery-0.0.1-SNAPSHOT.jar bootstrap-admin --login-name=platfo
 java -jar target/docquery-0.0.1-SNAPSHOT.jar
 ```
 
-打开 [管理后台](http://localhost:8080/admin/)，使用刚创建的账号登录。平台管理员负责创建租户及租户管理员；租户管理员负责本租户的应用、知识库和文档。
+在另一个终端执行 `cd frontend`、`pnpm install --frozen-lockfile`、`pnpm dev`，打开 [管理后台](http://127.0.0.1:5173/admin/)，使用刚创建的账号登录。平台管理员负责创建租户及租户管理员；租户管理员负责本租户的应用、知识库和文档。
 
 停止本地依赖并保留数据：
 
@@ -194,12 +194,13 @@ Embedding 默认使用 `qwen3.7-text-embedding` 和 2,560 维向量，需配置�
 
 ## API 示例
 
-两个服务接口使用相同的凭证与知识库授权：
+服务接口使用相同的凭证与知识库授权：
 
 | 接口 | 用途 |
 | --- | --- |
 | `POST /api/v1/service/knowledge-bases/{id}/retrieve` | 返回排序后的原文证据及来源位置 |
 | `POST /api/v1/service/knowledge-bases/{id}/answer` | 返回基于证据的回答及引用 |
+| `POST /api/v1/service/knowledge-bases/{id}/answer/stream` | SSE 增量回答，完成后返回校验结果与引用 |
 
 下面是业务后端发起问答的示例。将知识库 ID 替换为实际值，并通过环境变量提供 Credential：
 
@@ -216,6 +217,8 @@ curl --request POST \
 
 问答结果可能为 `ANSWERED` 或 `INSUFFICIENT_EVIDENCE`。后者是证据不足的正常结果；调用方应展示该状态，而不是把它当作已有答案。成功响应中的 `X-DocQuery-Request-Id` 可用于审计查询和排障。
 
+知识库问答默认流式输出，API 调试可选择普通或流式回答。`delta` 仅为临时预览，收到 `done` 才能采信完整结果与引用；停止或断线会保留带“未经最终校验”标记的部分文字。协议、取消、幂等重放和部署配置见 [流式回答说明](deploy/streaming.md)。 输出校验、模型输出模式与检索优化开关见 [问答稳定性说明](deploy/answer-stability.md)。
+
 应用 Credential 应由业务后端保存，不应分发给最终用户的浏览器或移动端。完整请求、错误处理及客户端示例见 [API 接入说明](docs/api/外部服务API接入说明.md)，也可使用 [OpenAPI 定义](frontend/public/docs/docquery-service-api.openapi.yaml) 导入 API 工具。
 
 ## 开发与测试
@@ -226,17 +229,19 @@ curl --request POST \
 sh ./mvnw clean verify
 ```
 
-该命令包含前端测试与构建、Java 单元测试，以及使用 Testcontainers 的集成测试。集成测试需要 Docker，并使用临时 MySQL、SeaweedFS、RabbitMQ、Elasticsearch 和 Redis，不连接本地 Compose 的业务数据。真实模型供应商测试默认跳过，需要显式配置后运行。
+该命令包含 Java 单元测试，以及使用 Testcontainers 的集成测试；前端检查独立执行。集成测试需要 Docker，并使用临时 MySQL、SeaweedFS、RabbitMQ、Elasticsearch 和 Redis，不连接本地 Compose 的业务数据。真实模型供应商测试默认跳过，需要显式配置后运行。
 
 单独开发前端时，先启动 Java 后端，再执行：
 
 ```bash
 cd frontend
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-开发页面位于 `http://localhost:5173/admin/`，API 请求代理到 `localhost:8080`。前端测试和构建可分别运行 `npm test`、`npm run build`。
+开发页面位于 `http://localhost:5173/admin/`，API 请求代理到 `localhost:8080`。前端测试和构建可分别运行 `pnpm lint`、`pnpm test`、`pnpm build`。
+
+Windows 下 `pnpm dev` 默认启用进程内存保护：V8 堆上限 768 MiB、单进程硬上限 1536 MiB、进程组硬上限 2048 MiB。接近单进程上限或系统剩余提交额度不足 2 GiB 时停止开发服务，不自动重启。浏览器测试启动的 Vite 也使用同一入口。内存记录位于 `frontend/node_modules/.cache/docquery-memory/`，不含请求正文和凭证，不提交到仓库。非 Windows 环境仅启用 V8 堆限制。
 
 ```text
 src/main/java/          后端接口、业务服务、文档处理与检索

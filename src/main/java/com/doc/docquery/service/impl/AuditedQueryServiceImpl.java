@@ -1,5 +1,9 @@
 package com.doc.docquery.service.impl;
 
+import com.doc.docquery.stream.*;
+import com.doc.docquery.audit.QueryAuditFailure;
+import com.doc.docquery.audit.QueryAuditOutcome;
+
 import com.doc.docquery.audit.AuditedQueryResult;
 import com.doc.docquery.audit.QueryAuditFailureClassifier;
 import com.doc.docquery.audit.QueryAuditOperation;
@@ -123,6 +127,60 @@ public class AuditedQueryServiceImpl implements AuditedQueryService {
             String requestedMode,
             Function<QueryExecutionTelemetry, T> execution
     ) {
+        Attempt attempt = begin(requestId, authorizationHeader, callerTraceId, actorRef,
+                knowledgeBaseId, operation, query, requestedMode);
+        try {
+            T body = execution.apply(attempt.telemetry());
+            auditService.succeed(attempt.audit(), attempt.telemetry());
+            return new AuditedQueryResult<>(requestId, body);
+        } catch (RuntimeException exception) {
+            fail(attempt, exception, false);
+            throw exception;
+        }
+    }
+
+    @Override
+    public PreparedAnswer prepareAnswer(String requestId, String authorization, String key,
+            String trace, String actor, long knowledgeBaseId, AnswerRequestDTO request) {
+        Attempt attempt = begin(requestId, authorization, trace, actor, knowledgeBaseId,
+                QueryAuditOperation.ANSWER, request == null ? null : request.getQuery(),
+                request == null ? null : request.getMode());
+        PreparedAnswer prepared;
+        try {
+            prepared = answerService.prepare(authorization, key, knowledgeBaseId, request, attempt.telemetry());
+        } catch (RuntimeException exception) {
+            fail(attempt, exception, false);
+            throw exception;
+        }
+        return new PreparedAnswer() {
+            private final java.util.concurrent.atomic.AtomicBoolean ended = new java.util.concurrent.atomic.AtomicBoolean();
+            public boolean replayed() { return prepared.replayed(); }
+            public void renew() { prepared.renew(); }
+            public void abandon() { finishAbandoned(AnswerStreamException.cancelled(), true); }
+            public void reject(RuntimeException cause) { finishAbandoned(cause, false); }
+            private void finishAbandoned(RuntimeException cause, boolean streaming) {
+                try { prepared.abandon(); }
+                finally { if (ended.compareAndSet(false, true)) fail(attempt, cause, streaming); }
+            }
+            public AnswerResponseVO execute(AnswerExecution execution) {
+                try {
+                    AnswerResponseVO result = prepared.execute(execution);
+                    auditService.succeed(attempt.audit(), attempt.telemetry());
+                    ended.set(true);
+                    return result;
+                } catch (RuntimeException exception) {
+                    if (ended.compareAndSet(false, true)) fail(attempt, exception, true);
+                    throw exception;
+                }
+            }
+        };
+    }
+
+    private record Attempt(ApplicationQueryAuditEntity audit, QueryExecutionTelemetry telemetry) {}
+
+    private Attempt begin(String requestId, String authorizationHeader, String callerTraceId,
+            String actorRef, long knowledgeBaseId, QueryAuditOperation operation,
+            String query, String requestedMode) {
         String credential = extractBearerCredential(authorizationHeader);
         ApplicationCredentialPrincipal principal;
         try {
@@ -160,26 +218,24 @@ public class AuditedQueryServiceImpl implements AuditedQueryService {
                         ? null : normalizedQuery.codePointCount(0, normalizedQuery.length()),
                 normalizeMode(requestedMode)
         ));
-        QueryExecutionTelemetry telemetry = new QueryExecutionTelemetry();
-        try {
-            if (auditHeaderFailure != null) {
-                throw auditHeaderFailure;
-            }
-            T body = execution.apply(telemetry);
-            auditService.succeed(audit, telemetry);
-            return new AuditedQueryResult<>(requestId, body);
-        } catch (RuntimeException exception) {
-            try {
-                auditService.fail(
-                        audit,
-                        telemetry,
-                        QueryAuditFailureClassifier.classify(exception)
-                );
-            } catch (RuntimeException auditFailure) {
-                exception.addSuppressed(auditFailure);
-            }
-            throw exception;
+        Attempt attempt = new Attempt(audit, new QueryExecutionTelemetry());
+        if (auditHeaderFailure != null) {
+            fail(attempt, auditHeaderFailure, false);
+            throw auditHeaderFailure;
         }
+        return attempt;
+    }
+
+    private void fail(Attempt attempt, RuntimeException exception, boolean streaming) {
+        QueryAuditFailure failure = QueryAuditFailureClassifier.classify(exception);
+        if (exception instanceof AnswerStreamException stream) {
+            failure = new QueryAuditFailure(
+                    "ANSWER_INTERRUPTED".equals(stream.code()) ? QueryAuditOutcome.INTERRUPTED : QueryAuditOutcome.FAILED,
+                    503, "STREAM", stream.code());
+        }
+        if (streaming) failure = new QueryAuditFailure(failure.outcome(), 200, failure.category(), failure.code());
+        try { auditService.fail(attempt.audit(), attempt.telemetry(), failure); }
+        catch (RuntimeException auditFailure) { exception.addSuppressed(auditFailure); }
     }
 
     private String extractBearerCredential(String authorizationHeader) {

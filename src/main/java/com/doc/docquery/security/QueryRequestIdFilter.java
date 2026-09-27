@@ -18,7 +18,7 @@ public class QueryRequestIdFilter extends OncePerRequestFilter {
     public static final String ATTRIBUTE = QueryRequestIdFilter.class.getName() + ".requestId";
     public static final String HEADER = "X-DocQuery-Request-Id";
     private static final Pattern SERVICE_QUERY = Pattern.compile(
-            "^/api/v1/service/knowledge-bases/[1-9][0-9]*/(retrieve|answer)$"
+            "^/api/v1/service/knowledge-bases/[1-9][0-9]*/(retrieve|answer(?:/stream)?)$"
     );
 
     @Override

@@ -47,6 +47,8 @@ public class ChatProfilesConfig {
                 prefix + "thinking-mode",
                 "PROVIDER_DEFAULT"
         ));
+        profile.setFinalOutputMode(environment.getProperty(prefix + "final-output-mode"));
+        profile.setReasoningEffort(environment.getProperty(prefix + "reasoning-effort"));
         profile.setBaseUrl(environment.getProperty(prefix + "base-url", ""));
         profile.setApiKey(environment.getProperty(prefix + "api-key", ""));
         profile.setMaxRetries(environment.getProperty(

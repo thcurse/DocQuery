@@ -42,6 +42,29 @@ public class ChatProfilesProperties {
         private String provider = "PACKY_API";
         private String protocol = "RESPONSES";
         private String thinkingMode = "PROVIDER_DEFAULT";
+        /** Responses reasoning effort; empty leaves the provider default unchanged. */
+        private String reasoningEffort;
+        /** Empty preserves the existing protocol default. */
+        private String finalOutputMode;
+
+        public String effectiveFinalOutputMode() {
+            String mode = finalOutputMode == null || finalOutputMode.isBlank()
+                    ? ("ANTHROPIC_MESSAGES".equals(normalizedProtocol()) ? "PROMPT_ONLY" : "JSON_OBJECT")
+                    : finalOutputMode.strip().toUpperCase(Locale.ROOT);
+            if (!java.util.Set.of("JSON_SCHEMA", "JSON_OBJECT", "PROMPT_ONLY").contains(mode))
+                throw new IllegalStateException("Unsupported final output mode");
+            return mode;
+        }
+
+        public String answerIdentity() {
+            try {
+                String endpoint = baseUrl.strip().replaceAll("/+$", "");
+                String addressHash = java.util.HexFormat.of().formatHex(java.security.MessageDigest
+                        .getInstance("SHA-256").digest(endpoint.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                return String.join("\n", model, provider, normalizedProtocol(), addressHash,
+                        reasoningEffort == null ? "" : reasoningEffort.strip().toLowerCase(Locale.ROOT), effectiveFinalOutputMode());
+            } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        }
         /** 仅用于原生支持 SDK 重试上限的协议客户端。 */
         private int maxRetries;
 

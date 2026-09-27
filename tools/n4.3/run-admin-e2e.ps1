@@ -9,6 +9,8 @@ $mysqlPassword = 'n43-e2e-mysql-only'
 $platformLogin = 'platform.e2e'
 $platformPassword = 'Platform Browser Password 2026!'
 $appProcess = $null
+$frontend = $null
+. (Join-Path $PSScriptRoot '..\frontend-e2e.ps1')
 $jar = $null
 $preexistingAppPids = @()
 $appOut = Join-Path ([IO.Path]::GetTempPath()) ($containerName + '-app.out.log')
@@ -110,6 +112,7 @@ try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/api/admin/v1/auth/csrf" -TimeoutSec 2
         return $response.StatusCode -eq 200
     } 120 'Spring Boot did not become ready'
+    $frontend = Start-DocQueryFrontend $projectRoot $baseUrl
 
     Push-Location (Join-Path $projectRoot 'frontend')
     try {
@@ -125,13 +128,13 @@ try {
         mysql --user=docquery docquery "--execute=$seedSql"
     if ($LASTEXITCODE -ne 0) { throw 'Failed to seed the platform administrator' }
 
-    $env:DOCQUERY_E2E_BASE_URL = $baseUrl
+    $env:DOCQUERY_E2E_BASE_URL = $frontend.BaseUrl
     $env:DOCQUERY_E2E_PLATFORM_LOGIN = $platformLogin
     $env:DOCQUERY_E2E_PLATFORM_PASSWORD = $platformPassword
     $env:DOCQUERY_E2E_BROWSER_CHANNEL = 'msedge'
     Push-Location (Join-Path $projectRoot 'frontend')
     try {
-        & npm.cmd run test:e2e
+        & pnpm exec playwright test e2e/admin-core-flow.spec.ts
         if ($LASTEXITCODE -ne 0) { throw 'Playwright browser acceptance failed' }
     } finally {
         Pop-Location
@@ -159,6 +162,7 @@ try {
     }
     throw
 } finally {
+    Stop-DocQueryFrontend $frontend
     if ($appProcess -and -not $appProcess.HasExited) {
         Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
         $appProcess.WaitForExit(10000) | Out-Null

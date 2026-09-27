@@ -6,6 +6,7 @@ import com.doc.docquery.service.AnswerException;
 import com.doc.docquery.service.RetrieveException;
 import com.doc.docquery.vo.ErrorVO;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,18 +19,25 @@ import jakarta.servlet.http.HttpServletRequest;
 /** 将业务异常统一转换为稳定的错误码和 HTTP 状态。 */
 @RestControllerAdvice
 public class BusinessExceptionHandler {
+    @ExceptionHandler(com.doc.docquery.stream.AnswerStreamException.class)
+    public ResponseEntity<ErrorVO> handleStream(com.doc.docquery.stream.AnswerStreamException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .body(new ErrorVO(exception.code(), exception.getMessage()));
+    }
+
 
     @ExceptionHandler(QueryAccessException.class)
     public ResponseEntity<ErrorVO> handleQueryAccess(QueryAccessException exception) {
         return switch (exception.reason()) {
             case APPLICATION_CREDENTIAL_INVALID -> ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
+                    .status(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON)
                     .body(new ErrorVO(
                             "APPLICATION_CREDENTIAL_INVALID",
                             "Application credential is invalid"
                     ));
             case KNOWLEDGE_BASE_NOT_AVAILABLE -> ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
+                    .status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON)
                     .body(new ErrorVO(
                             "KNOWLEDGE_BASE_NOT_AVAILABLE",
                             "KnowledgeBase is not available to this application"
@@ -80,25 +88,27 @@ public class BusinessExceptionHandler {
                     "REQUEST_IN_PROGRESS",
                     "Answer request is in progress"
             );
+            case MODEL_REQUEST_INVALID -> serviceError(HttpStatus.SERVICE_UNAVAILABLE,
+                    "ANSWER_MODEL_REQUEST_INVALID", exception.publicMessage());
             case MODEL_UNAVAILABLE -> serviceError(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "ANSWER_MODEL_UNAVAILABLE",
-                    "Answer model is unavailable"
+                    exception.publicMessage()
             );
             case OUTPUT_INVALID -> serviceError(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "ANSWER_OUTPUT_INVALID",
-                    "Answer model output is invalid"
+                    exception.publicMessage()
             );
             case EXECUTION_LIMIT_EXCEEDED -> serviceError(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "ANSWER_EXECUTION_LIMIT_EXCEEDED",
-                    "Answer execution limit was exceeded"
+                    exception.publicMessage()
             );
             case EXECUTION_TIMEOUT -> serviceError(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "ANSWER_EXECUTION_TIMEOUT",
-                    "Answer execution timed out"
+                    exception.publicMessage()
             );
         };
     }
@@ -157,7 +167,7 @@ public class BusinessExceptionHandler {
             case UNSUPPORTED_MEDIA_TYPE -> HttpStatus.UNSUPPORTED_MEDIA_TYPE;
             case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
         };
-        return ResponseEntity.status(status).body(
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(
                 new ErrorVO(exception.code(), exception.getMessage())
         );
     }
@@ -170,7 +180,7 @@ public class BusinessExceptionHandler {
                 .findFirst()
                 .map(error -> error.getDefaultMessage())
                 .orElse("请求参数不正确");
-        return ResponseEntity.badRequest().body(
+        return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                 new ErrorVO("VALIDATION_FAILED", message)
         );
     }
@@ -180,7 +190,7 @@ public class BusinessExceptionHandler {
     public ResponseEntity<ErrorVO> handleUploadLimit(
             MaxUploadSizeExceededException exception
     ) {
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).contentType(MediaType.APPLICATION_JSON).body(
                 new ErrorVO("FILE_TOO_LARGE", "Uploaded file exceeds size limit")
         );
     }
@@ -190,7 +200,7 @@ public class BusinessExceptionHandler {
     public ResponseEntity<ErrorVO> handleMissingUploadPart(
             MissingServletRequestPartException exception
     ) {
-        return ResponseEntity.badRequest().body(
+        return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                 new ErrorVO("INVALID_UPLOAD_FILE", "Required upload part is missing")
         );
     }
@@ -200,7 +210,7 @@ public class BusinessExceptionHandler {
             String code,
             String message
     ) {
-        return ResponseEntity.status(status).body(new ErrorVO(code, message));
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(new ErrorVO(code, message));
     }
 
     private String invalidRequestCode(HttpServletRequest request) {
@@ -213,6 +223,6 @@ public class BusinessExceptionHandler {
 
     private boolean isAnswer(HttpServletRequest request) {
         return request != null && request.getRequestURI() != null
-                && request.getRequestURI().endsWith("/answer");
+                && (request.getRequestURI().endsWith("/answer") || request.getRequestURI().endsWith("/answer/stream"));
     }
 }

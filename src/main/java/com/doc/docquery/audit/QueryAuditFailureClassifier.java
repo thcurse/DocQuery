@@ -49,6 +49,7 @@ public final class QueryAuditFailureClassifier {
                 case INVALID_REQUEST -> rejected(400, "VALIDATION", "INVALID_ANSWER_REQUEST");
                 case REQUEST_IN_PROGRESS -> rejected(
                         409, "IDEMPOTENCY", "REQUEST_IN_PROGRESS");
+                case MODEL_REQUEST_INVALID -> failed("ANSWER_MODEL", "ANSWER_MODEL_REQUEST_INVALID");
                 case MODEL_UNAVAILABLE -> failed("ANSWER_MODEL", "ANSWER_MODEL_UNAVAILABLE");
                 case OUTPUT_INVALID -> failed("ANSWER_POLICY", "ANSWER_OUTPUT_INVALID");
                 case EXECUTION_LIMIT_EXCEEDED -> failed(

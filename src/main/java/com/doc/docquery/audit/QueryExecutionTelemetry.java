@@ -24,7 +24,12 @@ public final class QueryExecutionTelemetry {
     private int toolCalls;
     private int modelCalls;
     private int canonicalCharacters;
-
+    private long inputTokens, outputTokens;
+    private boolean tokenUsageAvailable;
+    public synchronized void modelUsage(Integer input, Integer output) {
+        if (input != null) { inputTokens += input; tokenUsageAvailable = true; }
+        if (output != null) outputTokens += output;
+    }
     public void snapshot(QueryAccessContext context) {
         if (context != null) {
             snapshotFingerprint = context.getSnapshotFingerprint();

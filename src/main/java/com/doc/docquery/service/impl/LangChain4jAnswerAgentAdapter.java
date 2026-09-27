@@ -1,5 +1,13 @@
 package com.doc.docquery.service.impl;
 
+import com.doc.docquery.stream.*;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.response.*;
+import java.time.Duration;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
 import com.doc.docquery.service.AnswerAgentGateway;
 import com.doc.docquery.service.AnswerException;
 import dev.langchain4j.agent.tool.ReturnBehavior;
@@ -15,6 +23,8 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.chat.request.ToolChoice;
+import dev.langchain4j.model.chat.request.ResponseFormat;
+import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.service.AiServices;
@@ -121,9 +131,154 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
     );
 
     private final ChatModel chatModel;
+    private final Function<Duration, StreamingChatModel> streamingFactory;
+    private final Function<Duration, ChatModel> chatFactory;
+    private final ResponseFormat finalFormat;
+    private final String identity;
+    private final String modelLabel;
+
+    @Override public String configurationIdentity() { return identity; }
 
     public LangChain4jAnswerAgentAdapter(ChatModel chatModel) {
+        this(chatModel, null, null);
+    }
+
+    public LangChain4jAnswerAgentAdapter(ChatModel chatModel,
+            Function<Duration, StreamingChatModel> streamingFactory,
+            Function<Duration, ChatModel> chatFactory) {
+        this(chatModel, streamingFactory, chatFactory, ResponseFormat.JSON, "", chatModel.getClass().getSimpleName());
+    }
+
+    public LangChain4jAnswerAgentAdapter(ChatModel chatModel,
+            Function<Duration, StreamingChatModel> streamingFactory,
+            Function<Duration, ChatModel> chatFactory, ResponseFormat finalFormat, String identity, String modelLabel) {
+        this.finalFormat = finalFormat;
+        this.identity = identity;
+        this.modelLabel = modelLabel;
         this.chatModel = chatModel;
+        this.streamingFactory = streamingFactory;
+        this.chatFactory = chatFactory;
+    }
+
+    @Override
+    public String streamFinalAnswer(FinalizationRequest request, Observer observer,
+            AnswerExecution execution, int maxBytes) {
+        if (streamingFactory == null) return AnswerAgentGateway.super.streamFinalAnswer(request, observer, execution, maxBytes);
+        observer.beforeModelCall();
+        StreamTimings timings = new StreamTimings(observer.queryExecutionId());
+        AnswerDeltaParser parser = new AnswerDeltaParser(maxBytes, text -> {
+            timings.answer();
+            execution.delta(text);
+        });
+        CompletableFuture<String> completion = new CompletableFuture<>();
+        AtomicReference<StreamingHandle> handle = new AtomicReference<>();
+        CountDownLatch transportClosed = new CountDownLatch(1);
+        long transportDeadline = System.nanoTime() + execution.remaining().toNanos();
+        boolean started = false;
+        execution.onCancel(() -> {
+            StreamingHandle active = handle.get();
+            if (active != null) active.cancel();
+            completion.completeExceptionally(AnswerStreamException.cancelled());
+        });
+        try {
+            StreamingChatModel model = streamingFactory.apply(execution.remaining());
+            model.chat(ChatRequest.builder().messages(
+                    SystemMessage.from(request.systemPrompt()), UserMessage.from(request.userPayload()))
+                    .responseFormat(finalFormat).build(),
+                    new StreamingChatResponseHandler() {
+                        @Override public void onPartialResponse(PartialResponse part, PartialResponseContext context) {
+                            handle.set(context.streamingHandle());
+                            if (completion.isDone()) { context.streamingHandle().cancel(); transportClosed.countDown(); return; }
+                            try {
+                                execution.check();
+                                timings.text();
+                                parser.accept(part.text());
+                            }
+                            catch (RuntimeException failure) {
+                                completion.completeExceptionally(failure);
+                                context.streamingHandle().cancel();
+                                transportClosed.countDown();
+                            }
+                        }
+                        @Override public void onPartialThinking(PartialThinking part, PartialThinkingContext context) {
+                            timings.thinking();
+                            handle.set(context.streamingHandle());
+                            if (completion.isDone()) { context.streamingHandle().cancel(); transportClosed.countDown(); }
+                        }
+                        @Override public void onCompleteResponse(ChatResponse response) {
+                            if (!completion.isDone()) {
+                                timings.complete(response);
+                                logFinish("stream_final", observer, response);
+                                if (response != null && response.finishReason() == FinishReason.LENGTH) {
+                                    completion.completeExceptionally(AnswerException.invalidOutput(AnswerException.Detail.TRUNCATED));
+                                } else if (parser.raw().isBlank()) completion.completeExceptionally(AnswerException.invalidOutput(AnswerException.Detail.STRUCTURE));
+                                else completion.complete(parser.raw());
+                            }
+                            transportClosed.countDown();
+                        }
+                        @Override public void onError(Throwable error) {
+                            if (!completion.isDone())
+                                completion.completeExceptionally(providerFailure(error, "stream_final", modelLabel, observer.queryExecutionId()));
+                            transportClosed.countDown();
+                        }
+                    });
+            started = true;
+            for (;;) {
+                execution.check();
+                try { return completion.get(Math.min(200, Math.max(1, execution.remaining().toMillis())), TimeUnit.MILLISECONDS); }
+                catch (TimeoutException ignored) { /* observe cancellation and absolute deadline */ }
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw AnswerStreamException.cancelled();
+        } catch (ExecutionException exception) {
+            execution.check();
+            if (exception.getCause() instanceof RuntimeException failure) throw failure;
+            throw new AnswerStreamException("ANSWER_MODEL_UNAVAILABLE", "模型流式请求失败，请重试", false);
+        } catch (RuntimeException failure) {
+            if (failure instanceof AnswerException || failure instanceof AnswerStreamException) throw failure;
+            throw providerFailure(failure, "stream_final", modelLabel, observer.queryExecutionId());
+        } finally {
+            completion.cancel(false);
+            StreamingHandle active = handle.get();
+            if (active != null) active.cancel();
+            else if (started) {
+                // Before the first provider event no cancellation handle exists. Keep ownership
+                // until the transport terminates or its bounded request budget expires.
+                try { transportClosed.await(Math.max(1, transportDeadline - System.nanoTime()), TimeUnit.NANOSECONDS); }
+                catch (InterruptedException exception) { Thread.currentThread().interrupt(); }
+            }
+            timings.log();
+        }
+    }
+
+    /** Only durations and token counts: never log provider text or hidden reasoning. */
+    private static final class StreamTimings {
+        private final String queryExecutionId;
+        private final long started = System.nanoTime();
+        private long firstText, firstAnswer, firstThinking;
+        private int chunks;
+        private boolean completed;
+        private Integer inputTokens, outputTokens;
+        private StreamTimings(String queryExecutionId) { this.queryExecutionId = queryExecutionId; }
+        synchronized void text() { if (firstText == 0) firstText = System.nanoTime(); chunks++; }
+        synchronized void answer() { if (firstAnswer == 0) firstAnswer = System.nanoTime(); }
+        synchronized void thinking() { if (firstThinking == 0) firstThinking = System.nanoTime(); }
+        synchronized void complete(ChatResponse response) {
+            completed = true;
+            if (response != null && response.tokenUsage() != null) {
+                inputTokens = response.tokenUsage().inputTokenCount();
+                outputTokens = response.tokenUsage().outputTokenCount();
+            }
+        }
+        private long elapsed(long value) {
+            return value == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(value - started);
+        }
+        synchronized void log() {
+            LOG.info("docquery_answer_model_stream queryExecutionId={} firstThinkingMs={} firstModelTextMs={} firstAnswerMs={} modelChunks={} elapsedMs={} completed={} inputTokens={} outputTokens={}",
+                    queryExecutionId, elapsed(firstThinking), elapsed(firstText), elapsed(firstAnswer),
+                    chunks, elapsed(System.nanoTime()), completed, inputTokens, outputTokens);
+        }
     }
 
     @Override
@@ -132,7 +287,8 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
         ChatModel observed = new ObservedChatModel(
                 chatModel,
                 observer,
-                maxToolRoundTrips
+                maxToolRoundTrips,
+                chatFactory
         );
         SubmissionCapture submission = new SubmissionCapture();
         List<AiServiceTool> agentTools = List.of(
@@ -150,11 +306,11 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
                 .systemMessage(request.systemPrompt())
                 .tools(agentTools)
                 .maxToolCallingRoundTrips(maxToolRoundTrips)
-                .hallucinatedToolNameStrategy(call -> ToolExecutionResultMessage.from(
-                        call.id(),
-                        call.name(),
-                        "{\"status\":\"INVALID_ARGUMENT\",\"message\":\"Unknown tool\"}"
-                ))
+                .hallucinatedToolNameStrategy(call -> {
+                    observer.afterToolCall();
+                    return ToolExecutionResultMessage.from(call.id(), call.name(),
+                            "{\"status\":\"INVALID_ARGUMENT\",\"message\":\"Unknown tool; use search, open or submit_evidence\"}");
+                })
                 .build();
         return userMessage -> invoke(agent, userMessage, submission);
     }
@@ -164,21 +320,17 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
         observer.beforeModelCall();
         ChatResponse response;
         try {
-            response = chatModel.chat(List.of(
-                    SystemMessage.from(request.systemPrompt()),
-                    UserMessage.from(request.userPayload())
-            ));
+            ChatModel finalModel = chatFactory == null ? chatModel : chatFactory.apply(observer.remaining());
+            response = finalModel.chat(ChatRequest.builder().messages(
+                    SystemMessage.from(request.systemPrompt()), UserMessage.from(request.userPayload()))
+                    .responseFormat(finalFormat).build());
         } catch (RuntimeException exception) {
-            LOG.error(
-                    "docquery_answer_finalizer_provider_failure provider={} client={} "
-                            + "exceptionType={}",
-                    chatModel.provider(),
-                    chatModel.getClass().getName(),
-                    exception.getClass().getName(),
-                    exception
-            );
-            throw unavailable(exception);
+            throw providerFailure(exception, "final", modelLabel, observer.queryExecutionId());
         }
+        logFinish("final", observer, response);
+        if (response != null && response.finishReason() == FinishReason.LENGTH)
+            throw AnswerException.invalidOutput(AnswerException.Detail.TRUNCATED);
+
         if (response == null || response.aiMessage() == null
                 || response.aiMessage().text() == null
                 || response.aiMessage().text().isBlank()) {
@@ -300,11 +452,46 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
     }
 
     private AnswerException unavailable(Throwable cause) {
-        return new AnswerException(
-                MODEL_UNAVAILABLE,
-                "Answer model is unavailable",
-                cause
-        );
+        return providerFailure(cause, "agent", modelLabel, null);
+    }
+
+    private static void usage(Observer observer, ChatResponse response) {
+        if (response != null && response.tokenUsage() != null)
+            observer.modelUsage(response.tokenUsage().inputTokenCount(), response.tokenUsage().outputTokenCount());
+    }
+
+    private void logFinish(String stage, Observer observer, ChatResponse response) {
+        usage(observer, response);
+        LOG.info("docquery_answer_provider_finish model={} stage={} queryExecutionId={} finishReason={}",
+                modelLabel, stage, observer.queryExecutionId(), response == null ? "EMPTY" : response.finishReason());
+    }
+
+    private static AnswerException providerFailure(Throwable failure, String stage, String model, String queryId) {
+        Throwable current = failure;
+        Integer status = null;
+        boolean invalid = false, timeout = false, truncated = false;
+        while (current != null) {
+            if (current instanceof AnswerException e) return e;
+            if (current instanceof dev.langchain4j.exception.HttpException e) status = e.statusCode();
+            invalid |= current instanceof dev.langchain4j.exception.InvalidRequestException
+                    || current instanceof dev.langchain4j.exception.AuthenticationException
+                    || current instanceof dev.langchain4j.exception.UnsupportedFeatureException;
+            timeout |= current instanceof dev.langchain4j.exception.TimeoutException
+                    || current instanceof java.net.http.HttpTimeoutException
+                    || current instanceof java.net.SocketTimeoutException || current instanceof TimeoutException;
+            // Responses providers can deliver incomplete as an SDK error instead of LENGTH.
+            String message = current.getMessage();
+            truncated |= message != null && (message.contains("max_output_tokens") || message.contains("max_tokens"))
+                    && message.contains("incomplete");
+            current = current.getCause();
+        }
+        truncated &= status == null;
+        invalid |= status != null && (status == 400 || status == 401 || status == 403 || status == 404 || status == 422);
+        LOG.warn("docquery_answer_provider_failure model={} stage={} queryExecutionId={} httpStatus={} category={}",
+                model, stage, queryId, status, invalid ? "REQUEST_INVALID" : truncated ? "TRUNCATED" : timeout ? "TIMEOUT" : "UNAVAILABLE");
+        if (truncated && !invalid) return AnswerException.invalidOutput(AnswerException.Detail.TRUNCATED);
+        return new AnswerException(invalid ? AnswerException.Reason.MODEL_REQUEST_INVALID
+                : timeout ? AnswerException.Reason.EXECUTION_TIMEOUT : MODEL_UNAVAILABLE, "Model request failed");
     }
 
     private interface Agent {
@@ -317,15 +504,19 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
 
     private static final class ObservedChatModel implements ChatModel {
         private final ChatModel delegate;
+        private final Function<Duration, ChatModel> factory;
         private final Observer observer;
         private final int normalToolRoundTripLimit;
         private int completedToolRoundTrips;
+        private int modelCalls;
 
         private ObservedChatModel(
                 ChatModel delegate,
                 Observer observer,
-                int maxToolRoundTrips
+                int maxToolRoundTrips,
+                Function<Duration, ChatModel> factory
         ) {
+            this.factory = factory;
             this.delegate = delegate;
             this.observer = observer;
             // Reserve the final tool round for submit_evidence so exhaustion converges instead of
@@ -376,24 +567,26 @@ public class LangChain4jAnswerAgentAdapter implements AnswerAgentGateway {
         }
 
         private ChatResponse callAndObserve(ChatRequest request) {
+            // Tool selection uses function calls; JSON mode belongs only to final answers.
+            request = request.toBuilder().responseFormat(ResponseFormat.TEXT).build();
             observer.beforeModelCall();
             ChatResponse response;
+            long started = System.nanoTime();
+            int call = ++modelCalls;
             try {
-                response = delegate.chat(request);
+                response = (factory == null ? delegate : factory.apply(observer.remaining())).chat(request);
             } catch (RuntimeException exception) {
-                LOG.error(
-                        "docquery_answer_provider_failure provider={} client={} exceptionType={}",
-                        delegate.provider(),
-                        delegate.getClass().getName(),
-                        exception.getClass().getName(),
-                        exception
-                );
-                throw exception;
+                throw providerFailure(exception, "agent", delegate.getClass().getSimpleName(), observer.queryExecutionId());
             }
             if (response == null || response.aiMessage() == null) {
                 throw new AnswerException(MODEL_UNAVAILABLE, "Answer model is unavailable");
             }
+            usage(observer, response);
             int calls = response.aiMessage().toolExecutionRequests().size();
+            LOG.info("docquery_answer_model_call queryExecutionId={} call={} elapsedMs={} toolCalls={} inputTokens={} outputTokens={}",
+                    observer.queryExecutionId(), call, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started), calls,
+                    response.tokenUsage() == null ? null : response.tokenUsage().inputTokenCount(),
+                    response.tokenUsage() == null ? null : response.tokenUsage().outputTokenCount());
             if (request.toolChoice() == ToolChoice.REQUIRED) {
                 if (calls != 1
                         || !"submit_evidence".equals(

@@ -42,14 +42,15 @@ const chatContent = (body) => {
       answerableQuestions: ['差旅住宿报销标准是什么？'],
     })
   }
-  if (String(system).includes('controlled single-turn answer agent')) {
-    return JSON.stringify({
+  if (Array.isArray(input.evidencePackages)) {
+    const evidenceIds = input.evidencePackages.flatMap((item) => item.anchorEvidenceIds ?? [])
+    return JSON.stringify(evidenceIds.length ? {
       status: 'ANSWERED',
       answer: '普通员工出差住宿上限为每晚 500 元，超出部分需自行承担 [E1]',
-      citedEvidenceIds: ['E1'],
-    })
+      evidenceIds,
+    } : { status: 'INSUFFICIENT_EVIDENCE', answer: null, evidenceIds: [] })
   }
-  return JSON.stringify({ status: 'INSUFFICIENT_EVIDENCE', answer: null, citedEvidenceIds: [] })
+  throw new Error('Unsupported fake-provider prompt')
 }
 
 const server = http.createServer((request, response) => {
@@ -72,16 +73,41 @@ const server = http.createServer((request, response) => {
       })
     }
     if (request.method === 'POST' && request.url?.endsWith('/chat/completions')) {
+      const id = `chatcmpl-${Date.now()}`
+      const model = body.model ?? 'fake-chat'
+      // Production Agent must hand off selected real evidence through submit_evidence.
+      const handoff = body.tools?.some((tool) => tool.function?.name === 'submit_evidence')
+      const message = handoff
+        ? { role: 'assistant', content: null, tool_calls: [{
+            id: 'call-evidence', type: 'function', function: {
+              name: 'submit_evidence', arguments: JSON.stringify({ evidenceIds: ['E1'], readRefs: [] }),
+            },
+          }] }
+        : { role: 'assistant', content: chatContent(body) }
+      if (body.stream) {
+        response.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' })
+        response.flushHeaders()
+        const text = Array.from(message.content)
+        let offset = 0
+        const write = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({
+          id, object: 'chat.completion.chunk', model,
+          choices: [{ index: 0, delta, finish_reason }],
+        })}\n\n`)
+        const timer = setInterval(() => {
+          if (offset < text.length) {
+            write({ content: text.slice(offset, offset += 5).join('') })
+          } else {
+            clearInterval(timer)
+            write({}, 'stop')
+            response.end('data: [DONE]\n\n')
+          }
+        }, 60)
+        response.on('close', () => clearInterval(timer))
+        return
+      }
       return send(response, 200, {
-        id: `chatcmpl-${Date.now()}`,
-        object: 'chat.completion',
-        created: Math.floor(Date.now() / 1000),
-        model: body.model ?? 'fake-chat',
-        choices: [{
-          index: 0,
-          message: { role: 'assistant', content: chatContent(body) },
-          finish_reason: 'stop',
-        }],
+        id, object: 'chat.completion', created: Math.floor(Date.now() / 1000), model,
+        choices: [{ index: 0, message, finish_reason: handoff ? 'tool_calls' : 'stop' }],
         usage: { prompt_tokens: 8, completion_tokens: 8, total_tokens: 16 },
       })
     }
